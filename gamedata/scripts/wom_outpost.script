@@ -1,0 +1,576 @@
+--- wom_outpost.script
+--- Outpost service discovery: announces ALifePlus 1.8.4 outpost services (trader,
+--- barman, mechanic, medic) that grow on smart terrains a faction has conquered.
+---
+--- Why this exists: AlifePlus grows these NPCs slowly and silently (a 15% roll per
+--- 10 game-minutes per held smart, capped per level), anywhere in the Zone. They are
+--- real shopkeepers, mechanics and medics, but nothing tells the player one appeared
+--- — the only way to find one is to walk into it. This turns that into news.
+---
+--- Detection: AlifePlus publishes NO activity record and NO xbus event for service
+--- growth (ap_ext_smart_mutator._try_grow_service only debug-logs), so the AP record
+--- stream that wom_reaction polls will never see one. Instead this polls the squad
+--- registry for squads whose section matches the service naming convention
+--- "ap_service_<faction>_<role>" (ap_ext_smart_mutator._service_section), which
+--- encodes both the holding faction and the role. The squad's smart terrain gives
+--- the location. Nothing is required of ALifePlus beyond that naming convention.
+---
+--- Two announcement kinds:
+---   • established — the first service seen at a smart ("Duty has taken X, and
+---                   there is a trader working out of it now")
+---   • service     — DORMANT as of ALifePlus 1.8.6. A later role added to a smart
+---                   already known to have services ("that outpost at X has a
+---                   mechanic now"). ALifePlus 1.8.5 cut a held smart to a single
+---                   service for its whole life, and 1.8.6 hardened that into a
+---                   stated ruling: ap_ext_smart_mutator._try_grow_service opens
+---                   with `if next(data.services) then return end`, so a smart that
+---                   has one never grows another (variety across a map now comes
+---                   from the per-(faction, role) level cap steering later outposts
+---                   onto later roles, not from stacking roles on one smart).
+---                   Consequently _roles_at_smart can never return a second role,
+---                   this branch never fires, wom_mcm.outpost_announce_services
+---                   controls nothing, and the st_wom_outpost_service pool is
+---                   unreachable. All of it is kept, not deleted: the cost is one
+---                   branch per scan, and AlifePlus has already reversed this once
+---                   (1.8.4 grew the full set). If AP ever re-widens, this works
+---                   again with no change. Do not "fix" the dead code path.
+--- Both are attributed to the service NPC itself, so the specialist announces their
+--- own arrival. Delivery is wom_bark.send_news_pda (unquoted news-wire style), since
+--- the sender is normally offline and on another map.
+---
+--- Announcements are queued rather than delivered inline: multiple roles can appear
+--- in the same scan, and OUTPOST_MIN_INTERVAL_GAME_SEC spaces them out so the PDA
+--- never bursts. On the first scan after a session load the whole live set is
+--- baselined so pre-existing outposts do not all announce at once.
+---
+--- Relevance is gated on the player's own faction or its allies, MCM-configurable,
+--- via the shared wom_bark.faction_matches test.
+---
+--- Also exposes get_outposts_for_level for wom_recap_smart_terrain, so a stalker
+--- asked "what's the word out there?" can mention an outpost in the area recap.
+---
+--- Depends on: wom_bark, wom_mcm, wom_utils, wom_terminology_helper, wom_dialogue_helper,
+---             xsquad (soft), xlevel (soft), xobject (soft), xtime (soft), db
+
+local POLL_INTERVAL                = 15    -- real seconds between scans
+local OUTPOST_MIN_INTERVAL_GAME_SEC = 600  -- 10 in-game minutes between PDA deliveries
+local MAX_PENDING                  = 8     -- announcement queue cap
+
+local TIMER_ID = "wom_outpost"
+local TIMER_EV = "tick"
+
+-- Squad section naming convention for an ALifePlus outpost service NPC:
+-- "ap_service_<faction>_<role>" (ap_ext_smart_mutator._service_section).
+local SERVICE_SECTION_PATTERN = "^ap_service_(%a+)_(%a+)$"
+
+-- The four service roles ALifePlus grows on a held smart (ap_ext_smart_mutator.SERVICE_ROLES).
+-- Guards the pattern match: "ap_service_" is also the respawn-key prefix, and only these
+-- four suffixes are real roles.
+local SERVICE_ROLES = {
+    trader = true, barman = true, mechanic = true, medic = true,
+}
+
+-- squad_id -> { faction, role, smart_id, level_id } for every service NPC known to exist.
+-- Rebuilt from the live scan each tick; entries that disappear (outpost decayed) are dropped.
+local _known = {}
+-- True once the first scan has baselined the pre-existing set.
+local _baselined = false
+-- Game-sec timestamp of the last delivered announcement; global throttle.
+-- nil means "nothing delivered yet", which must stay distinct from a real timestamp of 0:
+-- game_sec genuinely is 0 at the start of a new game, so an in-band 0 sentinel cannot tell
+-- "never fired" from "fired just now" and leaks the throttle either way.
+local _last_fire_sec = nil
+-- FIFO of announcements waiting on the throttle.
+-- Each entry: { kind, faction, role, roles, smart_id, squad_id }
+local _pending = {}
+
+-- ---- helpers ----------------------------------------------------------------
+
+-- Emits a debug trace line when WoM logging is on. No-op otherwise.
+--
+-- This feature is unusually hard to diagnose from the outside, which is why the tracing
+-- is this thorough: "no announcement appeared" has at least six innocent explanations
+-- (feature off, load baseline adopted the outpost silently, faction out of MCM scope,
+-- the smart did not resolve, the throttle has not elapsed, the message gated out), and
+-- from the player's chair they all look identical. Every one of them logs a distinct
+-- line here, so a single log read answers which happened.
+--
+-- Routed through wom_debug.log_trace so the lines land in wom_combat.log, not only in the
+-- engine's xray_<user>.log — a feature trace is impractical to find in the latter.
+--
+-- ALSO mirrored into wom_responses.log (the dialogue log) via log_response. That file is
+-- otherwise quiet — it holds only rendered NPC replies — so an outpost line is trivial to
+-- spot there, whereas wom_combat.log is dense with per-kill engagement traces. This feature
+-- is verified by leaving the game running and checking a log afterwards, so "easy to catch
+-- in a file you are already watching" is worth the duplication. Both are gated on
+-- wom_debug.enabled(), so neither writes anything with logging off.
+--
+-- Note the cost: log_response opens and closes the file per call, and the scan traces once
+-- per POLL_INTERVAL (15 real seconds) for the whole session. That is fine for a diagnostic
+-- run but is not free — turn WoM logging off once the feature is confirmed.
+--
+-- Callers pass a complete string: numeric format specifiers came out of the game's printf
+-- unsubstituted, so everything is formatted here with tostring first (same reason as
+-- wom_territory._trace).
+-- @param message string  fully formatted line
+local function _trace(message)
+    if not wom_debug then return end
+    if wom_debug.log_trace then
+        wom_debug.log_trace("wom_outpost", message)
+    end
+    if wom_debug.log_response then
+        wom_debug.log_response("OUTPOST", message)
+    end
+end
+
+-- Returns the number of key/value pairs in a table. Used only for trace counts.
+-- @param t table
+-- @return number
+local function _count(t)
+    local n = 0
+    for _ in pairs(t) do n = n + 1 end
+    return n
+end
+
+-- Returns current game_sec from xlibs, or 0 when unavailable.
+-- @return number
+local function _now_game_sec()
+    if not (xtime and xtime.game_sec) then return 0 end
+    return xtime.game_sec()
+end
+
+-- Returns the localised display phrase for a service role, article included
+-- ("a mechanic"). Returns "" for anything that is not one of the four real roles, so
+-- callers can pass raw pattern matches without validating them first.
+--
+-- An unauthored string falls back to the bare English role word rather than to "",
+-- which is deliberate and matches wom_bark.faction_display: every caller gates on this
+-- value, so returning "" would drop the whole line ("the outpost at X has now") and the
+-- player would never learn a specialist arrived. One untranslated noun inside an
+-- otherwise translated sentence is the lesser failure. All four keys are authored in
+-- both locales, so this only fires if a locale omits one.
+-- @param role string  "trader", "barman", "mechanic" or "medic"
+-- @return string  role phrase, or "" when the role is unknown
+function role_phrase(role)
+    if not (role and SERVICE_ROLES[role]) then return "" end
+    local key  = "st_wom_outpost_role_" .. role
+    local text = game.translate_string(key)
+    if text == key or text == nil or text == "" then return role end
+    return text
+end
+
+-- Canonical order for listing roles, so the same set always reads the same way.
+local SERVICE_ROLE_ORDER = { "trader", "barman", "mechanic", "medic" }
+
+-- Describes a set of service roles for template slots. Unknown keys in the set are
+-- ignored, since only the four real roles appear in SERVICE_ROLE_ORDER.
+-- This is the shared role vocabulary: wom_territory calls it to say "they even have a
+-- trader" on a live conquest hold, so the role words have exactly one home.
+-- @param roles table  set { [role] = true }
+-- @return string  joined list phrase, e.g. "a trader and a mechanic", or ""
+-- @return string  the first role phrase in canonical order, e.g. "a trader", or ""
+function describe_roles(roles)
+    if type(roles) ~= "table" then return "", "" end
+    local phrases = {}
+    for _, role in ipairs(SERVICE_ROLE_ORDER) do
+        if roles[role] then phrases[#phrases + 1] = role_phrase(role) end
+    end
+    return wom_utils.join_list(phrases), phrases[1] or ""
+end
+
+-- ---- scan -------------------------------------------------------------------
+
+-- Scans the squad registry for live outpost service NPCs on any map.
+--
+-- Returns two tables and a count. `live` holds fully resolved entries. `seen` is the id set
+-- of every service squad found, resolved or not: a squad whose smart terrain cannot be
+-- read right now (mid level-change, or in the window between spawn and smart
+-- registration) is still alive, and the caller uses `seen` to keep its previous entry
+-- instead of treating it as gone and re-announcing it on the next scan. The third return
+-- is how many squads of ANY kind the registry yielded, which is the only honest way to
+-- tell "the registry is not populated yet" from "there are genuinely no service squads" —
+-- `seen` being empty cannot distinguish them, and treating the latter as transient means a
+-- decayed last outpost is remembered forever.
+-- @return table, table, number
+local function _scan_services()
+    local live, seen, squad_count = {}, {}, 0
+    if not (xsquad and xsquad.iter_squads and xsquad.get_squad_smart) then return live, seen, squad_count end
+    for squad in xsquad.iter_squads() do
+        squad_count = squad_count + 1
+        local section = squad:section_name()
+        if section then
+            local faction, role = string.match(section, SERVICE_SECTION_PATTERN)
+            if faction and role and SERVICE_ROLES[role] then
+                -- iter_squads yields SERVER objects, where `id` is a FIELD, not a method
+                -- (`section_name()` and `commander_id()` above and below really are
+                -- methods — the mix is why squad:id() slipped through). Calling it threw
+                -- "attempt to call method 'id' (a number value)" on the first service
+                -- squad found, which aborted every scan and silently disabled the whole
+                -- feature: no announcements, and get_outposts_for_level always empty.
+                local squad_id = squad.id
+                seen[squad_id] = true
+                local smart = xsquad.get_squad_smart(squad)
+                if smart then
+                    local level_id = nil
+                    if xlevel and xlevel.get_level_id then
+                        local ok, resolved = pcall(xlevel.get_level_id, smart)
+                        if ok then level_id = resolved end
+                    end
+                    live[squad_id] = {
+                        faction  = faction,
+                        role     = role,
+                        smart_id = smart.id,
+                        level_id = level_id,
+                    }
+                end
+            end
+        end
+    end
+    return live, seen, squad_count
+end
+
+-- Builds the next _known set from a scan: every resolved entry, plus the previous
+-- entry for any service squad that is still in the registry but did not resolve this
+-- pass. Squads absent from `seen` are genuinely gone (outpost decayed) and drop out.
+-- @param live table  resolved entries from _scan_services
+-- @param seen table  id set of every service squad found this pass
+-- @return table  { [squad_id] = entry }
+local function _merge_known(live, seen)
+    local merged = {}
+    for squad_id, entry in pairs(live) do merged[squad_id] = entry end
+    for squad_id in pairs(seen) do
+        if not merged[squad_id] and _known[squad_id] then
+            merged[squad_id] = _known[squad_id]
+        end
+    end
+    return merged
+end
+
+-- Returns the set of roles already known at a smart, from the given service map.
+-- @param services table   { [squad_id] = entry }
+-- @param smart_id number
+-- @return table  set { [role] = true }
+local function _roles_at_smart(services, smart_id)
+    local roles = {}
+    for _, entry in pairs(services) do
+        if entry.smart_id == smart_id then roles[entry.role] = true end
+    end
+    return roles
+end
+
+-- ---- announcement queue -----------------------------------------------------
+
+-- Appends an announcement to the pending queue, dropping it when the queue is full.
+-- @param announcement table  { kind, faction, role, roles, smart_id, squad_id }
+local function _enqueue(announcement)
+    if #_pending >= MAX_PENDING then return end
+    _pending[#_pending + 1] = announcement
+end
+
+-- Compares the live scan against _known and queues announcements for newly appeared
+-- services that involve the player's faction (or allies, per MCM scope).
+-- A smart with no previously known service produces one "established" announcement
+-- covering every role that appeared; a smart that already had services produces one
+-- "service" announcement per new role -- dormant under ALifePlus 1.8.5+, which allows
+-- only one service per smart for its whole life, so had_services is never true for a
+-- smart yielding a new role. See the "service" entry in the file header before
+-- touching that branch.
+-- @param live table  result of _scan_services
+local function _queue_new_services(live)
+    local player_comm = get_actor_true_community and get_actor_true_community() or nil
+    local scope       = wom_mcm.outpost_scope()
+    local announce_services = wom_mcm.outpost_announce_services()
+
+    -- Collect new squads grouped by smart so one takeover yields one message.
+    local new_by_smart = {}
+    for squad_id, entry in pairs(live) do
+        if not _known[squad_id] then
+            local group = new_by_smart[entry.smart_id]
+            if not group then
+                group = { faction = entry.faction, roles = {}, squad_id = squad_id }
+                new_by_smart[entry.smart_id] = group
+            end
+            group.roles[entry.role] = true
+        end
+    end
+
+    for smart_id, group in pairs(new_by_smart) do
+        if not wom_bark.faction_matches(group.faction, player_comm, scope) then
+            -- Deliberate silence, not a failure: the holder is out of the player's MCM
+            -- scope. Logged because it is indistinguishable from a bug at the PDA.
+            _trace("new outpost at smart=" .. tostring(smart_id) .. " faction=" .. tostring(group.faction)
+                   .. " NOT announced: out of scope (player=" .. tostring(player_comm)
+                   .. " scope=" .. tostring(scope) .. ")")
+        else
+            local prior_roles  = _roles_at_smart(_known, smart_id)
+            local had_services = next(prior_roles) ~= nil
+            _trace("new outpost at smart=" .. tostring(smart_id) .. " faction=" .. tostring(group.faction)
+                   .. " kind=" .. (had_services and "service" or "established")
+                   .. " announce_services=" .. tostring(announce_services))
+            if not had_services then
+                _enqueue({
+                    kind     = "established",
+                    faction  = group.faction,
+                    roles    = group.roles,
+                    smart_id = smart_id,
+                    squad_id = group.squad_id,
+                })
+            elseif announce_services then
+                -- Dormant under ALifePlus 1.8.5+ (one service per smart, permanently).
+                -- Kept for forward compatibility; see the file header.
+                for role in pairs(group.roles) do
+                    _enqueue({
+                        kind     = "service",
+                        faction  = group.faction,
+                        role     = role,
+                        roles    = group.roles,
+                        smart_id = smart_id,
+                        squad_id = group.squad_id,
+                    })
+                end
+            end
+        end
+    end
+end
+
+-- ---- sender -----------------------------------------------------------------
+
+-- Resolves the (name, icon) pair for the service NPC that announces its own arrival.
+-- Falls back to the generic faction handle when the NPC cannot be resolved (it is
+-- normally offline and on another map).
+-- @param squad_id number  service squad id
+-- @param faction  string  raw community string
+-- @return string, string  sender name, sender icon
+local function _resolve_sender(squad_id, faction)
+    if xsquad and xsquad.get_commander_name then
+        local squad = xobject and xobject.se and xobject.se(squad_id)
+        if squad then
+            local character_name = xsquad.get_commander_name(squad)
+            if character_name and character_name ~= "" then
+                local commander = xobject.se(squad:commander_id())
+                return character_name, commander and commander:character_icon() or ""
+            end
+        end
+    end
+    return wom_bark.faction_display(faction)
+end
+
+-- ---- delivery ---------------------------------------------------------------
+
+-- Renders and delivers one queued announcement over the PDA.
+-- Returns false without delivering when the message renders empty, so the caller
+-- can leave the throttle untouched.
+-- @param announcement table  entry popped from _pending
+-- @return boolean  true when a message was delivered
+local function _deliver(announcement)
+    local location_name = wom_terminology_helper.get_location_name(announcement.smart_id)
+    if location_name == "" then
+        _trace("drop: smart=" .. tostring(announcement.smart_id) .. " has no resolvable display name")
+        return false
+    end
+
+    local slots = {
+        location = location_name,
+        identity = wom_terminology_helper.get_faction_identity(announcement.faction),
+        role     = announcement.role and role_phrase(announcement.role) or "",
+        roles    = (describe_roles(announcement.roles or {})),
+    }
+    local message = wom_dialogue_helper.pick_dialogue_variant(
+        "st_wom_outpost_" .. announcement.kind, slots, { "location", "identity", "role", "roles" })
+    if message == "" then
+        -- Either the pool is missing from the locale, or every variant referenced a slot
+        -- that resolved empty. Both are authoring faults, so name the pool.
+        _trace("drop: pool st_wom_outpost_" .. tostring(announcement.kind)
+               .. " produced no line (missing strings, or all variants gated out)")
+        return false
+    end
+
+    local sender_name, sender_icon = _resolve_sender(announcement.squad_id, announcement.faction)
+    if not sender_name or sender_name == "" then
+        _trace("drop: no sender resolved for squad=" .. tostring(announcement.squad_id))
+        return false
+    end
+
+    wom_bark.send_news_pda(sender_name, sender_icon, message, "wom_outpost")
+    -- The delivered text, so a success is as visible in the log as every failure branch
+    -- above. Without this the log records only the reasons a message did NOT go out, and a
+    -- working feature and a silently-dropped one look the same at the end of a session.
+    _trace("DELIVERED from " .. tostring(sender_name) .. ": " .. tostring(message))
+    return true
+end
+
+-- ---- public API -------------------------------------------------------------
+
+-- Returns every known outpost on the given level, one entry per smart terrain,
+-- for merging into the area recap by wom_recap_smart_terrain.
+-- Role phrases are pre-rendered here so the caller needs no outpost vocabulary.
+-- Returns an empty array when the feature is disabled or nothing is known yet.
+-- @param level_id number  level to filter on (xlevel.get_actor_level_id())
+-- @return table  array of {
+--   smart_id     number,
+--   faction      string,   raw community string of the holding faction
+--   service_list string,   e.g. "a trader and a mechanic"
+--   service_role string,   phrase for one role, e.g. "a mechanic"
+-- }
+function get_outposts_for_level(level_id)
+    local result = {}
+    if not level_id then return result end
+    if not wom_mcm.outpost_enabled() then return result end
+
+    -- Group the known services by smart terrain.
+    local by_smart = {}
+    for _, entry in pairs(_known) do
+        if entry.level_id == level_id then
+            local group = by_smart[entry.smart_id]
+            if not group then
+                group = { faction = entry.faction, roles = {} }
+                by_smart[entry.smart_id] = group
+            end
+            group.roles[entry.role] = true
+        end
+    end
+
+    for smart_id, group in pairs(by_smart) do
+        -- describe_roles also returns the first role in canonical order, which is what
+        -- #service_role# wants: the only role of a single-role outpost, or a
+        -- representative one for a multi-role outpost.
+        local service_list, service_role = describe_roles(group.roles)
+        result[#result + 1] = {
+            smart_id     = smart_id,
+            faction      = group.faction,
+            service_list = service_list,
+            service_role = service_role,
+        }
+    end
+    return result
+end
+
+-- ---- scan cycle -------------------------------------------------------------
+
+-- Core scan: refresh the known set, queue new discoveries, deliver one queued
+-- announcement if the throttle allows.
+local function _scan()
+    if not wom_mcm.outpost_enabled() then
+        _trace("skip: disabled in MCM")
+        return
+    end
+    if not db.actor then
+        _trace("skip: no actor yet")
+        return
+    end
+
+    local live, seen, squad_count = _scan_services()
+    _trace("scan: squads=" .. tostring(squad_count)
+           .. " service_seen=" .. tostring(_count(seen))
+           .. " resolved=" .. tostring(_count(live))
+           .. " known=" .. tostring(_count(_known))
+           .. " pending=" .. tostring(#_pending))
+
+    -- First scan after a session load: adopt the live set silently so pre-existing
+    -- outposts do not all announce at once.
+    if not _baselined then
+        _known     = live
+        _baselined = true
+        -- Worth its own line: adopting a non-empty set here is the single most common
+        -- reason a player who just watched an outpost appear never got a message. The
+        -- outpost was already there when the session loaded (it grew in an earlier
+        -- session, or before a save/reload), so it is treated as old news forever.
+        _trace("baselined " .. tostring(_count(live))
+               .. " pre-existing outpost service(s); these will not announce")
+        return
+    end
+
+    -- An unreadable registry with outposts already known is a transient (level change,
+    -- registry not yet populated), not four simultaneous decays. Skip the pass rather
+    -- than forgetting everything and re-announcing it all on the next one. The test is
+    -- "no squads at all", not "no service squads": the latter is the normal state of a map
+    -- whose last outpost just decayed, and treating that as transient would keep a dead
+    -- outpost in the area recap for the rest of the session.
+    if squad_count == 0 and next(_known) then
+        _trace("skip: empty squad registry with " .. tostring(_count(_known))
+               .. " outpost(s) known — treating as a transient read")
+        return
+    end
+
+    _queue_new_services(live)
+    _known = _merge_known(live, seen)
+
+    if #_pending == 0 then return end
+
+    local now_sec = _now_game_sec()
+    -- A nil _last_fire_sec means nothing has been delivered yet, so the first announcement
+    -- is never throttled. Comparing against an initial 0 instead suppressed the first
+    -- message for the opening 10 in-game minutes of a new game, and suppressed delivery
+    -- forever wherever xtime is unavailable (_now_game_sec then returns a constant 0).
+    if _last_fire_sec and (now_sec - _last_fire_sec) < OUTPOST_MIN_INTERVAL_GAME_SEC then
+        _trace("holding " .. tostring(#_pending) .. " announcement(s): throttled for another "
+               .. tostring(OUTPOST_MIN_INTERVAL_GAME_SEC - (now_sec - _last_fire_sec)) .. " game sec")
+        return
+    end
+
+    local announcement = table.remove(_pending, 1)
+    if _deliver(announcement) then
+        _last_fire_sec = now_sec
+    end
+end
+
+-- ---- timer ------------------------------------------------------------------
+
+-- Timer tick: reschedules itself and runs one guarded scan pass.
+-- Returns false so CreateTimeEvent keeps the event registered; never remove this.
+-- @return boolean  always false
+local function _on_timer()
+    ResetTimeEvent(TIMER_ID, TIMER_EV, POLL_INTERVAL)
+    local ok, err = pcall(_scan)
+    if not ok then
+        -- Route the failure through _trace, NOT only printf. This is the exact hole that
+        -- hid the original squad:id() crash for a whole play session: the error threw inside
+        -- _scan_services before _scan reached its own trace line, and printf writes solely to
+        -- the engine's xray_<user>.log — so the WoM logs being watched stayed completely
+        -- silent, which reads as "the timer never ran" rather than "the scan is crashing".
+        -- A scan error must appear in the same file as the scan traces.
+        _trace("SCAN ERROR: " .. tostring(err))
+        if printf then printf("~[wom_outpost] scan error: %s", tostring(err)) end
+    end
+    return false
+end
+
+-- ---- lifecycle --------------------------------------------------------------
+
+-- TEMPORARILY DISABLED: the scan timer is not started, so no squad-registry polling and no
+-- PDA announcements occur; get_outposts_for_level also short-circuits via
+-- wom_mcm.outpost_enabled() (hardcoded false) for the area-recap mention path.
+--
+-- NOT disabled because it is known broken. The original failure (a squad:id() call on a
+-- server object, which aborted every scan before the first trace line and reported only to
+-- the engine log) is fixed, and the diagnostic logging added alongside it is in place. What
+-- is unresolved is performance and architecture:
+--
+--   • Cost. Each pass walks the WHOLE squad registry via xsquad.iter_squads -- roughly 2
+--     luabind calls per squad (sim:object resolve + section_name, which allocates a
+--     shared_str) across the high hundreds to a couple thousand squads a GAMMA save holds,
+--     in one frame, every 15 real seconds. For comparison xlibs caches an equivalent
+--     SIMBOARD roster walk for 60 seconds in xsmart.get_faction_smart_count, and AP's own
+--     smart mutator scans on a 60-second interval. This polls 4x more often than xlibs
+--     bothers to cache.
+--
+--   • Architecture. Polling is the wrong shape entirely. `squad_on_npc_creation`
+--     (sim_board.script:149) fires server-side on ANY level at genuine squad creation and
+--     hands the handler (squad, member se_obj, spawn_smart) directly -- ALifePlus itself
+--     hooks it for exactly this purpose (ap_ext_smart_mutator._on_npc_creation) with a
+--     cheap "ap_service_" prefix compare. It costs one string compare per squad creation
+--     instead of thousands of luabind calls per minute, and because create_squad does not
+--     run for squads loaded from a save, it fires only for genuinely new outposts -- which
+--     removes the load-baseline problem below rather than working around it.
+--     The likely end shape is hybrid: creation events drive announcements, and the registry
+--     scan survives only as a slow (~5 min) reconciler for decay and for outposts that grew
+--     in an earlier session, since a creation event cannot report either.
+--
+-- Restore the CreateTimeEvent call below to re-enable for testing.
+function on_game_start()
+    _known         = {}
+    _baselined     = false
+    _last_fire_sec = nil
+    _pending       = {}
+    -- CreateTimeEvent(TIMER_ID, TIMER_EV, POLL_INTERVAL, _on_timer)
+end

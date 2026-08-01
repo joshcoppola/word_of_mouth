@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="windows-1251" ?>
+<string_table>
+
+  <!-- ===================================================== -->
+  <!-- FACTION MEMBER (SINGULAR) NAMES                       -->
+  <!-- ===================================================== -->
+  <!-- Human factions -->
+  <string id="st_wom_term_singular_stalker"><text>одиночка</text></string>
+  <string id="st_wom_term_singular_dolg"><text>боец «Долга»</text></string>
+  <string id="st_wom_term_singular_freedom"><text>боец «Свободы»</text></string>
+  <string id="st_wom_term_singular_army"><text>военный</text></string>
+  <string id="st_wom_term_singular_ecolog"><text>эколог</text></string>
+  <string id="st_wom_term_singular_csky"><text>сталкер «Чистого неба»</text></string>
+  <string id="st_wom_term_singular_killer"><text>наёмник</text></string>
+  <string id="st_wom_term_singular_bandit"><text>бандит</text></string>
+  <string id="st_wom_term_singular_monolith"><text>монолитовец</text></string>
+  <string id="st_wom_term_singular_renegade"><text>ренегат</text></string>
+  <string id="st_wom_term_singular_zombied"><text>зомбированный сталкер</text></string>
+  <string id="st_wom_term_singular_greh"><text>фанатик «Греха»</text></string>
+  <string id="st_wom_term_singular_isg"><text>боец ИИГ</text></string>
+  <!-- Mutant species -->
+  <string id="st_wom_term_singular_dog"><text>слепой пёс</text></string>
+  <string id="st_wom_term_singular_pseudodog"><text>псевдопёс</text></string>
+  <string id="st_wom_term_singular_psy_dog"><text>пси-пёс</text></string>
+  <string id="st_wom_term_singular_tushkano"><text>тушкан</text></string>
+  <string id="st_wom_term_singular_rat"><text>крыса</text></string>
+  <string id="st_wom_term_singular_cat"><text>кот</text></string>
+  <string id="st_wom_term_singular_boar"><text>кабан</text></string>
+  <string id="st_wom_term_singular_flesh"><text>плоть</text></string>
+  <string id="st_wom_term_singular_lurker"><text>кикимора</text></string>
+  <string id="st_wom_term_singular_chimera"><text>химера</text></string>
+  <string id="st_wom_term_singular_gigant"><text>псевдогигант</text></string>
+  <string id="st_wom_term_singular_zombie"><text>зомби</text></string>
+  <string id="st_wom_term_singular_snork"><text>снорк</text></string>
+  <string id="st_wom_term_singular_fracture"><text>излом</text></string>
+  <string id="st_wom_term_singular_burer"><text>бюрер</text></string>
+  <string id="st_wom_term_singular_karlik"><text>карлик</text></string>
+  <string id="st_wom_term_singular_controller"><text>контролёр</text></string>
+  <string id="st_wom_term_singular_psysucker"><text>пси-кровосос</text></string>
+  <string id="st_wom_term_singular_bloodsucker"><text>кровосос</text></string>
+  <string id="st_wom_term_singular_poltergeist"><text>полтергейст</text></string>
+  <string id="st_wom_term_singular_pyrogeist"><text>пиро-полтергейст</text></string>
+  <string id="st_wom_term_singular_pseudogeist"><text>псевдо-полтергейст</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FACTION PLURAL NAMES (Genitive Plural for #plural#)   -->
+  <!-- ===================================================== -->
+  <!-- Human factions -->
+  <string id="st_wom_term_plural_stalker"><text>одиночек</text></string>
+  <string id="st_wom_term_plural_dolg"><text>бойцов «Долга»</text></string>
+  <string id="st_wom_term_plural_freedom"><text>бойцов «Свободы»</text></string>
+  <string id="st_wom_term_plural_army"><text>военных</text></string>
+  <string id="st_wom_term_plural_ecolog"><text>экологов</text></string>
+  <string id="st_wom_term_plural_csky"><text>сталкеров «Чистого неба»</text></string>
+  <string id="st_wom_term_plural_killer"><text>наёмников</text></string>
+  <string id="st_wom_term_plural_bandit"><text>бандитов</text></string>
+  <string id="st_wom_term_plural_monolith"><text>монолитовцев</text></string>
+  <string id="st_wom_term_plural_renegade"><text>ренегатов</text></string>
+  <string id="st_wom_term_plural_zombied"><text>зомбированных</text></string>
+  <string id="st_wom_term_plural_greh"><text>фанатиков «Греха»</text></string>
+  <string id="st_wom_term_plural_isg"><text>бойцов ИИГ</text></string>
+  <!-- Mutant species -->
+  <string id="st_wom_term_plural_dog"><text>слепых псов</text></string>
+  <string id="st_wom_term_plural_pseudodog"><text>псевдопсов</text></string>
+  <string id="st_wom_term_plural_psy_dog"><text>пси-псов</text></string>
+  <string id="st_wom_term_plural_tushkano"><text>тушканов</text></string>
+  <string id="st_wom_term_plural_rat"><text>крыс</text></string>
+  <string id="st_wom_term_plural_cat"><text>котов</text></string>
+  <string id="st_wom_term_plural_boar"><text>кабанов</text></string>
+  <string id="st_wom_term_plural_flesh"><text>плотей</text></string>
+  <string id="st_wom_term_plural_lurker"><text>кикимор</text></string>
+  <string id="st_wom_term_plural_chimera"><text>химер</text></string>
+  <string id="st_wom_term_plural_gigant"><text>псевдогигантов</text></string>
+  <string id="st_wom_term_plural_zombie"><text>зомби</text></string>
+  <string id="st_wom_term_plural_snork"><text>снорков</text></string>
+  <string id="st_wom_term_plural_fracture"><text>изломов</text></string>
+  <string id="st_wom_term_plural_burer"><text>бюреров</text></string>
+  <string id="st_wom_term_plural_karlik"><text>карликов</text></string>
+  <string id="st_wom_term_plural_controller"><text>контролёров</text></string>
+  <string id="st_wom_term_plural_psysucker"><text>пси-кровососов</text></string>
+  <string id="st_wom_term_plural_bloodsucker"><text>кровососов</text></string>
+  <string id="st_wom_term_plural_poltergeist"><text>полтергейстов</text></string>
+  <string id="st_wom_term_plural_pyrogeist"><text>пиро-полтергейстов</text></string>
+  <string id="st_wom_term_plural_pseudogeist"><text>псевдо-полтергейстов</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FACTION ADJECTIVES                                    -->
+  <!-- ===================================================== -->
+  <!-- Human factions -->
+  <string id="st_wom_term_adjective_stalker"><text>одиночек</text></string>
+  <string id="st_wom_term_adjective_dolg"><text>«Долга»</text></string>
+  <string id="st_wom_term_adjective_freedom"><text>«Свободы»</text></string>
+  <string id="st_wom_term_adjective_army"><text>военных</text></string>
+  <string id="st_wom_term_adjective_ecolog"><text>экологов</text></string>
+  <string id="st_wom_term_adjective_csky"><text>«Чистого неба»</text></string>
+  <string id="st_wom_term_adjective_killer"><text>наёмников</text></string>
+  <string id="st_wom_term_adjective_bandit"><text>бандитов</text></string>
+  <string id="st_wom_term_adjective_monolith"><text>монолитовцев</text></string>
+  <string id="st_wom_term_adjective_renegade"><text>ренегатов</text></string>
+  <string id="st_wom_term_adjective_zombied"><text>зомбированных</text></string>
+  <string id="st_wom_term_adjective_greh"><text>«Греха»</text></string>
+  <string id="st_wom_term_adjective_isg"><text>ИИГ</text></string>
+  <!-- Mutant species -->
+  <string id="st_wom_term_adjective_dog"><text>слепых псов</text></string>
+  <string id="st_wom_term_adjective_pseudodog"><text>псевдопсов</text></string>
+  <string id="st_wom_term_adjective_psy_dog"><text>пси-псов</text></string>
+  <string id="st_wom_term_adjective_tushkano"><text>тушканов</text></string>
+  <string id="st_wom_term_adjective_rat"><text>крыс</text></string>
+  <string id="st_wom_term_adjective_cat"><text>котов</text></string>
+  <string id="st_wom_term_adjective_boar"><text>кабанов</text></string>
+  <string id="st_wom_term_adjective_flesh"><text>плотей</text></string>
+  <string id="st_wom_term_adjective_lurker"><text>кикимор</text></string>
+  <string id="st_wom_term_adjective_chimera"><text>химер</text></string>
+  <string id="st_wom_term_adjective_gigant"><text>псевдогигантов</text></string>
+  <string id="st_wom_term_adjective_zombie"><text>зомби</text></string>
+  <string id="st_wom_term_adjective_snork"><text>снорков</text></string>
+  <string id="st_wom_term_adjective_fracture"><text>изломов</text></string>
+  <string id="st_wom_term_adjective_burer"><text>бюреров</text></string>
+  <string id="st_wom_term_adjective_karlik"><text>карликов</text></string>
+  <string id="st_wom_term_adjective_controller"><text>контролёров</text></string>
+  <string id="st_wom_term_adjective_psysucker"><text>пси-кровососов</text></string>
+  <string id="st_wom_term_adjective_bloodsucker"><text>кровососов</text></string>
+  <string id="st_wom_term_adjective_poltergeist"><text>полтергейстов</text></string>
+  <string id="st_wom_term_adjective_pyrogeist"><text>пиро-полтергейстов</text></string>
+  <string id="st_wom_term_adjective_pseudogeist"><text>псевдо-полтергейстов</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FACTION IDENTITY NAMES                                 -->
+  <!-- ===================================================== -->
+  <!-- Human factions -->
+  <string id="st_wom_term_identity_stalker"><text>одиночки</text></string>
+  <string id="st_wom_term_identity_dolg"><text>«Долг»</text></string>
+  <string id="st_wom_term_identity_freedom"><text>«Свобода»</text></string>
+  <string id="st_wom_term_identity_army"><text>военные</text></string>
+  <string id="st_wom_term_identity_ecolog"><text>экологи</text></string>
+  <string id="st_wom_term_identity_csky"><text>«Чистое небо»</text></string>
+  <string id="st_wom_term_identity_killer"><text>наёмники</text></string>
+  <string id="st_wom_term_identity_bandit"><text>бандиты</text></string>
+  <string id="st_wom_term_identity_monolith"><text>«Монолит»</text></string>
+  <string id="st_wom_term_identity_renegade"><text>ренегаты</text></string>
+  <string id="st_wom_term_identity_zombied"><text>зомбированные сталкеры</text></string>
+  <string id="st_wom_term_identity_greh"><text>«Грех»</text></string>
+  <string id="st_wom_term_identity_isg"><text>ИИГ</text></string>
+  <!-- Mutant species -->
+  <string id="st_wom_term_identity_dog"><text>слепые псы</text></string>
+  <string id="st_wom_term_identity_pseudodog"><text>псевдопсы</text></string>
+  <string id="st_wom_term_identity_psy_dog"><text>пси-псы</text></string>
+  <string id="st_wom_term_identity_tushkano"><text>тушканы</text></string>
+  <string id="st_wom_term_identity_rat"><text>крысы</text></string>
+  <string id="st_wom_term_identity_cat"><text>коты</text></string>
+  <string id="st_wom_term_identity_boar"><text>кабаны</text></string>
+  <string id="st_wom_term_identity_flesh"><text>плоти</text></string>
+  <string id="st_wom_term_identity_lurker"><text>кикиморы</text></string>
+  <string id="st_wom_term_identity_chimera"><text>химеры</text></string>
+  <string id="st_wom_term_identity_gigant"><text>псевдогиганты</text></string>
+  <string id="st_wom_term_identity_zombie"><text>зомби</text></string>
+  <string id="st_wom_term_identity_snork"><text>снорки</text></string>
+  <string id="st_wom_term_identity_fracture"><text>изломы</text></string>
+  <string id="st_wom_term_identity_burer"><text>бюреры</text></string>
+  <string id="st_wom_term_identity_karlik"><text>карлики</text></string>
+  <string id="st_wom_term_identity_controller"><text>контролёры</text></string>
+  <string id="st_wom_term_identity_psysucker"><text>пси-кровососы</text></string>
+  <string id="st_wom_term_identity_bloodsucker"><text>кровососы</text></string>
+  <string id="st_wom_term_identity_poltergeist"><text>полтергейсты</text></string>
+  <string id="st_wom_term_identity_pyrogeist"><text>пиро-полтергейсты</text></string>
+  <string id="st_wom_term_identity_pseudogeist"><text>псевдо-полтергейсты</text></string>
+
+  <string id="st_wom_term_articles_enabled"><text>0</text></string>
+
+  <!-- ===================================================== -->
+  <!-- LIST CONJUNCTIONS                                     -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_list_two"><text>#a# и #b#</text></string>
+  <string id="st_wom_term_list_final"><text>#list#, а также #last#</text></string>
+
+  <!-- ===================================================== -->
+  <!-- SQUAD COLLECTIVE NOUNS                                 -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_squad_ecolog_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_ecolog_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_ecolog_002"><text>исследовательская группа</text></string>
+  <string id="st_wom_term_squad_plural_ecolog_002"><text>исследовательские группы</text></string>
+  <string id="st_wom_term_squad_ecolog_003"><text>научная группа</text></string>
+  <string id="st_wom_term_squad_plural_ecolog_003"><text>научные группы</text></string>
+  <string id="st_wom_term_squad_ecolog_004"><text>полевая группа</text></string>
+  <string id="st_wom_term_squad_plural_ecolog_004"><text>полевые группы</text></string>
+
+  <string id="st_wom_term_squad_csky_001"><text>отряд</text></string>
+  <string id="st_wom_term_squad_plural_csky_001"><text>отряды</text></string>
+  <string id="st_wom_term_squad_csky_002"><text>патруль</text></string>
+  <string id="st_wom_term_squad_plural_csky_002"><text>патрули</text></string>
+  <string id="st_wom_term_squad_csky_003"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_csky_003"><text>группы</text></string>
+  <string id="st_wom_term_squad_csky_004"><text>отделение</text></string>
+  <string id="st_wom_term_squad_plural_csky_004"><text>отделения</text></string>
+
+  <string id="st_wom_term_squad_freedom_001"><text>отряд</text></string>
+  <string id="st_wom_term_squad_plural_freedom_001"><text>отряды</text></string>
+  <string id="st_wom_term_squad_freedom_002"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_freedom_002"><text>группы</text></string>
+  <string id="st_wom_term_squad_freedom_003"><text>подразделение</text></string>
+  <string id="st_wom_term_squad_plural_freedom_003"><text>подразделения</text></string>
+
+  <string id="st_wom_term_squad_renegade_001"><text>целая банда</text></string>
+  <string id="st_wom_term_squad_plural_renegade_001"><text>банды</text></string>
+  <string id="st_wom_term_squad_renegade_002"><text>целая шайка</text></string>
+  <string id="st_wom_term_squad_plural_renegade_002"><text>шайки</text></string>
+  <string id="st_wom_term_squad_renegade_003"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_renegade_003"><text>группы</text></string>
+
+  <string id="st_wom_term_squad_dolg_001"><text>отряд</text></string>
+  <string id="st_wom_term_squad_plural_dolg_001"><text>отряды</text></string>
+  <string id="st_wom_term_squad_dolg_002"><text>подразделение</text></string>
+  <string id="st_wom_term_squad_plural_dolg_002"><text>подразделения</text></string>
+  <string id="st_wom_term_squad_dolg_003"><text>отделение</text></string>
+  <string id="st_wom_term_squad_plural_dolg_003"><text>отделения</text></string>
+  <string id="st_wom_term_squad_dolg_004"><text>огневая группа</text></string>
+  <string id="st_wom_term_squad_plural_dolg_004"><text>огневые группы</text></string>
+
+  <string id="st_wom_term_squad_stalker_001"><text>целая группа</text></string>
+  <string id="st_wom_term_squad_plural_stalker_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_stalker_002"><text>целая компания</text></string>
+  <string id="st_wom_term_squad_plural_stalker_002"><text>компании</text></string>
+  <string id="st_wom_term_squad_stalker_003"><text>целая ватага</text></string>
+  <string id="st_wom_term_squad_plural_stalker_003"><text>ватаги</text></string>
+
+  <string id="st_wom_term_squad_killer_001"><text>отряд</text></string>
+  <string id="st_wom_term_squad_plural_killer_001"><text>отряды</text></string>
+  <string id="st_wom_term_squad_killer_002"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_killer_002"><text>группы</text></string>
+  <string id="st_wom_term_squad_killer_003"><text>подразделение</text></string>
+  <string id="st_wom_term_squad_plural_killer_003"><text>подразделения</text></string>
+  <string id="st_wom_term_squad_killer_004"><text>огневая группа</text></string>
+  <string id="st_wom_term_squad_plural_killer_004"><text>огневые группы</text></string>
+
+  <string id="st_wom_term_squad_isg_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_isg_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_isg_002"><text>подразделение</text></string>
+  <string id="st_wom_term_squad_plural_isg_002"><text>подразделения</text></string>
+  <string id="st_wom_term_squad_isg_003"><text>отделение</text></string>
+  <string id="st_wom_term_squad_plural_isg_003"><text>отделения</text></string>
+  <string id="st_wom_term_squad_isg_004"><text>отряд</text></string>
+  <string id="st_wom_term_squad_plural_isg_004"><text>отряды</text></string>
+
+  <string id="st_wom_term_squad_monolith_001"><text>отряд</text></string>
+  <string id="st_wom_term_squad_plural_monolith_001"><text>отряды</text></string>
+  <string id="st_wom_term_squad_monolith_002"><text>подразделение</text></string>
+  <string id="st_wom_term_squad_plural_monolith_002"><text>подразделения</text></string>
+  <string id="st_wom_term_squad_monolith_003"><text>отделение</text></string>
+  <string id="st_wom_term_squad_plural_monolith_003"><text>отделения</text></string>
+
+  <string id="st_wom_term_squad_army_001"><text>отряд</text></string>
+  <string id="st_wom_term_squad_plural_army_001"><text>отряды</text></string>
+  <string id="st_wom_term_squad_army_002"><text>огневая группа</text></string>
+  <string id="st_wom_term_squad_plural_army_002"><text>огневые группы</text></string>
+  <string id="st_wom_term_squad_army_003"><text>подразделение</text></string>
+  <string id="st_wom_term_squad_plural_army_003"><text>подразделения</text></string>
+  <string id="st_wom_term_squad_army_004"><text>отделение</text></string>
+  <string id="st_wom_term_squad_plural_army_004"><text>отделения</text></string>
+
+  <string id="st_wom_term_squad_bandit_001"><text>целая банда</text></string>
+  <string id="st_wom_term_squad_plural_bandit_001"><text>банды</text></string>
+  <string id="st_wom_term_squad_bandit_002"><text>целая шайка</text></string>
+  <string id="st_wom_term_squad_plural_bandit_002"><text>шайки</text></string>
+  <string id="st_wom_term_squad_bandit_003"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_bandit_003"><text>группы</text></string>
+
+  <string id="st_wom_term_squad_greh_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_greh_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_greh_002"><text>ватага</text></string>
+  <string id="st_wom_term_squad_plural_greh_002"><text>ватаги</text></string>
+  <string id="st_wom_term_squad_greh_003"><text>компания</text></string>
+  <string id="st_wom_term_squad_plural_greh_003"><text>компании</text></string>
+
+  <string id="st_wom_term_squad_dog_001"><text>целая стая</text></string>
+  <string id="st_wom_term_squad_plural_dog_001"><text>стаи</text></string>
+  <string id="st_wom_term_squad_pseudodog_001"><text>целая стая</text></string>
+  <string id="st_wom_term_squad_plural_pseudodog_001"><text>стаи</text></string>
+  <string id="st_wom_term_squad_psy_dog_001"><text>целая стая</text></string>
+  <string id="st_wom_term_squad_plural_psy_dog_001"><text>стаи</text></string>
+
+  <string id="st_wom_term_squad_tushkano_001"><text>целая стая</text></string>
+  <string id="st_wom_term_squad_plural_tushkano_001"><text>стаи</text></string>
+  <string id="st_wom_term_squad_tushkano_002"><text>целый рой</text></string>
+  <string id="st_wom_term_squad_plural_tushkano_002"><text>рои</text></string>
+
+  <string id="st_wom_term_squad_cat_001"><text>целая стая</text></string>
+  <string id="st_wom_term_squad_plural_cat_001"><text>стаи</text></string>
+  <string id="st_wom_term_squad_cat_002"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_cat_002"><text>группы</text></string>
+
+  <string id="st_wom_term_squad_rat_001"><text>целая стая</text></string>
+  <string id="st_wom_term_squad_plural_rat_001"><text>стаи</text></string>
+  <string id="st_wom_term_squad_rat_002"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_rat_002"><text>группы</text></string>
+
+  <string id="st_wom_term_squad_boar_001"><text>целое стадо</text></string>
+  <string id="st_wom_term_squad_plural_boar_001"><text>стада</text></string>
+  <string id="st_wom_term_squad_boar_002"><text>стая</text></string>
+  <string id="st_wom_term_squad_plural_boar_002"><text>стаи</text></string>
+
+  <string id="st_wom_term_squad_flesh_001"><text>целое стадо</text></string>
+  <string id="st_wom_term_squad_plural_flesh_001"><text>стада</text></string>
+  <string id="st_wom_term_squad_flesh_002"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_flesh_002"><text>группы</text></string>
+
+  <string id="st_wom_term_squad_lurker_001"><text>стая</text></string>
+  <string id="st_wom_term_squad_plural_lurker_001"><text>стаи</text></string>
+  <string id="st_wom_term_squad_chimera_001"><text>стая</text></string>
+  <string id="st_wom_term_squad_plural_chimera_001"><text>стаи</text></string>
+  <string id="st_wom_term_squad_gigant_001"><text>стая</text></string>
+  <string id="st_wom_term_squad_plural_gigant_001"><text>стаи</text></string>
+  <string id="st_wom_term_squad_snork_001"><text>стая</text></string>
+  <string id="st_wom_term_squad_plural_snork_001"><text>стаи</text></string>
+
+  <string id="st_wom_term_squad_zombie_001"><text>целая орда</text></string>
+  <string id="st_wom_term_squad_plural_zombie_001"><text>орды</text></string>
+  <string id="st_wom_term_squad_zombie_002"><text>целая толпа</text></string>
+  <string id="st_wom_term_squad_plural_zombie_002"><text>толпы</text></string>
+  <string id="st_wom_term_squad_zombied_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_zombied_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_zombied_002"><text>толпа</text></string>
+  <string id="st_wom_term_squad_plural_zombied_002"><text>толпы</text></string>
+
+  <string id="st_wom_term_squad_fracture_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_fracture_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_burer_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_burer_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_karlik_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_karlik_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_controller_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_controller_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_psysucker_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_psysucker_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_bloodsucker_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_bloodsucker_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_poltergeist_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_poltergeist_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_pyrogeist_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_pyrogeist_001"><text>группы</text></string>
+  <string id="st_wom_term_squad_pseudogeist_001"><text>группа</text></string>
+  <string id="st_wom_term_squad_plural_pseudogeist_001"><text>группы</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FIRST-PERSON SAME-FACTION PHRASES                      -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_ours_one_001"><text>одного из наших бойцов</text></string>
+  <string id="st_wom_term_ours_some_001"><text>нескольких наших ребят</text></string>
+
+  <!-- Count phrases (first-person) -->
+  <string id="st_wom_term_count_couple_ours"><text>пара наших ребят</text></string>
+  <string id="st_wom_term_count_few_ours"><text>несколько наших бойцов</text></string>
+  <string id="st_wom_term_count_bunch_ours"><text>куча наших ребят</text></string>
+  <string id="st_wom_term_count_N_ours"><text>#count# наших бойцов</text></string>
+
+  <!-- ===================================================== -->
+  <!-- TIME-OF-DAY PHRASES                                    -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_time_dawn"><text>на рассвете</text></string>
+  <string id="st_wom_term_time_morning"><text>утром</text></string>
+  <string id="st_wom_term_time_midday"><text>около полудня</text></string>
+  <string id="st_wom_term_time_afternoon"><text>днём</text></string>
+  <string id="st_wom_term_time_evening"><text>вечером</text></string>
+  <string id="st_wom_term_time_night"><text>ночью</text></string>
+
+  <!-- ===================================================== -->
+  <!-- "AGO" PHRASES                                          -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_ago_now"><text>только что</text></string>
+  <string id="st_wom_term_ago_one_hour"><text>около часа назад</text></string>
+  <string id="st_wom_term_ago_hours"><text>около #count# ч. назад</text></string>
+
+  <!-- ===================================================== -->
+  <!-- RECENT-EVENT PARAGRAPH OPENERS                         -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_just_now_para"><text>Только что</text></string>
+  <string id="st_wom_term_recent_para"><text>Меньше часа назад</text></string>
+
+  <!-- ===================================================== -->
+  <!-- NUMBER WORDS (Accusative / Genitive for creatures)     -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_number_1"><text>в количестве одного</text></string>
+  <string id="st_wom_term_number_2"><text>в количестве двоих</text></string>
+  <string id="st_wom_term_number_3"><text>в количестве троих</text></string>
+  <string id="st_wom_term_number_4"><text>в количестве четверых</text></string>
+  <string id="st_wom_term_number_5"><text>в количестве пятерых</text></string>
+  <string id="st_wom_term_number_6"><text>в количестве шестерых</text></string>
+  <string id="st_wom_term_number_7"><text>в количестве семерых</text></string>
+  <string id="st_wom_term_number_8"><text>в количестве восьмерых</text></string>
+  <string id="st_wom_term_number_9"><text>в количестве девятерых</text></string>
+  <string id="st_wom_term_number_10"><text>в количестве десятерых</text></string>
+  <string id="st_wom_term_number_11"><text>одиннадцать человек</text></string>
+  <string id="st_wom_term_number_12"><text>двенадцать человек</text></string>
+  <string id="st_wom_term_number_many"><text>многих</text></string>
+
+  <!-- ================================================================= -->
+  <!-- GENERIC FALLBACK TERMS                                             -->
+  <!-- ================================================================= -->
+  <string id="st_wom_term_unknown_member"><text>кто-то</text></string>
+  <string id="st_wom_term_unknown_some"><text>несколько человек</text></string>
+  <string id="st_wom_term_unknown_squad"><text>группа каких-то парней</text></string>
+  <string id="st_wom_term_unknown_plural"><text>люди</text></string>
+  <string id="st_wom_term_unknown_squad_bare"><text>группа каких-то мужиков</text></string>
+  <string id="st_wom_term_unknown_member_bare"><text>человек</text></string>
+
+  <string id="st_wom_term_nearby"><text>поблизости</text></string>
+  <string id="st_wom_term_count_fallback"><text>несколько</text></string>
+  <string id="st_wom_term_action_fallback"><text>что-то</text></string>
+  <string id="st_wom_term_location_fallback"><text>какое-то место</text></string>
+
+  <!-- Location prepositions -->
+  <string id="st_wom_term_prep_at"><text>возле объекта</text></string>
+  <string id="st_wom_term_prep_to"><text>в район объекта</text></string>
+  <string id="st_wom_term_prep_near"><text>неподалёку от объекта</text></string>
+  <string id="st_wom_term_prep_in"><text>в окрестностях места</text></string>
+  <string id="st_wom_term_prep_from"><text>со стороны объекта</text></string>
+  <string id="st_wom_term_prep_by"><text>рядом с объектом</text></string>
+  <string id="st_wom_term_prep_around"><text>около объекта</text></string>
+  <string id="st_wom_term_prep_toward"><text>в сторону объекта</text></string>
+
+<!-- ===================================================== -->
+  <!-- COUNT PHRASE TEMPLATES (third-person)                  -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_count_some"><text>несколько групп из числа #plural#</text></string>
+  <string id="st_wom_term_count_couple"><text>парочка групп #plural#</text></string>
+  <string id="st_wom_term_count_few"><text>несколько отрядов #plural#</text></string>
+  <string id="st_wom_term_count_bunch"><text>целая куча #plural#</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FIRST-PERSON SQUAD PHRASE TEMPLATES                    -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_squad_ours_one_tpl"><text>один из наших бойцов #plural#</text></string>
+  <string id="st_wom_term_squad_ours_a_tpl"><text>группа наших ребят</text></string>
+  <string id="st_wom_term_squad_self_tpl"><text>отряд наших бойцов</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FIRST-PERSON PRONOUN TOKENS                            -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_pronoun_sg_im_were"><text>я</text></string>
+  <string id="st_wom_term_pronoun_sg_ive_weve"><text>я</text></string>
+  <string id="st_wom_term_pronoun_sg_i_we"><text>я</text></string>
+  <string id="st_wom_term_pronoun_sg_my_our"><text>моё</text></string>
+  <string id="st_wom_term_pronoun_sg_me_us"><text>меня</text></string>
+  <string id="st_wom_term_pronoun_sg_iwas_wewere"><text>я был</text></string>
+
+  <string id="st_wom_term_pronoun_pl_im_were"><text>мы</text></string>
+  <string id="st_wom_term_pronoun_pl_ive_weve"><text>мы</text></string>
+  <string id="st_wom_term_pronoun_pl_i_we"><text>мы</text></string>
+  <string id="st_wom_term_pronoun_pl_my_our"><text>наше</text></string>
+  <string id="st_wom_term_pronoun_pl_me_us"><text>нас</text></string>
+  <string id="st_wom_term_pronoun_pl_iwas_wewere"><text>мы были</text></string>
+
+</string_table>

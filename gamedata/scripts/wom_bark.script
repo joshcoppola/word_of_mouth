@@ -1,0 +1,216 @@
+--- wom_bark.script
+--- Shared proximity-bark infrastructure for Word of Mouth ambient features.
+--- Provides: human-faction test, in-combat test, PDA delivery, a single shared
+--- per-NPC cooldown table, and a generic nearby-stalker picker.
+---
+--- The shared cooldown table means one NPC cannot deliver barks from two systems
+--- (campfire chatter and reaction) within the same cooldown window.
+---
+--- Depends on: wom_utils, db, xr_sound (soft), xmath (soft)
+
+-- All human factions whose NPCs may speak. Mutants are excluded by omission.
+local HUMAN_FACTIONS = {
+    stalker  = true, dolg    = true, freedom = true, bandit   = true,
+    killer   = true, army    = true, ecolog  = true, csky     = true,
+    renegade = true, greh    = true, isg     = true,
+}
+
+-- npc_id -> game_sec when that NPC last spoke; shared across all bark features.
+local _last_spoke = {}
+
+-- ---- faction / combat tests -------------------------------------------------
+
+-- Returns true when the given community string is a human faction.
+-- @param community string  e.g. "stalker", "dog"
+-- @return boolean
+function is_human_faction(community)
+    return HUMAN_FACTIONS[community] == true
+end
+
+-- Returns true when the NPC currently has an active enemy (is in combat).
+-- Uses the engine's best_enemy() query, which returns the current target or nil.
+-- @param npc userdata  NPC client game object (alive, online)
+-- @return boolean
+function is_in_combat(npc)
+    return npc:best_enemy() ~= nil
+end
+
+-- ---- player-faction relevance ----------------------------------------------
+
+-- Returns true when community is in scope for the player: their own faction always,
+-- plus allied factions at "allies", plus non-hostile factions at "neutral".
+-- The scopes are cumulative, widest last, so a caller can offer any prefix of them.
+-- A nil community always returns false.
+-- Shared by every news-wire feature so one MCM scope setting means the same thing
+-- everywhere. Not every caller offers every scope — wom_reaction offers only
+-- "faction"/"allies" — but the meanings are fixed here so they cannot drift apart.
+--
+-- "neutral" is tested with is_factions_neutrals rather than "not is_factions_enemies":
+-- the latter is true for a faction with no registered relation at all, which would
+-- pull in communities the player has no standing with. Neutral means a real relation
+-- strictly between ENEMIES and FRIENDS.
+-- @param community   string|nil  raw community string to test
+-- @param player_comm string|nil  get_actor_true_community()
+-- @param scope       string      "faction", "allies" or "neutral"
+-- @return boolean
+function faction_matches(community, player_comm, scope)
+    if not community then return false end
+    if community == player_comm then return true end
+    if not game_relations then return false end
+    if (scope == "allies" or scope == "neutral")
+       and game_relations.is_factions_friends
+       and game_relations.is_factions_friends(player_comm, community) == true then
+        return true
+    end
+    if scope == "neutral" and game_relations.is_factions_neutrals then
+        return game_relations.is_factions_neutrals(player_comm, community) == true
+    end
+    return false
+end
+
+-- Returns the generic (name, icon) pair for a faction: translated faction name and
+-- community portrait. Used as the last-resort sender when no real NPC can be resolved.
+-- @param faction string  raw community string e.g. "dolg", "stalker"
+-- @return string, string  faction display name, faction portrait texture
+function faction_display(faction)
+    local icon = news_manager and news_manager.tips_icons
+                 and news_manager.tips_icons[faction] or ""
+    local key  = "st_dyn_news_comm_" .. faction .. "_6"
+    local name = game.translate_string(key)
+    if name == key then name = faction end
+    return name, icon
+end
+
+-- ---- shared cooldown --------------------------------------------------------
+
+-- Returns true when the NPC is off cooldown and may speak.
+-- @param npc_id      number  NPC client game object id
+-- @param now_sec     number  xtime.game_sec() current value
+-- @param cooldown_sec number  required minimum gap in in-game seconds
+-- @return boolean
+function can_speak(npc_id, now_sec, cooldown_sec)
+    return (now_sec - (_last_spoke[npc_id] or 0)) >= cooldown_sec
+end
+
+-- Records that the NPC has spoken now.
+-- @param npc_id  number  NPC client game object id
+-- @param now_sec number  xtime.game_sec() current value
+function mark_spoke(npc_id, now_sec)
+    _last_spoke[npc_id] = now_sec
+end
+
+-- Clears all entries from the shared cooldown table.
+-- Call from each feature's on_game_start so stale timestamps from a prior save
+-- cannot permanently block NPCs when the player loads an earlier save (which
+-- makes now_sec smaller than stored values, keeping can_speak always false).
+function reset_cooldowns()
+    _last_spoke = {}
+end
+
+-- Removes entries whose cooldown has elapsed to keep the table bounded.
+-- @param now_sec      number  xtime.game_sec() current value
+-- @param cooldown_sec number  minimum gap; entries older than this are pruned
+function prune_cooldowns(now_sec, cooldown_sec)
+    for id, last in pairs(_last_spoke) do
+        if (now_sec - last) >= cooldown_sec then
+            _last_spoke[id] = nil
+        end
+    end
+end
+
+-- ---- NPC picker -------------------------------------------------------------
+
+-- Squared ground-plane (XZ) distance between two world positions, ignoring
+-- height. Falls back to the engine's 3D squared distance when xlibs is absent.
+-- @param from userdata  world-space vector
+-- @param to   userdata  world-space vector
+-- @return number  squared distance
+local function _range_sqr(from, to)
+    if xmath and xmath.dist_flat_sqr then return xmath.dist_flat_sqr(from, to) end
+    return from:distance_to_sqr(to)
+end
+
+-- Shuffles db.OnlineStalkers (Fisher-Yates) and returns the first NPC that passes
+-- all eligibility checks:
+--   • alive and not a destroyed/stale object (wom_utils.get_live_online_npc)
+--   • human faction (character_community in HUMAN_FACTIONS)
+--   • in range (or dev mode)
+--   • off the shared cooldown
+--   • passes opts.filter_fn when provided
+-- Returns nil when no eligible NPC is found.
+--
+-- Range is measured on the ground plane (xmath.dist_flat_sqr), not in 3D: these
+-- are earshot checks, and a stalker one floor up a stairwell or on a gantry is
+-- as audible as one the same distance away on the flat. A 3D measure pushes
+-- them out of range on vertical maps (Agroprom underground, the Jupiter plant).
+-- Falls back to the 3D measure when xlibs is absent.
+-- opts fields:
+--   range_sqr  number    squared detection radius (ground-plane comparison)
+--   dev        boolean   when true, the range gate is removed
+--   now_sec    number    current xtime.game_sec() value
+--   cooldown_sec number  shared cooldown constant in in-game seconds
+--   filter_fn  function|nil  optional (npc) -> boolean extra filter
+-- @param actor   userdata  db.actor
+-- @param opts    table
+-- @return userdata|nil
+function pick_nearby_stalker(actor, opts)
+    local online    = db.OnlineStalkers
+    local actor_pos = actor:position()
+    local indices   = {}
+    for i = 1, #online do indices[i] = i end
+    for i = #indices, 2, -1 do
+        local j = math.random(i)
+        indices[i], indices[j] = indices[j], indices[i]
+    end
+    for _, i in ipairs(indices) do
+        local id  = online[i]
+        local npc = wom_utils.get_live_online_npc(id)
+        if npc and HUMAN_FACTIONS[npc:character_community()] then
+            local in_range = opts.dev or (_range_sqr(actor_pos, npc:position()) <= opts.range_sqr)
+            if in_range and can_speak(id, opts.now_sec, opts.cooldown_sec) then
+                if not opts.filter_fn or opts.filter_fn(npc) then
+                    return npc
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- ---- PDA delivery -----------------------------------------------------------
+
+-- Delivers a styled PDA message attributed to the given NPC, plays a 3D hello
+-- bark, and emits a console log line tagged with log_tag.
+-- Message is wrapped in amber quotes to match the campfire/chatter visual style.
+-- Use this for proximity barks from a nearby online NPC (campfire, chatter).
+-- @param npc     userdata  NPC client game object (alive, online)
+-- @param message string    rendered sentence to deliver
+-- @param log_tag string    module name for printf (e.g. "wom_campfire")
+function send_pda(npc, message, log_tag)
+    local name   = npc:character_name() or "Stalker"
+    local icon   = npc:character_icon()
+    local styled = '%c[255,220,190,100]"' .. message .. '"%c[default]'
+    wom_utils.play_hello_bark(npc)
+    if db.actor then
+        db.actor:give_game_news(name, styled, icon, 0, 8000)
+        if xr_sound then xr_sound.set_sound_play(db.actor:id(), "pda_beep_1") end
+    end
+    if printf then printf("~[%s] [%s] %s", log_tag, name, message) end
+end
+
+-- Delivers an unquoted news-wire PDA message using explicit name and icon strings.
+-- No hello bark is played (sender may be remote/offline). Styled in the default
+-- (white) PDA text color, unquoted, to distinguish from proximity campfire/chatter barks.
+-- Use this for faction news-wire delivery where the sender is an offline member.
+-- @param name    string  sender display name (from se_obj:character_name() or faction fallback)
+-- @param icon    string  sender portrait texture (from se_obj:character_icon() or tips_icons)
+-- @param message string  rendered sentence to deliver
+-- @param log_tag string  module name for printf (e.g. "wom_reaction")
+function send_news_pda(name, icon, message, log_tag)
+    local styled = "%c[default]" .. message .. "%c[default]"
+    if db.actor then
+        db.actor:give_game_news(name, styled, icon or "", 0, 8000)
+        if xr_sound then xr_sound.set_sound_play(db.actor:id(), "pda_beep_1") end
+    end
+    if printf then printf("~[%s] [%s] %s", log_tag, name, message) end
+end

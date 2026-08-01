@@ -1,0 +1,105 @@
+--- wom_ap_bridge.script
+--- Thin bridge between Word of Mouth and ALifePlus internals that are not
+--- exposed through ap_api or xlibs. Centralises all direct references to
+--- ap_ext_tracker and ap_core_mcm so that the rest of WoM never touches those
+--- modules directly.
+---
+--- Public:
+---   get_need_timestamps(squad_id)      -- { need -> game_sec } or nil
+---   get_need_threshold_hours(need)     -- number (MCM value or built-in fallback)
+---   get_area_decay_hours(kind)         -- number (0 means "never decays")
+
+-- Maps need name to the DTO field written by ap_ext_causes_needs.
+local NEED_FIELD = {
+    hunger  = "last_hunger_at",
+    social  = "last_social_at",
+    sleep   = "last_sleep_at",
+    rest    = "last_rest_at",
+    supply  = "last_supply_at",
+    money   = "last_money_at",
+}
+
+-- Maps need name to the ap_core_mcm config key for its threshold (in hours).
+local NEED_THRESHOLD_KEY = {
+    hunger  = "cause_hunger_threshold",
+    social  = "cause_social_threshold",
+    sleep   = "cause_sleep_threshold",
+    rest    = "cause_rest_threshold",
+    supply  = "cause_supply_threshold",
+    money   = "cause_money_threshold",
+}
+
+-- Built-in fallback thresholds (hours) used when ap_core_mcm is absent.
+-- Mirrors ap_core_mcm.script's own defaults; re-check against that table when
+-- ALifePlus updates, since a drifted value here silently changes which needs
+-- read as overdue in the status reply. Current as of ALifePlus 1.8.6.
+local NEED_THRESHOLD_DEFAULT_HOURS = {
+    hunger  = 8,
+    social  = 36,
+    sleep   = 16,
+    rest    = 4,
+    supply  = 12,
+    money   = 24,
+}
+
+-- Maps a territory takeover kind to the ap_core_mcm config key holding the number of
+-- in-game hours before that takeover decays and the smart reverts to its old owner.
+-- Keys are ap_ext_smart_mutator's own decay_cfg values.
+local AREA_DECAY_KEY = {
+    conquer = "mutator_area_conquest_decay_hours",
+    swarm   = "mutator_area_swarm_decay_hours",
+    infest  = "mutator_area_infest_decay_hours",
+}
+
+-- Built-in fallback decay windows (hours) used when ap_core_mcm is absent.
+-- Mirrors ap_core_mcm.script's own defaults; current as of ALifePlus 1.8.6.
+-- 1.8.5 raised the conquest window from 2 to 5 game days; swarm and infest were left at 2.
+local AREA_DECAY_DEFAULT_HOURS = {
+    conquer = 120,
+    swarm   = 48,
+    infest  = 48,
+}
+
+-- ---- public -----------------------------------------------------------------
+
+-- Returns a table mapping each tracked need name to the game-second timestamp
+-- at which it was last satisfied, for the given squad id.
+-- Returns nil when ap_ext_tracker is unavailable or has no entry for the squad.
+-- @param squad_id number  squad server object id
+-- @return table|nil  { need_name -> game_sec }
+function get_need_timestamps(squad_id)
+    if not (ap_ext_tracker and ap_ext_tracker.get_stalker_needs) then return nil end
+    local dto = ap_ext_tracker.get_stalker_needs(squad_id)
+    if not dto then return nil end
+
+    local timestamps = {}
+    for need, field in pairs(NEED_FIELD) do
+        local value = dto[field]
+        if value then timestamps[need] = value end
+    end
+    return timestamps
+end
+
+-- Returns the threshold in hours for the given need.
+-- Reads from ap_core_mcm.cfg when available; falls back to the built-in default.
+-- @param need string  e.g. "hunger", "sleep", "money"
+-- @return number  threshold in hours
+function get_need_threshold_hours(need)
+    local key = NEED_THRESHOLD_KEY[need]
+    local cfg = ap_core_mcm and ap_core_mcm.cfg
+    return (key and cfg and cfg[key]) or NEED_THRESHOLD_DEFAULT_HOURS[need] or 8
+end
+
+-- Returns how many in-game hours a territory takeover of the given kind lasts before
+-- ALifePlus decays it. Reads ap_core_mcm.cfg when available, else the built-in default.
+-- A value of 0 is meaningful, not missing: ap_ext_smart_mutator skips the decay check
+-- entirely at 0, so the takeover is permanent. Callers must not treat 0 as "unknown".
+-- @param kind string  "conquer", "swarm" or "infest"
+-- @return number  decay window in in-game hours; 0 means the takeover never decays
+function get_area_decay_hours(kind)
+    local key   = AREA_DECAY_KEY[kind]
+    local cfg   = ap_core_mcm and ap_core_mcm.cfg
+    local value = key and cfg and cfg[key]
+    if type(value) == "number" then return value end
+    return AREA_DECAY_DEFAULT_HOURS[kind] or 48
+end

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <!-- Outpost service discovery strings for wom_outpost.script.
+         Russian counterpart of eng/st_wom_outpost.xml — same ids, same slots.
+         Comments stay in English per project convention.
+
+         ROLE WORDS (st_wom_outpost_role_<role>)
+         The English values carry an article ("a trader"); Russian has none, so these
+         are bare nouns in the NOMINATIVE case. Every template below is phrased so the
+         #role#/#roles# slot lands in a nominative position ("здесь есть #role#"), and
+         the joined list ("торговец и механик") stays grammatical. Do not write a
+         template that needs another case from these slots.
+
+         #location# is an undeclined engine name, so templates use the established
+         military-designator framing ("в районе X") rather than a bare preposition —
+         same convention as st_wom_recap_smart_terrain.xml. See TRANSLATION.md.
+
+         The area-recap pool (st_wom_event_outpost_*) supplies body clauses that follow
+         a time stamp or a sequence connector, so they read as short continuation
+         sentences — the same rhythm note as the other Russian event pools. -->
+
+    <!-- ===== role words ===== -->
+    <string id="st_wom_outpost_role_trader"><text>торговец</text></string>
+    <string id="st_wom_outpost_role_barman"><text>бармен</text></string>
+    <string id="st_wom_outpost_role_mechanic"><text>механик</text></string>
+    <string id="st_wom_outpost_role_medic"><text>медик</text></string>
+
+    <!-- ===== PDA: outpost established ===== -->
+    <string id="st_wom_outpost_established_001"><text>Мы заняли точку — #location#. Теперь здесь есть #roles#, так что заходи, если что нужно.</text></string>
+    <string id="st_wom_outpost_established_002"><text>Новости с точки — #location# — место наше, и у нас тут работает #roles#. Передай дальше.</text></string>
+    <string id="st_wom_outpost_established_003"><text>Теперь точкой — #location# заправляет #identity#. У нас тут #roles#, и для своих двери открыты.</text></string>
+    <string id="st_wom_outpost_established_004"><text>Обустраиваемся на точке — #location#. Пока только #roles# — дальше видно будет, если удержим место.</text></string>
+    <string id="st_wom_outpost_established_005"><text>Будешь проходить мимо точки — #location# — заглядывай. Место теперь наше, и на точке есть #roles#.</text></string>
+    <string id="st_wom_outpost_established_006"><text>Точка — #location# теперь под контролем #identity#. Кому нужны услуги — вы знаете, где нас найти.</text></string>
+
+    <!-- ===== PDA: new specialist at an existing outpost ===== -->
+    <string id="st_wom_outpost_service_001"><text>На аванпосте на точке — #location# теперь есть #role#. Долго же его сюда выбивали.</text></string>
+    <string id="st_wom_outpost_service_002"><text>Меня только что определили на точку — #location#. Нужен #role# — я здесь.</text></string>
+    <string id="st_wom_outpost_service_003"><text>#identity# наконец прислал подкрепление на точку — #location# — теперь тут #role#. Пользуйся, пока место у нас не отбили.</text></string>
+    <string id="st_wom_outpost_service_004"><text>На аванпосте на точке — #location# новое лицо — #role#, сидит в задней комнате.</text></string>
+    <string id="st_wom_outpost_service_005"><text>Передаю дальше: на точке — #location# теперь есть #role#. Всяко лучше, чем таскать всё на базу.</text></string>
+    <string id="st_wom_outpost_service_006"><text>Меня поставили на точку — #location#. Местом заправляет #identity#, а я тут, если нужна работа.</text></string>
+
+    <!-- ===== area recap: outpost mentioned alongside other news ===== -->
+    <string id="st_wom_event_outpost_001a"><text>место на точке — #location# теперь держат #some_members_subject#, и у них там работает #service_list#.</text></string>
+    <string id="st_wom_event_outpost_001b"><text>на точке — #location# теперь настоящий аванпост — #service_list#, как я слышал.</text></string>
+    <string id="st_wom_event_outpost_001c"><text>#some_members_subject# осели на точке — #location# всерьёз. На точке есть #service_list#.</text></string>
+    <string id="st_wom_event_outpost_001d"><text>на точке — #location# теперь работает аванпост, если тебе нужен #service_role#.</text></string>
+    <string id="st_wom_event_outpost_001e"><text>чем бы всё это на точке — #location# ни кончилось, #service_list# там всё ещё работает.</text></string>
+
+    <!-- ===== area recap: outpost as the only news from a location ===== -->
+    <string id="st_wom_event_solo_outpost_001"><text>#some_members_subject# сделали из точки — #location# аванпост. У них там работает #service_list#, если сумеешь добраться.</text></string>
+    <string id="st_wom_event_solo_outpost_002"><text>Из нового разве что точка — #location# — там теперь аванпост, на точке #service_list#.</text></string>
+    <string id="st_wom_event_solo_outpost_003"><text>Точкой — #location# теперь заправляют #some_members_subject#. Говорят, у них там #service_list#.</text></string>
+</string_table>

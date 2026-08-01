@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="windows-1251" ?>
+<string_table>
+  <!-- MCM strings for Word of Mouth. Root id = word_of_mouth (see wom_mcm.script).
+       Tab label key:    ui_mcm_menu_<root_id>
+       Option label key: ui_mcm_<root_id>_<option_id>  (+ _desc for tooltip) -->
+
+  <!-- tab / mod entry -->
+  <string id="ui_mcm_menu_word_of_mouth"><text>Слухи и Сплетни</text></string>
+  <string id="ui_mcm_word_of_mouth"><text>Слухи и Сплетни</text></string>
+
+  <!-- page title and description -->
+  <string id="ui_mcm_word_of_mouth_title"><text>Слухи и Сплетни</text></string>
+  <string id="ui_mcm_word_of_mouth_description"><text>Дополнение к ALifePlus от damian_sirbu. Требует включенного ALifePlus.</text></string>
+
+  <string id="ui_mcm_word_of_mouth_conversation_details"><text>Этот мод добавляет несколько новых вариантов разговора. «Что новенького?» расскажет вам слухи о местах на текущей карте. «Чем занимался в последнее время?» даст краткий пересказ целей ALifePlus и боевых столкновений, произошедших за день у этого NPC. «Как сам, держишься?» расскажет о его звании, здоровье и потребностях по ALifePlus.</text></string>
+
+  <string id="ui_mcm_word_of_mouth_chatter_details"><text>NPC также будут переговариваться между собой. Вы услышите, как лидеры ближайших группировок объявляют о смене целей ALifePlus, а также как сталкеры в местах отдыха обмениваются слухами или обсуждают свои потребности по ALifePlus.</text></string>
+
+  <!-- campfire chatter -->
+  <string id="ui_mcm_word_of_mouth_title_campfire"><text>Разговоры у костра</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_enabled"><text>Включить разговоры у костра</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_enabled_desc"><text>Сталкеры у костров и в местах отдыха будут время от времени сплетничать о событиях в Зоне или о своих делах.</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_interval"><text>Интервал разговоров (секунды)</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_interval_desc"><text>Как часто выполняется проверка разговоров у костра. Чем меньше значение, тем чаще будут появляться сообщения.</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_range"><text>Радиус обнаружения (метры)</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_range_desc"><text>Насколько близко нужно находиться к отдыхающему сталкеру, чтобы он начал сплетничать.</text></string>
+
+  <!-- goal announce -->
+  <string id="ui_mcm_word_of_mouth_title_chatter"><text>Разговоры группировки</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_enabled"><text>Включить разговоры группировки</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_enabled_desc"><text>Лидеры ближайших группировок сталкеров будут переговариваться при смене их цели ALifePlus, как будто вы случайно услышали обсуждение приказов.</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_range"><text>Радиус обнаружения (метры)</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_range_desc"><text>Насколько близко должен находиться член группировки, чтобы его разговор о смене цели донёсся до вас.</text></string>
+
+  <!-- MCM list content labels: MCM builds key as "ui_mcm_lst_" .. second_element (shared global prefix) -->
+  <string id="ui_mcm_lst_wom_public"><text>Публично: сталкеры расскажут кому угодно</text></string>
+  <string id="ui_mcm_lst_wom_faction"><text>Только своим: сталкеры расскажут только членам своей группировки</text></string>
+  <string id="ui_mcm_lst_wom_none"><text>Скрыто: сталкеры никому не расскажут</text></string>
+
+  <!-- event reaction barks -->
+  <string id="ui_mcm_word_of_mouth_title_reaction"><text>Реакции на события</text></string>
+  <string id="ui_mcm_word_of_mouth_reaction_enabled"><text>Включить реакции на события</text></string>
+  <string id="ui_mcm_word_of_mouth_reaction_enabled_desc"><text>Когда ALifePlus фиксирует значимое событие, затрагивающее вашу группировку или её союзников (резня, штурм базы, захват территории, разграбление тайника, появление мутанта), участник этой группировки, находящийся на посту, присылает вам короткое сообщение на КПК — новости откуда угодно из симуляции, а не только с текущей карты.</text></string>
+  <string id="ui_mcm_word_of_mouth_reaction_scope"><text>Кто вам сообщает</text></string>
+  <string id="ui_mcm_word_of_mouth_reaction_scope_desc"><text>Только своя группировка: реакцию вызывают только события, связанные с вашей группировкой. Группировка и союзники: до вас также доходят события, связанные с любой дружественной группировкой.</text></string>
+
+  <!-- MCM list content: scope options (prefix: ui_mcm_lst_) -->
+  <string id="ui_mcm_lst_wom_scope_allies"><text>Группировка и союзники</text></string>
+  <string id="ui_mcm_lst_wom_scope_faction"><text>Только своя группировка</text></string>
+
+  <!-- secret goals -->
+  <string id="ui_mcm_word_of_mouth_title_secret"><text>Секретные цели</text></string>
+  <string id="ui_mcm_word_of_mouth_secret_money_harvest"><text>Кому сталкеры расскажут об охоте за артефактами?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_money_harvest_desc"><text>Controls who will gossip about artifact-hunting operations. Faction only = only same-faction stalkers will mention it.</text></string> -->
+  <string id="ui_mcm_word_of_mouth_secret_harvest_rob"><text>Кому сталкеры расскажут об ограблении охотников за артефактами?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_harvest_rob_desc"><text>Controls who will gossip about operations targeting artifact hunters.</text></string> -->
+  <string id="ui_mcm_word_of_mouth_secret_stash_fill"><text>Кому сталкеры расскажут о пополнении тайника?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_stash_fill_desc"><text>Controls who will gossip about squads stashing supplies.</text></string> -->
+  <string id="ui_mcm_word_of_mouth_secret_stash_loot"><text>Кому сталкеры расскажут о разграблении тайника?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_stash_loot_desc"><text>Controls who will gossip about squads looting known stashes.</text></string> -->
+  <string id="ui_mcm_word_of_mouth_secret_stash_ambush"><text>Кому сталкеры расскажут о засаде у тайника?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_stash_ambush_desc"><text>Controls who will gossip about squads lying in wait at stashes.</text></string> -->
+
+  <string id="ui_mcm_word_of_mouth_area_recap_respects_secrets"><text>Скрывать закрытые для чужих и секретные события из сводок по локации?</text></string>
+  <string id="ui_mcm_word_of_mouth_area_recap_respects_secrets_desc"><text>Если включено, диалог «Что новенького?» также будет пропускать события, связанные с целями, помеченными как скрытые или доступные только своей группировке. По умолчанию слухи по местности считают все события Зоны публичными новостями (поскольку эти события уже произошли в прошлом, и слух о них вполне мог разойтись).</text></string>
+  <!-- reset button -->
+  <string id="ui_mcm_word_of_mouth_btn_reset_defaults"><text>Сбросить настройки</text></string>
+
+  <!-- debug -->
+  <string id="ui_mcm_word_of_mouth_title_debug"><text>Отладка</text></string>
+  <string id="ui_mcm_word_of_mouth_enable_logging"><text>Включить журналирование</text></string>
+  <string id="ui_mcm_word_of_mouth_enable_logging_desc"><text>Создаёт файл журнала для боевых столкновений и отдельный файл журнала для всего диалогового вывода. Оставьте выключенным для обычной игры.</text></string>
+  <string id="ui_mcm_word_of_mouth_dev_mode"><text>Режим разработчика</text></string>
+
+</string_table>

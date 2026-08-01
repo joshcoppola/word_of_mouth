@@ -1,0 +1,245 @@
+--- wom_utils.script
+--- Cross-script utility functions shared by all other wom_* scripts.
+--- No dependencies on other wom_* scripts.
+
+-- Returns a random item from a non-empty indexed table.
+-- @param items table  indexed array with at least one element
+-- @return any  a randomly selected element
+function pick_random_item(items)
+    return items[math.random(#items)]
+end
+
+-- ============================================================
+-- DXML dialog wiring (modded-exes / GAMMA)
+-- ============================================================
+-- These let a mod add a scripted NPC dialog purely at runtime — no system.ltx,
+-- character_dialogs.xml, or dialog XML file overrides (which conflict and break
+-- across GAMMA updates). The engine fires on_xml_read while loading each XML file
+-- and on_specific_character_dialog_list while building each NPC's talk menu.
+
+-- Builds one phrase and returns its PhraseScript (for SetScriptText / AddAction /
+-- AddPrecondition). AddPhrase(text, id, parent, goodwill); ids and parents are strings.
+-- @param dialog userdata       the CPhraseDialog being populated
+-- @param parent string|number  parent phrase id ("" for the root phrase)
+-- @param id     string|number  this phrase's id
+-- @param text   string         literal text, or a localization string id to resolve
+-- @return userdata|nil  the phrase script, or nil if AddPhrase failed
+function add_phrase(dialog, parent, id, text)
+    local phrase = dialog:AddPhrase(text or "", tostring(id), tostring(parent), -10000)
+    if phrase then return phrase:GetPhraseScript() end
+    return nil
+end
+
+-- [UNUSED] Registers an on_xml_read handler that injects each dialog definition into
+-- gameplay\dialogs.xml as it loads (idempotent; skips ids already present).
+-- Call from a module's on_xml_read(). Each entry is { id = string, init = "module.func" }.
+-- No current callers: WoM topics now live inside dm_universal_dialog via a
+-- dialog_manager.init_new_dialog wrap. Kept for future standalone dialogs.
+-- @param dialog_defs table        array of { id, init }
+-- @param logtag      string|nil   short tag for log lines
+function inject_dialogs(dialog_defs, logtag)
+    RegisterScriptCallback("on_xml_read", function(xml_file_name, xml_obj)
+        if xml_file_name ~= [[gameplay\dialogs.xml]] then return end
+        for i = 1, #dialog_defs do
+            local d = dialog_defs[i]
+            if not is_not_empty(xml_obj:query("dialog[id=" .. d.id .. "]")) then
+                xml_obj:insertFromXMLString(
+                    "<dialog id=\"" .. d.id .. "\">" ..
+                    "<init_func>" .. d.init .. "</init_func>" ..
+                    "</dialog>")
+                if printf then printf("~[%s] dialog '%s' injected into dialogs.xml", logtag or "wom", d.id) end
+            end
+        end
+    end)
+end
+
+-- [UNUSED] Registers an on_specific_character_dialog_list handler that attaches each
+-- dialog id to every talkable NPC. Call from a module's on_game_start().
+-- No current callers — see inject_dialogs note above.
+-- @param dialog_defs table        array of { id }
+-- @param logtag      string|nil   short tag for log lines
+function attach_dialogs(dialog_defs, logtag)
+    RegisterScriptCallback("on_specific_character_dialog_list", function(character_id, dialog_list)
+        for i = 1, #dialog_defs do
+            local id = dialog_defs[i].id
+            if not dialog_list:has(id) then dialog_list:add(id) end
+        end
+    end)
+    if printf then printf("~[%s] online", logtag or "wom") end
+end
+
+
+-- Returns an object's numeric id regardless of whether it is a server object
+-- (id as a property) or a client object (id as a method). Returns nil for nil input.
+--
+-- The client-object branch is pcall-guarded for the same reason
+-- get_live_online_npc guards :alive(): a destroyed object raises on any method
+-- call, and the loudest caller is modxml_wom_dialog.npc_speaker, which runs
+-- inside a dialog precondition — a raise there takes down the whole
+-- "I want to ask you something." menu, not just one lookup.
+-- @param obj userdata|nil  server or client game object
+-- @return number|nil
+function get_object_id(obj)
+    if not obj then return nil end
+    local t = type(obj.id)
+    if t == "number" then return obj.id end        -- server object
+    if t == "function" then                        -- client object
+        local call_ok, id = pcall(obj.id, obj)
+        if call_ok and type(id) == "number" then return id end
+        return nil
+    end
+    return nil
+end
+
+-- Returns an object's world position regardless of whether it is a server object
+-- (position as a vector field) or a client object (position as a method).
+--
+-- The sibling of get_object_id, and the same trap: on a client object, reading
+-- `obj.position` as a field does NOT yield a vector — it yields the member
+-- function itself. That value is truthy, so it sails past every `if not pos`
+-- guard and only blows up further downstream when something indexes it as a
+-- vector (xsmart.find_smart doing pos.x). That is the crash players hit on a
+-- death in the Miracle Machine: on_npc_death passed `npc.position` straight
+-- into wom_npc_role.nearest_smart_id.
+--
+-- Callbacks that receive "a server object when offline, a client object when
+-- online" (on_squad_npc_death) cannot know which shape they hold, so always
+-- resolve through here rather than picking one form at the call site.
+-- @param obj userdata|nil  server or client game object
+-- @return userdata|nil  position vector, or nil when unavailable
+function get_object_position(obj)
+    if not obj then return nil end
+    local position = obj.position
+    if type(position) == "function" then
+        local call_ok, result = pcall(position, obj)
+        return call_ok and result or nil
+    end
+    return position
+end
+
+-- Returns a usable online client game object for an NPC id, or nil.
+--
+-- db.storage entries can outlive the client object they point at: the engine
+-- destroys the object when an NPC goes offline or is released, and db's own
+-- cleanup runs a frame later. Calling any method (even :alive()) on such a
+-- stale object raises "you are trying to use a destroyed object" and aborts the
+-- whole scan, so never touch db.storage[id].object directly — go through here.
+--
+-- Three independent guards, cheapest first:
+--   1. level.object_by_id  — the engine's live object map; nil once released.
+--   2. alife():object(id)  — nil when the server object is gone too.
+--   3. pcall on :alive()   — catches the residual case where the object is
+--                            still mapped but already destroyed.
+-- @param id number|nil  NPC game object id
+-- @return userdata|nil  alive online client game object
+function get_live_online_npc(id)
+    if not id or id >= 65535 then return nil end
+
+    local npc = level.object_by_id(id)
+    if not npc then return nil end
+
+    local sim = alife()
+    if not (sim and sim:object(id)) then return nil end
+
+    local call_ok, is_alive = pcall(npc.alive, npc)
+    if not (call_ok and is_alive) then return nil end
+    return npc
+end
+
+-- Returns the level_id for a server NPC/monster object.
+-- Uses xlevel.get_level_id on the server object. Returns nil when unavailable —
+-- callers that need a level guarantee must handle nil explicitly. Never falls back
+-- to xlevel.get_actor_level_id(), since that would assign off-map deaths to the
+-- player's current level and surface them as local events.
+-- @param sim    userdata|nil  alife() simulator (unused; kept for symmetry with callers)
+-- @param se_obj userdata|nil  server object
+-- @return number|nil
+function get_level_id(sim, se_obj)
+    if se_obj and xlevel and xlevel.get_level_id then
+        local ok, lid = pcall(xlevel.get_level_id, se_obj)
+        if ok and lid then return lid end
+    end
+    return nil
+end
+
+-- Plays a short 3D greeting bark from the NPC's position using their faction-specific
+-- voice set. Picks randomly from the NPC's meet_hello_N pool (the short acknowledgment
+-- sounds used when stalkers greet each other). No-ops when the NPC's voice set has no
+-- meet_hello sounds or when sound_object is unavailable.
+-- @param npc userdata  online NPC client game object
+function play_hello_bark(npc)
+    if not (npc and sound_object) then return end
+    local f = getFS and getFS()
+    if not f then return end
+
+    -- Temporarily set the base prefix to discover this NPC's full faction voice path.
+    local saved = npc:sound_prefix()
+    npc:sound_prefix("characters_voice\\")
+    local prefix = npc:sound_prefix()
+    npc:sound_prefix(saved)
+
+    -- Scan meet_hello_1, _2, ... up to 10; stop at the first missing file.
+    local paths = {}
+    for i = 1, 10 do
+        local path = prefix .. "states\\meet\\meet_hello_" .. i
+        if f:exist("$game_sounds$", path .. ".ogg") then
+            paths[#paths + 1] = path
+        else
+            break
+        end
+    end
+    if #paths == 0 then return end
+
+    local snd = sound_object(paths[math.random(#paths)])
+    if snd then snd:play(npc, 0, sound_object.s3d) end
+end
+
+-- Returns the squad server object for the given NPC, or nil.
+-- Tries xsquad.get_squad_by_member first; falls back to the server-object group_id.
+-- Accepts either object kind: the id is resolved through get_object_id, so a caller
+-- holding a server object (a death callback, say) is not a latent crash the way a
+-- bare npc:id() here would be.
+-- @param npc userdata  NPC game object (client or server)
+-- @return userdata|nil  squad server object
+function resolve_squad(npc)
+    if not npc then return nil end
+    local npc_id = get_object_id(npc)
+    if not npc_id then return nil end
+    if xsquad and xsquad.get_squad_by_member then
+        return xsquad.get_squad_by_member(npc_id)
+    end
+    local sim = alife()
+    local server_object = sim and sim:object(npc_id)
+    local squad_id = server_object and server_object.group_id
+    if not squad_id or squad_id == 65535 then return nil end
+    return sim:object(squad_id)
+end
+
+-- Looks up a localized string, returning fallback when the key has no entry
+-- (STALKER returns the key itself on a miss).
+-- @param key      string  XML string id to look up
+-- @param fallback string  returned when the key is absent
+-- @return string
+local function translate_or(key, fallback)
+    local result = game.translate_string(key)
+    return result ~= key and result or fallback
+end
+
+-- Joins an array of strings into a natural-language list using the locale's
+-- conjunction templates: st_wom_term_list_two joins a pair ("#a# and #b#"),
+-- st_wom_term_list_final appends the last item to the comma-joined rest
+-- ("#list#, and #last#"). Falls back to English Oxford-comma formatting.
+-- @param t table  indexed array of strings
+-- @return string  e.g. "a", "a and b", "a, b, and c"
+function join_list(t)
+    local n = #t
+    if n == 0 then return "" end
+    if n == 1 then return t[1] end
+    if n == 2 then
+        local pair_template = translate_or("st_wom_term_list_two", "#a# and #b#")
+        return (string.gsub(string.gsub(pair_template, "#a#", t[1]), "#b#", t[2]))
+    end
+    local head_list = table.concat(t, ", ", 1, n - 1)
+    local final_template = translate_or("st_wom_term_list_final", "#list#, and #last#")
+    return (string.gsub(string.gsub(final_template, "#list#", head_list), "#last#", t[n]))
+end

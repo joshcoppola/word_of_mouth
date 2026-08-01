@@ -1,0 +1,285 @@
+--- wom_npc_status.script
+--- "How are you holding up?" response: combines live NPC health tier with
+--- overdue ALifePlus needs to produce a short 1-3 sentence first-person reply.
+---
+--- Depends on: wom_dialogue_helper, wom_utils
+--- Soft depends on: xsquad, xtime, wom_ap_bridge (which gates ap_ext_tracker, ap_core_mcm)
+
+-- Health tier boundaries (npc.health is 0.0 to 1.0)
+local HEALTH_FINE     = 0.75
+local HEALTH_WORN     = 0.40
+local HEALTH_BAD      = 0.20
+
+-- Needs worth surfacing in dialogue. Excludes heal (redundant with health tier),
+-- job, and shelter (too abstract for casual check-in).
+local SURFACED_NEEDS = { "hunger", "social", "sleep", "supply", "money" } -- "rest"
+
+-- Ratios >= this get "heavy" phrasing; below gets "light"
+local HEAVY_RATIO = 1.8
+
+-- Needs with elapsed/threshold below this are reported as positively satisfied
+local SATISFIED_RATIO = 0.5
+
+-- Radiation thresholds (npc:radiation() returns 0.0-1.0)
+local RADIATION_LIGHT = 0.10
+local RADIATION_HEAVY = 0.30
+
+-- Combat loss thresholds and lookback window
+local LOSSES_HEAVY      = 2
+local LOSSES_WINDOW_SEC = 24 * 3600
+
+local HOURS_TO_SECONDS = 3600
+
+-- Maps npc:character_rank() return values to rank key strings used as pool suffixes.
+local RANK_KEYS = { [0] = "novice", [1] = "experienced", [2] = "veteran", [3] = "master" }
+
+-- ---- internal helpers -------------------------------------------------------
+
+-- Returns the health tier key for the NPC's current health value.
+-- @param npc userdata  NPC client game object
+-- @return string  "fine" | "worn" | "bad" | "critical"
+local function get_health_tier(npc)
+    local health = npc.health
+    if health >= HEALTH_FINE then return "fine"     end
+    if health >= HEALTH_WORN then return "worn"     end
+    if health >= HEALTH_BAD  then return "bad"      end
+    return "critical"
+end
+
+local resolve_squad = wom_utils.resolve_squad
+
+-- Returns { need, ratio } entries for every SURFACED_NEED that has a recorded timestamp.
+-- Returns nil when tracker data is unavailable for the squad.
+-- @param squad   userdata  squad server object
+-- @param now_sec number    current game time in seconds
+-- @return table|nil  array of { need = string, ratio = number }
+local function _compute_need_ratios(squad, now_sec)
+    if not squad then return nil end
+    local timestamps = wom_ap_bridge.get_need_timestamps(squad.id)
+    if not timestamps then return nil end
+
+    local results = {}
+    for i = 1, #SURFACED_NEEDS do
+        local need = SURFACED_NEEDS[i]
+        local last = timestamps[need]
+        if last then
+            local threshold_sec = wom_ap_bridge.get_need_threshold_hours(need) * HOURS_TO_SECONDS
+            results[#results + 1] = { need = need, ratio = (now_sec - last) / threshold_sec }
+        end
+    end
+    return results
+end
+
+-- Returns an array of overdue need entries for the squad, sorted most overdue first,
+-- and a boolean indicating whether needs data was available at all.
+-- Each entry is { need = string, ratio = number, heavy = boolean }.
+-- Returns ({}, false) when ap_ext_tracker is unavailable or the squad has no DTO.
+-- Returns ({}, true) when data exists but no needs are currently overdue.
+-- @param squad   userdata  squad server object
+-- @param now_sec number    current game time in seconds
+-- @return table, boolean
+local function get_overdue_needs(squad, now_sec)
+    local ratios = _compute_need_ratios(squad, now_sec)
+    if not ratios then return {}, false end
+    local results = {}
+    for i = 1, #ratios do
+        local entry = ratios[i]
+        if entry.ratio > 1.0 then
+            results[#results + 1] = { need = entry.need, ratio = entry.ratio, heavy = entry.ratio >= HEAVY_RATIO }
+        end
+    end
+    table.sort(results, function(a, b) return a.ratio > b.ratio end)
+    return results, true
+end
+
+-- Returns an array of well-satisfied need entries for the squad, sorted most recently
+-- satisfied first (lowest ratio first). A need is satisfied when its elapsed/threshold
+-- ratio is below SATISFIED_RATIO. Returns {} when tracker data is unavailable.
+-- Each entry is { need = string, ratio = number }.
+-- @param squad   userdata  squad server object
+-- @param now_sec number    current game time in seconds
+-- @return table
+local function get_satisfied_needs(squad, now_sec)
+    local ratios = _compute_need_ratios(squad, now_sec)
+    if not ratios then return {} end
+    local results = {}
+    for i = 1, #ratios do
+        local entry = ratios[i]
+        if entry.ratio < SATISFIED_RATIO then
+            results[#results + 1] = { need = entry.need, ratio = entry.ratio }
+        end
+    end
+    table.sort(results, function(a, b) return a.ratio < b.ratio end)
+    return results
+end
+
+-- Returns a summary of this squad's combat losses within the last LOSSES_WINDOW_SEC,
+-- or nil when wom_combat is unavailable or there were no losses.
+-- Accumulates losses across all qualifying engagements and identifies the dominant
+-- enemy faction for use in the #a_member_other# slot.
+-- @param squad       userdata   squad server object
+-- @param npc_faction string|nil NPC's community key
+-- @param now_sec     number     current game time in seconds
+-- @return table|nil  { total = number, losses_word = string, a_member_other = string }
+local function get_recent_losses(squad, npc_faction, now_sec)
+    if not (wom_combat and wom_combat.get_engagements) then return nil end
+    if not squad then return nil end
+
+    local squad_id     = squad.id
+    local all_engs     = wom_combat.get_engagements()
+    local total_losses = 0
+    local enemy_scores = {}
+
+    for i = 1, #all_engs do
+        local eng = all_engs[i]
+        local recorded_faction = eng.squad_factions and eng.squad_factions[squad_id]
+        if eng.squads and eng.squads[squad_id]
+        and (now_sec - eng.t_start) <= LOSSES_WINDOW_SEC
+        and not (recorded_faction and npc_faction and recorded_faction ~= npc_faction)
+        then
+            local faction_stats = npc_faction and eng.factions[npc_faction]
+            local losses = (faction_stats and faction_stats.losses) or 0
+            if losses > 0 then
+                total_losses = total_losses + losses
+                local enemy_key = wom_terminology_helper.get_dominant_enemy_faction(eng, npc_faction)
+                if enemy_key then
+                    enemy_scores[enemy_key] = (enemy_scores[enemy_key] or 0) + losses
+                end
+            end
+        end
+    end
+
+    if total_losses == 0 then return nil end
+
+    local best_enemy, best_score = nil, -1
+    for key, score in pairs(enemy_scores) do
+        if score > best_score then best_score = score; best_enemy = key end
+    end
+
+    return {
+        total          = total_losses,
+        losses_word    = wom_terminology_helper.number_word(total_losses),
+        a_member_other = best_enemy and wom_terminology_helper.get_a_faction_adjective(best_enemy) or "",
+    }
+end
+
+-- ---- public -----------------------------------------------------------------
+
+-- No-op callback so the engine registers this script at game start.
+function on_game_start() end
+
+-- Composes the "How are you holding up?" response for the given NPC.
+-- Always returns a rank lead and health line. Appends the single most overdue negative
+-- need line, then the single most recently-satisfied positive need line, when ALifePlus
+-- tracker data is available. Falls back to a plain health-only response when AP is
+-- absent or the squad has no tracked needs.
+-- @param npc userdata  NPC client game object
+-- @return string
+function render_status(npc)
+    local health_tier = get_health_tier(npc)
+    local rank_key    = RANK_KEYS[npc:character_rank()] or "experienced"
+    local npc_faction = npc:character_community()
+
+    local rank_line = wom_dialogue_helper.pick_dialogue_variant(
+        "st_wom_status_rank_" .. rank_key, {})
+    local health_line = wom_dialogue_helper.pick_dialogue_variant(
+        "st_wom_status_health_" .. health_tier, {})
+
+    local radiation       = npc.radiation
+    local radiation_line  = ""
+    if radiation >= RADIATION_HEAVY then
+        radiation_line = wom_dialogue_helper.pick_dialogue_variant("st_wom_status_radiation_heavy", {})
+    elseif radiation >= RADIATION_LIGHT then
+        radiation_line = wom_dialogue_helper.pick_dialogue_variant("st_wom_status_radiation_light", {})
+    end
+
+    local now_sec         = xtime and xtime.game_sec and xtime.game_sec() or 0
+    local squad           = resolve_squad(npc)
+    local loss_data       = get_recent_losses(squad, npc_faction, now_sec)
+    local losses_line     = ""
+    if loss_data then
+        local loss_slots   = { losses_word = loss_data.losses_word, a_member_other = loss_data.a_member_other }
+        local loss_prefix  = (loss_data.total >= LOSSES_HEAVY)
+                             and "st_wom_status_losses_heavy" or "st_wom_status_losses_light"
+        losses_line = wom_dialogue_helper.pick_dialogue_variant(loss_prefix, loss_slots, { "a_member_other" })
+    end
+
+    local needs, has_data = get_overdue_needs(squad, now_sec)
+    local satisfied       = has_data and get_satisfied_needs(squad, now_sec) or {}
+
+    local has_anything = radiation_line ~= "" or losses_line ~= ""
+                         or #needs > 0 or #satisfied > 0
+    if not has_anything then
+        if not has_data then
+            local fallback = wom_dialogue_helper.pick_dialogue_variant("st_wom_status_no_data", {})
+            if fallback ~= "" then
+                local base = health_line .. " " .. fallback
+                return (rank_line ~= "") and (rank_line .. " " .. base) or base
+            end
+        end
+        return (rank_line ~= "") and (rank_line .. " " .. health_line) or health_line
+    end
+
+    local parts = (rank_line ~= "") and { rank_line, health_line } or { health_line }
+    if radiation_line ~= "" then parts[#parts + 1] = radiation_line end
+    if losses_line    ~= "" then parts[#parts + 1] = losses_line    end
+    for i = 1, math.min(1, #needs) do
+        local entry       = needs[i]
+        local need_prefix = "st_wom_status_need_" .. entry.need
+                            .. (entry.heavy and "_heavy" or "_light")
+        local need_line   = wom_dialogue_helper.pick_dialogue_variant(need_prefix, {})
+        if need_line ~= "" then parts[#parts + 1] = need_line end
+    end
+    for i = 1, math.min(1, #satisfied) do
+        local need_line = wom_dialogue_helper.pick_dialogue_variant(
+            "st_wom_status_need_" .. satisfied[i].need .. "_good", {})
+        if need_line ~= "" then parts[#parts + 1] = need_line end
+    end
+
+    return table.concat(parts, " ")
+end
+
+-- Picks one notable need bark using template keys from the given prefix namespace.
+-- Considers heavy-overdue needs (ratio >= HEAVY_RATIO) and well-satisfied needs
+-- (ratio < SATISFIED_RATIO); excludes light-overdue. Returns nil when the pool
+-- is empty or no template matches.
+-- @param npc        userdata  NPC client game object
+-- @param key_prefix string    e.g. "st_wom_status_need" or "st_wom_campfire_need"
+-- @return string|nil
+local function _pick_needs_line(npc, key_prefix)
+    local now_sec   = xtime and xtime.game_sec and xtime.game_sec() or 0
+    local squad     = resolve_squad(npc)
+    local overdue   = get_overdue_needs(squad, now_sec)
+    local satisfied = get_satisfied_needs(squad, now_sec)
+
+    local pool = {}
+    for i = 1, #overdue do
+        if overdue[i].heavy then
+            pool[#pool + 1] = key_prefix .. "_" .. overdue[i].need .. "_heavy"
+        end
+    end
+    for i = 1, #satisfied do
+        pool[#pool + 1] = key_prefix .. "_" .. satisfied[i].need .. "_good"
+    end
+
+    if #pool == 0 then return nil end
+    local prefix = wom_utils.pick_random_item(pool)
+    local line   = wom_dialogue_helper.pick_dialogue_variant(prefix, {})
+    return line ~= "" and line or nil
+end
+
+-- Picks one notable need bark for the "How are you holding up?" status dialogue.
+-- Uses st_wom_status_need_* templates (first-person, detailed).
+-- @param npc userdata  NPC client game object
+-- @return string|nil
+function pick_needs_bark_line(npc)
+    return _pick_needs_line(npc, "st_wom_status_need")
+end
+
+-- Picks one notable need bark for campfire ambient chatter.
+-- Uses st_wom_campfire_need_* templates (casual, overheard-conversation tone).
+-- @param npc userdata  NPC client game object
+-- @return string|nil
+function pick_campfire_needs_line(npc)
+    return _pick_needs_line(npc, "st_wom_campfire_need")
+end

@@ -1,0 +1,916 @@
+--- wom_recap_npc.script
+--- NPC daily-recap: assembles the "What have you been up to?" dialog answer.
+---
+--- Collects the speaking NPC's squad ALifePlus event history for the last
+--- RECAP_WINDOW_HOURS of game time, buckets events by time-of-day period, and
+--- builds a natural-language recap. Events are listed chronologically within
+--- each period block. On a busy day (5+ events) mundane goals are condensed
+--- into a single summary line instead of being listed individually.
+---
+--- Depends on: ap_api (soft), xsquad (soft), xsmart (soft), xtime (soft),
+---             wom_dialogue_helper, wom_terminology_helper, wom_utils, wom_npc_role
+
+local RECAP_WINDOW_HOURS = 24           -- rolling window, in-game hours
+local SQUAD_STATUS_ABSENT_DISTANCE = 20 -- metres; beyond this an online member is "absent"
+
+-- Low-interest goals: on a busy day (5+ events) these are not listed
+-- individually but condensed into one summary line.
+-- Maps goal key -> category word key used in st_wom_ask_recap_low_<word>.
+local LOW_INTEREST = {
+    social_base     = "chatting",  social_campfire  = "chatting",
+    hunger_campfire = "eating",    sleep_campfire   = "sleeping",
+    rest_campfire   = "resting",
+    shelter_indoor  = "sheltering", shelter_outdoor = "sheltering",
+    heal_shelter    = "healing",
+}
+
+-- Preposition names used to fill the #<prep>_location# slot tokens.
+local WHERE_PREPS = { "at", "to", "near", "in", "from", "by", "around", "toward" }
+
+-- ---- internal helpers -------------------------------------------------------
+
+
+local resolve_squad = wom_utils.resolve_squad
+
+-- Returns true when the squad is currently a player companion.
+-- Soft-depends on axr_companions; returns false when absent.
+-- @param squad_id number
+-- @return boolean
+local function is_companion_squad(squad_id)
+    return axr_companions ~= nil
+        and axr_companions.companion_squads ~= nil
+        and axr_companions.companion_squads[squad_id] ~= nil
+end
+
+-- Returns the player's perceived faction community string, or nil.
+-- Anomaly's disguise system rewrites actor:character_community(), so this is
+-- automatically disguise-aware: a player disguised as a Duty soldier returns "dolg".
+-- @return string|nil
+local function perceived_player_faction()
+    local actor = db.actor
+    if not actor then return nil end
+    return actor:character_community()
+end
+
+-- Returns true when two or more squad members are currently online and alive.
+-- Falls back to false (singular) when the xsquad API is unavailable — singular
+-- is always grammatically safe.
+-- @param squad userdata|nil  squad server object
+-- @return boolean
+local function squad_is_plural(squad)
+    if not squad then return false end
+    if not (xsquad and xsquad.iter_member_ids) then return false end
+    local count = 0
+    for member_id in xsquad.iter_member_ids(squad) do
+        if wom_utils.get_live_online_npc(member_id) then
+            count = count + 1
+        end
+    end
+    return count >= 2
+end
+
+-- Collects all squad member IDs and identifies online non-self members and which of
+-- those are beyond the absent-distance threshold.
+-- @param squad        userdata  squad server object
+-- @param npc_id       number    client ID of the speaking NPC
+-- @param npc_position userdata  position of the speaking NPC
+-- @return table  member_ids     array of all squad member IDs
+-- @return table  online_others  array of { id, object } for alive online non-self members
+-- @return table  absent_ids     set (keyed by id) of members beyond SQUAD_STATUS_ABSENT_DISTANCE
+-- @return table  absent_names   array of first-name strings for absent members
+local function _collect_members_and_absences(squad, npc_id, npc_position)
+    local member_ids    = {}
+    local online_others = {}
+    for member_id in xsquad.iter_member_ids(squad) do
+        member_ids[#member_ids + 1] = member_id
+        if member_id ~= npc_id then
+            local member_npc = wom_utils.get_live_online_npc(member_id)
+            if member_npc then
+                online_others[#online_others + 1] = { id = member_id, object = member_npc }
+            end
+        end
+    end
+    local absent_ids   = {}
+    local absent_names = {}
+    for i = 1, #online_others do
+        local distance = npc_position:distance_to(online_others[i].object:position())
+        if distance > SQUAD_STATUS_ABSENT_DISTANCE then
+            local member_id = online_others[i].id
+            absent_ids[member_id]           = true
+            absent_names[#absent_names + 1] = wom_dialogue_helper.get_npc_first_name(member_id)
+        end
+    end
+    return member_ids, online_others, absent_ids, absent_names
+end
+
+-- Selects the template pool key and populates per-case slot values for the squad-status line.
+-- The five cases (alone / leader-pair / leader-squad / follower-pair / follower-squad)
+-- each fill different slot keys, so pool and slots are returned together.
+-- @param is_leader       boolean
+-- @param total_count     number    squad:npc_count()
+-- @param commander_id    number|nil
+-- @param npc_id          number
+-- @param member_ids      table     array of all squad member IDs
+-- @param absent_ids      table     set of member IDs considered absent
+-- @param squad_term      string    e.g. "unit", "squad" (with fallback applied)
+-- @param squad_count_word string   e.g. "three", "4" (with fallback applied)
+-- @return string  pool_key
+-- @return table   slots
+local function _pick_status_pool_and_slots(is_leader, total_count, commander_id, npc_id,
+                                            member_ids, absent_ids, squad_term, squad_count_word)
+    local slots   = {}
+    local pool_key
+
+    if total_count <= 1 then
+        pool_key = "st_wom_recap_status_alone"
+
+    elseif is_leader and total_count == 2 then
+        local partner_id = nil
+        for i = 1, #member_ids do
+            if member_ids[i] ~= npc_id then partner_id = member_ids[i]; break end
+        end
+        local name_fn = absent_ids[partner_id] and wom_dialogue_helper.get_npc_full_name
+                                               or  wom_dialogue_helper.get_npc_first_name
+        slots.partner_name = name_fn(partner_id)
+        pool_key = "st_wom_recap_status_leader_pair"
+
+    elseif is_leader then
+        slots.squad_term  = squad_term
+        slots.squad_count = squad_count_word
+        pool_key = "st_wom_recap_status_leader_squad"
+
+    elseif total_count == 2 then
+        if commander_id then
+            local name_fn = absent_ids[commander_id] and wom_dialogue_helper.get_npc_full_name
+                                                     or  wom_dialogue_helper.get_npc_first_name
+            slots.leader_name = name_fn(commander_id)
+            pool_key = "st_wom_recap_status_follower_pair"
+        else
+            pool_key = "st_wom_recap_status_member_pair"
+        end
+
+    else
+        if commander_id then
+            local name_fn = absent_ids[commander_id] and wom_dialogue_helper.get_npc_full_name
+                                                     or  wom_dialogue_helper.get_npc_first_name
+            slots.leader_name = name_fn(commander_id)
+            slots.squad_term  = squad_term
+            slots.squad_count = squad_count_word
+            pool_key = "st_wom_recap_status_follower_squad"
+        else
+            slots.squad_term  = squad_term
+            slots.squad_count = squad_count_word
+            pool_key = "st_wom_recap_status_member_squad"
+        end
+    end
+
+    return pool_key, slots
+end
+
+-- Builds the absent-member suffix for the squad-status line.
+-- Returns "." when no members are absent, or ", <absent clause>." otherwise.
+-- @param absent_names table  array of first-name strings for absent squad members
+-- @return string
+local function _build_absent_suffix(absent_names)
+    if #absent_names == 0 then return "." end
+    local absent_slots = {}
+    local absent_key
+    if #absent_names == 1 then
+        absent_slots.absent_name = absent_names[1]
+        absent_key = "st_wom_recap_status_absent_one"
+    else
+        absent_slots.absent_names = wom_utils.join_list(absent_names)
+        absent_key = "st_wom_recap_status_absent_many"
+    end
+    local absent_clause = wom_dialogue_helper.pick_dialogue_variant(absent_key, absent_slots)
+    if absent_clause ~= "" then
+        return ", " .. wom_dialogue_helper.decapitalize_clause(absent_clause) .. "."
+    end
+    return "."
+end
+
+-- Builds the squad-composition first line for the "What have you been up to?" recap.
+-- Five cases: alone, leader of a pair, leader of 3+, follower in a pair, follower in 3+.
+-- When any online squad member (other than the speaker) is more than
+-- SQUAD_STATUS_ABSENT_DISTANCE metres away, appends an absent-member clause.
+-- Returns "" when xsquad is unavailable or no status line can be composed.
+-- @param npc   userdata  NPC client game object (the speaker)
+-- @param squad userdata  squad server object
+-- @return string  complete status sentence with trailing punctuation, or ""
+local function render_squad_status(npc, squad)
+    if not (xsquad and xsquad.iter_member_ids) then return "" end
+
+    local npc_id       = npc:id()
+    local npc_position = npc:position()
+    local total_count  = squad:npc_count()
+
+    local member_ids, _, absent_ids, absent_names =
+        _collect_members_and_absences(squad, npc_id, npc_position)
+
+    local commander_id = squad.commander_id and squad:commander_id()
+    local is_leader    = commander_id ~= nil and commander_id == npc_id
+    local npc_faction  = npc:character_community()
+    local squad_term   = wom_terminology_helper.get_faction_squad_term(npc_faction)
+    local squad_count_word = wom_terminology_helper.number_word(total_count)
+    if squad_count_word == "" then squad_count_word = tostring(total_count) end
+
+    local pool_key, slots = _pick_status_pool_and_slots(
+        is_leader, total_count, commander_id, npc_id,
+        member_ids, absent_ids, squad_term, squad_count_word)
+
+    local main_line = wom_dialogue_helper.pick_dialogue_variant(pool_key, slots)
+    if main_line == "" then return "" end
+
+    return main_line .. _build_absent_suffix(absent_names)
+end
+
+-- Builds natural-language participant lists for a multi-faction combat engagement.
+-- The NPC's own faction is listed first; remaining factions are sorted by total
+-- activity (kills + losses, descending). Returns the full participant list (all
+-- factions) and an enemy-only list (factions other than npc_faction).
+-- @param engagement  table        wom_combat engagement record
+-- @param npc_faction string|nil   NPC speaker's community key
+-- @return string  participant_list  e.g. "two Duty units, a Clear Sky unit, and a Psy-Dog pack"
+-- @return string  enemy_list        e.g. "a Clear Sky unit and a Psy-Dog pack"
+local function build_participant_list(engagement, npc_faction)
+    local participant_list, _, enemy_list =
+        wom_terminology_helper.build_faction_participant_list(engagement, npc_faction)
+    return participant_list, enemy_list
+end
+
+-- Fills all eight #<prep>_location# tokens in the slot table.
+-- "nearby"       when the event happened at the NPC's current smart terrain.
+-- "<prep> <name>" when a named location is known.
+-- ""             when the location is unknown (clean_output handles the gap).
+-- @param slots           table       slot table to update in place
+-- @param event_smart_id  number|nil  smart_id from the AP record
+-- @param current_smart   number|nil  smart_id where the NPC currently is
+local function set_where_slots(slots, event_smart_id, current_smart)
+    local name = event_smart_id and wom_terminology_helper.get_location_name(event_smart_id) or ""
+    local is_here = event_smart_id and current_smart and (event_smart_id == current_smart)
+    for i = 1, #WHERE_PREPS do
+        local prep = WHERE_PREPS[i]
+        local value
+        if is_here then
+            value = game.translate_string("st_wom_term_nearby")
+        elseif name ~= "" then
+            value = wom_terminology_helper.get_where_preposition(prep) .. " " .. name
+        else
+            value = ""
+        end
+        slots[prep .. "_location"] = value
+    end
+end
+
+-- Fetches AP records for a squad and returns those that fall within the recap window.
+-- @param squad   userdata  squad server object
+-- @param now_gh  number    current cumulative in-game hours
+-- @return table  array of { goal = string, record = table }
+local function collect_ap_entries(squad, now_gh)
+    local records = ap_api.get_records({ squad_id = squad.id }) or {}
+    local entries = {}
+    for i = 1, #records do
+        local record = records[i]
+        if not record.assigned then
+            local goal = record.consequence_key and record.consequence_key:match("^consequence:(.+)")
+            if goal and record.game_hours and (now_gh - record.game_hours) <= RECAP_WINDOW_HOURS then
+                entries[#entries + 1] = { goal = goal, record = record }
+            end
+        end
+    end
+    return entries
+end
+
+-- Returns the number of distinct factions in an engagement that are not npc_faction.
+-- @param eng         table       wom_combat engagement record
+-- @param npc_faction string|nil  NPC speaker's community key
+-- @return number
+local function compute_enemy_faction_count(eng, npc_faction)
+    local count = 0
+    for faction_key in pairs(eng.factions) do
+        if faction_key ~= npc_faction then count = count + 1 end
+    end
+    return count
+end
+
+-- Returns the summed initial size of all enemy squads (single-faction path only),
+-- or nil when the total is unknown or zero.
+-- @param eng         table       wom_combat engagement record
+-- @param enemy_key   string|nil  dominant enemy faction key
+-- @param npc_faction string|nil
+-- @return number|nil
+local function compute_other_initial_size(eng, enemy_key, npc_faction)
+    if not enemy_key then return nil end
+    local total = 0
+    for sq_id, sq_faction in pairs(eng.squad_factions) do
+        if sq_faction == enemy_key then
+            total = total + (eng.squad_sizes[sq_id] or 0)
+        end
+    end
+    return total > 0 and total or nil
+end
+
+-- Maps combat outcome flags to a goal key string used as a template pool suffix.
+-- @param is_multi_faction boolean
+-- @param has_kills        boolean
+-- @param has_losses       boolean
+-- @param npc_kills        number
+-- @return string  e.g. "combat", "combat_loss", "combat_multi_fell_back"
+local function classify_kill_goal(is_multi_faction, has_kills, has_losses, npc_kills)
+    if is_multi_faction then
+        if not has_kills then
+            return has_losses and "combat_multi_fell_back" or "combat_multi_skirmish"
+        else
+            return has_losses and "combat_multi_loss" or "combat_multi"
+        end
+    else
+        if not has_kills then
+            return has_losses and "combat_fell_back" or "combat_skirmish"
+        elseif npc_kills == 1 then
+            return has_losses and "combat_kill1_loss" or "combat_kill1"
+        else
+            return has_losses and "combat_loss" or "combat"
+        end
+    end
+end
+
+-- Converts one combat engagement into a recap entry, or nil when outside the window.
+-- @param eng         table       wom_combat engagement record
+-- @param npc_faction string|nil  NPC speaker's community key
+-- @param now_gh      number      current cumulative in-game hours
+-- @return table|nil  { goal = string, record = table }
+local function make_combat_entry(eng, npc_faction, now_gh)
+    -- now_gh is floor(game_sec/3600); eng.t_start/3600 is a float, so
+    -- age_hours can be slightly negative for kills within the current hour.
+    -- Clamp to 0 so recent kills are always included.
+    local age_hours = math.max(0, now_gh - (eng.t_start / 3600))
+    if age_hours > RECAP_WINDOW_HOURS then return nil end
+
+    local enemy_key  = wom_terminology_helper.get_dominant_enemy_faction(eng, npc_faction)
+    local npc_stats  = npc_faction and eng.factions[npc_faction]
+    local npc_kills  = (npc_stats and npc_stats.kills)  or eng.total_kills
+    local npc_losses = (npc_stats and npc_stats.losses) or eng.total_losses
+
+    local enemy_faction_count = compute_enemy_faction_count(eng, npc_faction)
+    local is_multi_faction    = npc_faction ~= nil and enemy_faction_count >= 2
+
+    -- Sum initial enemy squad sizes (single-faction path only).
+    local other_initial_size = not is_multi_faction
+        and compute_other_initial_size(eng, enemy_key, npc_faction)
+        or nil
+
+    local has_kills  = type(npc_kills)  == "number" and npc_kills  > 0
+    local has_losses = type(npc_losses) == "number" and npc_losses > 0
+    local kill_goal  = classify_kill_goal(is_multi_faction, has_kills, has_losses, npc_kills)
+
+    -- Pre-build the participant list for multi-faction entries.
+    local participant_list, enemy_list
+    if is_multi_faction then
+        participant_list, enemy_list = build_participant_list(eng, npc_faction)
+    end
+
+    return {
+        goal   = kill_goal,
+        record = {
+            smart_id            = eng.smart_id,
+            game_hours          = eng.t_start / 3600,
+            started_clock       = eng.started_clock,
+            other_faction_key   = enemy_key,
+            other_species_key   = nil,
+            subject_faction_key = npc_faction,
+            subject_species_key = nil,
+            kills               = npc_kills,
+            losses              = npc_losses,
+            kills_word          = wom_terminology_helper.number_word(npc_kills),
+            losses_word         = wom_terminology_helper.number_word(npc_losses),
+            other_initial_size  = other_initial_size,
+            participant_list    = participant_list,
+            enemy_list          = enemy_list,
+        },
+    }
+end
+
+-- Collects combat engagement entries for a squad within the recap window.
+-- @param squad       userdata    squad server object
+-- @param npc_faction string|nil  NPC speaker's community key
+-- @param now_gh      number      current cumulative in-game hours
+-- @return table  array of { goal = string, record = table }
+local function collect_combat_entries(squad, npc_faction, now_gh)
+    local squad_id = squad.id
+    local all_engs = wom_combat.get_engagements()
+    wom_debug.log_collect_combat(squad_id, npc_faction, now_gh, RECAP_WINDOW_HOURS, all_engs)
+    local entries = {}
+    for i = 1, #all_engs do
+        local eng = all_engs[i]
+        local recorded_faction = eng.squad_factions and eng.squad_factions[squad_id]
+        if eng.squads and eng.squads[squad_id]
+            and not (recorded_faction and npc_faction and recorded_faction ~= npc_faction)
+        then
+            local entry = make_combat_entry(eng, npc_faction, now_gh)
+            if entry then entries[#entries + 1] = entry end
+        end
+    end
+    return entries
+end
+
+-- Collects and sorts past event entries for a squad within the recap window.
+-- Excludes currently-assigned (live) goals — those belong to the present-tense
+-- "What are you up to?" feature, not the past-tense recap.
+-- @param squad   userdata  squad server object
+-- @param now_gh  number    current cumulative in-game hours
+-- @return table  array of { goal = string, record = table }, sorted oldest-first
+local function collect_entries(squad, now_gh)
+    if not (ap_api and ap_api.get_records) then return {} end
+    local entries = collect_ap_entries(squad, now_gh)
+    if wom_combat and wom_combat.get_engagements then
+        local raw_pid     = squad.player_id or ""
+        local npc_faction = string.match(raw_pid, "^actor_(.+)$") or (raw_pid ~= "" and raw_pid or nil)
+        for _, combat_entry in ipairs(collect_combat_entries(squad, npc_faction, now_gh)) do
+            entries[#entries + 1] = combat_entry
+        end
+    end
+    -- Sort chronologically using minutes-since-game-start as sort key.
+    local function entry_sort_key(entry)
+        local clock  = entry.record.started_clock
+        local minute = clock and (tonumber(tostring(clock):sub(4, 5)) or 0) or 0
+        return (entry.record.game_hours or now_gh) * 60 + minute
+    end
+    table.sort(entries, function(a, b) return entry_sort_key(a) < entry_sort_key(b) end)
+    return entries
+end
+
+-- Assembles the slot table for one recap entry (pronouns, location, other-faction,
+-- kill/loss counts, subject identity, multi-faction lists, action fallback).
+-- @param entry         table      { goal = string, record = table }
+-- @param plural        boolean    squad has two or more present members
+-- @param current_smart number|nil smart_id where the NPC is now
+-- @param now_gh        number     current cumulative in-game hours (unused here, kept for symmetry)
+-- @param npc_faction   string|nil NPC speaker's community key for first-person faction slots
+-- @return table  populated slot map
+local function _build_entry_slots(entry, plural, current_smart, now_gh, npc_faction)
+    local slots = wom_dialogue_helper.make_pronoun_slots(plural)
+    set_where_slots(slots, entry.record.smart_id, current_smart)
+
+    -- Other-faction slots: populated when the AP record has a second party.
+    -- Prefers the captured pre-battle enemy squad size over kill count for count_other:
+    -- "a Duty fireteam" (initial size 3) reads better than "two Duty" (kills achieved).
+    wom_dialogue_helper.fill_other_community_slots(
+        slots, entry.record.other_faction_key, entry.record.other_species_key,
+        npc_faction, entry.record.other_initial_size)
+
+    -- Kill/loss count slots for combat entries (empty string for non-combat entries).
+    if entry.record.kills_word  ~= nil then slots.kills  = entry.record.kills_word  end
+    if entry.record.losses_word ~= nil then slots.losses = entry.record.losses_word end
+
+    -- Subject (NPC's own faction) identity slot, e.g. "Duty", "Freedom", "Loners".
+    if npc_faction then
+        slots.subject_identity = wom_terminology_helper.get_faction_identity(npc_faction)
+    end
+
+    -- Multi-faction combat slots: pre-built strings attached to the record.
+    if entry.record.participant_list then slots.participant_list = entry.record.participant_list end
+    if entry.record.enemy_list       then slots.enemy_list       = entry.record.enemy_list       end
+
+    -- Generic fallback uses the ALifePlus action label; lower-case it.
+    if ap_api and ap_api.get_text then
+        local action_text = ap_api.get_text(entry.record.action_key)
+                         or ap_api.get_text(entry.record.consequence_key)
+        slots.action = action_text and action_text:lower() or game.translate_string("st_wom_term_action_fallback")
+    else
+        slots.action = game.translate_string("st_wom_term_action_fallback")
+    end
+
+    return slots
+end
+
+-- Renders one event entry as a full "lead phrase, body clause" sentence.
+-- The global first event (tracked via occurrence_counts._stamp_done) gets a
+-- time-of-day stamp lead (st_wom_event_stamp_*) and #I_we_blank_l# = "I"/"we".
+-- All subsequent events use a sequence connector (st_wom_ask_recap_seq_mid_*) with
+-- #clock#/#Ago# slots available for gated clock/ago variants; #I_we_blank_l# = "".
+-- Mutates occurrence_counts.
+-- @param entry             table      { goal = string, record = table }
+-- @param is_block_lead     boolean    true for the first event of a new period
+-- @param period            string     period key for this entry (e.g. "morning")
+-- @param occurrence_counts table      { [goal] = n } mutable tracker, updated here
+-- @param plural            boolean    squad has two or more present members
+-- @param current_smart     number|nil smart_id where the NPC is now
+-- @param now_gh            number     current cumulative in-game hours
+-- @param npc_faction       string|nil NPC speaker's community key for first-person faction slots
+-- @param previous_record   table|nil  record of the previously narrated entry, for
+--                                     same-time connector detection
+-- @return string|nil  full sentence, or nil when no body text could be produced
+local function emit_entry(entry, is_block_lead, period, occurrence_counts,
+                           plural, current_smart, now_gh, npc_faction, previous_record)
+    local slots = _build_entry_slots(entry, plural, current_smart, now_gh, npc_faction)
+
+    -- Pick the lead and set the inline block-subject token.
+    -- The time-of-day stamp fires only once (global first event); all subsequent
+    -- events — even the first of a new period block — use a sequence connector.
+    -- Exception: "just_now" and "recent" blocks always get their fixed opener phrase
+    -- regardless of whether a stamp was already emitted earlier in the recap.
+    local lead_phrase
+    local is_recent_period = (period == "just_now" or period == "recent")
+    if is_block_lead and (not occurrence_counts._stamp_done or is_recent_period) then
+        occurrence_counts._stamp_done = true
+        lead_phrase = wom_dialogue_helper.make_time_stamp(
+            period, entry.record.started_clock, entry.record.game_hours, now_gh)
+    else
+        local clock_value = wom_terminology_helper.format_clock(entry.record.started_clock)
+        local ago_value   = wom_terminology_helper.get_ago_phrase(entry.record.game_hours, now_gh)
+        slots.clock = clock_value
+        slots.Ago   = ago_value
+        -- Two events within a few in-game minutes of each other (typically sibling
+        -- consequences of the same cause) read wrong with a sequential connector
+        -- ("Next", "After that") — use a same-time connector instead.
+        if previous_record and wom_dialogue_helper.is_same_time(
+                previous_record.started_clock, previous_record.game_hours,
+                entry.record.started_clock, entry.record.game_hours) then
+            lead_phrase = wom_dialogue_helper.pick_dialogue_variant(
+                "st_wom_ask_recap_seq_same_time", slots)
+        end
+        if not lead_phrase or lead_phrase == "" then
+            lead_phrase = wom_dialogue_helper.pick_dialogue_variant(
+                "st_wom_ask_recap_seq_mid", slots, { "clock", "Ago" })
+        end
+        if lead_phrase == "" then lead_phrase = "Then" end
+        slots.I_we_blank_l = ""
+    end
+
+    -- Pick the occurrence-indexed body line, falling back to the generic pool
+    occurrence_counts[entry.goal] = (occurrence_counts[entry.goal] or 0) + 1
+    local body = wom_dialogue_helper.pick_indexed_dialogue_variant(
+        "st_wom_ask_recap_" .. entry.goal,
+        occurrence_counts[entry.goal],
+        slots
+    )
+    if not body or body == "" then
+        body = wom_dialogue_helper.pick_dialogue_variant("st_wom_ask_recap_generic", slots)
+    end
+    if not body or body == "" then return nil end
+
+    body = wom_dialogue_helper.decapitalize_clause(body)
+    return lead_phrase .. ", " .. body
+end
+
+-- Groups entries into one paragraph per time-of-day block using the shared
+-- wom_dialogue_helper.group_into_paragraphs implementation. Captures occurrence_counts,
+-- plural, current_smart, now_gh, now_hod, now_game_sec, and npc_faction in closures so
+-- the emit_fn can call emit_entry with the correct context.
+-- @param entries           table      array of { goal, record }, sorted oldest-first
+-- @param occurrence_counts table      { [goal] = n } mutable tracker (shared with caller)
+-- @param plural            boolean
+-- @param current_smart     number|nil
+-- @param now_gh            number     current cumulative in-game hours
+-- @param now_hod           number     current hour-of-day, 0-23
+-- @param now_game_sec      number     current raw game seconds
+-- @param npc_faction       string|nil NPC speaker's community key for first-person faction slots
+-- @return table  array of paragraph strings (one per time-of-day period)
+local function emit_grouped(entries, occurrence_counts, plural, current_smart, now_gh, now_hod, now_game_sec, npc_faction)
+    local function period_fn(entry)
+        return wom_terminology_helper.get_stamped_period_key(
+            entry.record, now_game_sec, now_gh, now_hod)
+    end
+
+    -- Record of the previously narrated entry, for same-time connector detection.
+    -- Only advanced when a sentence was actually emitted, so "At the same time"
+    -- always refers to the immediately preceding spoken event.
+    local previous_record
+    local function emit_fn(entry, is_block_lead, period)
+        local sentence = emit_entry(
+            entry, is_block_lead, period, occurrence_counts, plural, current_smart,
+            now_gh, npc_faction, previous_record)
+        if sentence then previous_record = entry.record end
+        return sentence
+    end
+
+    return wom_dialogue_helper.group_into_paragraphs(entries, period_fn, emit_fn, " ")
+end
+
+-- Composes the closing "and right now" sentence for the daily recap.
+-- Queries the NPC's live AP goal and current scheme role, then picks a template
+-- via a goal+role → goal+state → role-frame → generic → no-goal cascade.
+-- Returns "" when nothing can be composed (AP absent, no squad, no template match).
+-- @param npc             userdata      NPC client game object
+-- @param squad           userdata|nil  squad server object
+-- @param plural          boolean       true when 2+ squad members are online
+-- @param current_smart_id number|nil   smart terrain id of NPC's current post (nil = travelling)
+-- @return string
+local function render_current_action(npc, squad, plural, current_smart_id)
+    if not squad then return "" end
+    local squad_id = squad.id
+    if not (ap_api and ap_api.get_record) then return "" end
+
+    local record = ap_api.get_record({ squad_id = squad_id, assigned = true })
+    local goal   = record and record.consequence_key
+                           and record.consequence_key:match("^consequence:(.+)")
+    local role   = wom_npc_role.scheme_role(npc)
+    local state  = current_smart_id and "arrived" or "moving"
+
+    -- Target location: current smart when arrived, or AP-assigned destination when moving.
+    local target_smart_id = current_smart_id
+    if not target_smart_id and record then
+        local scripted    = ap_api.get_scripted_squads and ap_api.get_scripted_squads()
+        local squad_entry = scripted and scripted[squad_id]
+        target_smart_id   = (squad_entry and squad_entry.target_smart_id) or record.smart_id
+    end
+    -- Fallback to squad's assigned target if no AP record.
+    if not target_smart_id then target_smart_id = squad.assigned_target_id end
+
+    local slots = wom_dialogue_helper.make_pronoun_slots(plural)
+    local location_name = target_smart_id
+                          and wom_terminology_helper.get_location_name(target_smart_id)
+                          or ""
+    slots.location = location_name ~= "" and location_name or game.translate_string("st_wom_term_location_fallback")
+
+    -- Other-faction slots: populated from the AP record when a second party is present.
+    -- Falls back to "someone" so templates using #some_members_other# or #a_member_other# are always safe.
+    local npc_faction = npc:character_community()
+    local other_fk = record and record.other_faction_key
+    local other_sk = record and record.other_species_key
+    wom_dialogue_helper.fill_other_community_slots(slots, other_fk, other_sk, npc_faction, nil)
+
+    -- Intent fragment for role frames (empty when no template authored for this goal).
+    slots.intent = goal
+                   and wom_dialogue_helper.pick_dialogue_variant("st_wom_ask_intent_" .. goal, slots)
+                   or ""
+
+    -- Secretive deflection: outsiders asking about a secret goal get a generic
+    -- deflecting answer instead of the honest current-action line.
+    local player_faction    = perceived_player_faction()
+    local is_outsider       = player_faction ~= nil and npc_faction ~= nil
+                              and player_faction ~= npc_faction
+    local goal_visibility   = goal and wom_mcm.get_goal_visibility(goal) or "public"
+    if goal and (goal_visibility == "none" or (goal_visibility == "faction" and is_outsider)) then
+        local deflect = wom_dialogue_helper.pick_dialogue_variant(
+            "st_wom_ask_generic_secretive", slots)
+        if deflect ~= "" then return deflect end
+    end
+
+    -- Cascade: most specific to most generic.
+    -- #location# always has a value ("a location" fallback), so no location gating needed.
+    -- #intent# is still gated: it may be empty when no intent template exists for the goal.
+    local result = ""
+    if result == "" and goal and role and current_smart_id then
+        result = wom_dialogue_helper.pick_dialogue_variant(
+            "st_wom_ask_" .. goal .. "_" .. role, slots)
+    end
+    if result == "" and goal then
+        result = wom_dialogue_helper.pick_dialogue_variant(
+            "st_wom_ask_" .. goal .. "_" .. state, slots)
+    end
+    if result == "" and role then
+        result = wom_dialogue_helper.pick_dialogue_variant(
+            "st_wom_ask_" .. role, slots, {"intent"})
+    end
+    if result == "" then
+        result = wom_dialogue_helper.pick_dialogue_variant(
+            "st_wom_ask_generic_" .. state, slots)
+    end
+    if result == "" then
+        result = wom_dialogue_helper.pick_dialogue_variant("st_wom_ask_nogoal", slots)
+    end
+    return result
+end
+
+-- Maps npc:character_rank() return values to rank key strings used as pool suffixes.
+local RANK_KEYS = { [0] = "novice", [1] = "experienced", [2] = "veteran", [3] = "master" }
+
+-- ---- public -----------------------------------------------------------------
+
+-- Picks one interesting event from the NPC's squad day history and renders it as
+-- a single first-person sentence. "Interesting" means not in the LOW_INTEREST set
+-- (so mundane goals like chatting, eating, and resting are excluded). Returns nil
+-- when ALifePlus is absent, the NPC has no squad, or no interesting events exist
+-- within the recap window.
+-- Used by wom_campfire for ambient NPC barks — the sentence is delivered as-is
+-- without a time-stamp lead or sequence connector.
+-- @param npc userdata  NPC client game object
+-- @return string|nil
+function pick_day_event_line(npc)
+    if not (ap_api and ap_api.get_records) then return nil end
+    local squad = resolve_squad(npc)
+    if not squad then return nil end
+
+    local now_gh = wom_terminology_helper.get_now_context()
+    local entries = collect_entries(squad, now_gh)
+    if #entries == 0 then return nil end
+
+    local interesting_entries = {}
+    for i = 1, #entries do
+        local entry_goal = entries[i].goal
+        if not LOW_INTEREST[entry_goal]
+           and wom_mcm.get_goal_visibility(entry_goal) == "public" then
+            interesting_entries[#interesting_entries + 1] = entries[i]
+        end
+    end
+    if #interesting_entries == 0 then return nil end
+
+    local entry        = wom_utils.pick_random_item(interesting_entries)
+    local plural       = squad_is_plural(squad)
+    local current_smart_object = wom_npc_role.current_smart(npc)
+    local current_smart = current_smart_object and current_smart_object.id
+    local npc_faction  = npc:character_community()
+
+    local slots = wom_dialogue_helper.make_pronoun_slots(plural)
+    set_where_slots(slots, entry.record.smart_id, current_smart)
+
+    wom_dialogue_helper.fill_other_community_slots(
+        slots, entry.record.other_faction_key, entry.record.other_species_key,
+        npc_faction, entry.record.other_initial_size)
+    if entry.record.kills_word  ~= nil then slots.kills  = entry.record.kills_word  end
+    if entry.record.losses_word ~= nil then slots.losses = entry.record.losses_word end
+    if npc_faction then
+        slots.subject_identity = wom_terminology_helper.get_faction_identity(npc_faction)
+    end
+    if entry.record.participant_list then slots.participant_list = entry.record.participant_list end
+    if entry.record.enemy_list       then slots.enemy_list       = entry.record.enemy_list       end
+
+    if ap_api and ap_api.get_text then
+        local action_text = ap_api.get_text(entry.record.action_key)
+                         or ap_api.get_text(entry.record.consequence_key)
+        slots.action = action_text and action_text:lower() or game.translate_string("st_wom_term_action_fallback")
+    else
+        slots.action = game.translate_string("st_wom_term_action_fallback")
+    end
+
+    local body = wom_dialogue_helper.pick_indexed_dialogue_variant(
+        "st_wom_ask_recap_" .. entry.goal, 1, slots, {"kills"})
+    if not body or body == "" then
+        body = wom_dialogue_helper.pick_dialogue_variant("st_wom_ask_recap_generic", slots)
+    end
+    if not body or body == "" then return nil end
+    return body, entry.record.started_clock, entry.record.game_hours
+end
+
+-- Filters entries to those visible to the player based on goal visibility settings.
+-- "none" goals are always hidden; "faction" goals are hidden from outsiders (different faction).
+-- Returns the original table unchanged when the player faction cannot be determined.
+-- @param entries     table       array of { goal, record }
+-- @param npc_faction string|nil  NPC speaker's community key
+-- @return table  filtered array of { goal, record }
+local function filter_visible_entries(entries, npc_faction)
+    local player_faction = perceived_player_faction()
+    if player_faction == nil then return entries end
+    local is_outsider = npc_faction ~= nil and player_faction ~= npc_faction
+    local visible = {}
+    for i = 1, #entries do
+        local visibility = wom_mcm.get_goal_visibility(entries[i].goal)
+        local hidden = visibility == "none" or (visibility == "faction" and is_outsider)
+        if not hidden then visible[#visible + 1] = entries[i] end
+    end
+    return visible
+end
+
+-- Builds the condensed mundane-activity summary line for busy-day recaps.
+-- Returns "" when the word order list is empty or no template matches.
+-- @param mundane_word_order  table    ordered, deduplicated list of LOW_INTEREST category words
+-- @param plural              boolean  squad has two or more present members
+-- @param has_interesting     boolean  true when interesting paragraphs were already emitted
+-- @return string
+local function build_mundane_summary(mundane_word_order, plural, has_interesting)
+    if #mundane_word_order == 0 then return "" end
+    local base_slots   = wom_dialogue_helper.make_pronoun_slots(plural)
+    local word_strings = {}
+    for i = 1, #mundane_word_order do
+        local word_text = wom_dialogue_helper.pick_dialogue_variant(
+            "st_wom_ask_recap_low_" .. mundane_word_order[i], base_slots)
+        word_strings[i] = (word_text ~= "" and wom_dialogue_helper.decapitalize_clause(word_text))
+                       or mundane_word_order[i]
+    end
+    local summary_slots = wom_dialogue_helper.make_pronoun_slots(plural)
+    summary_slots.list  = wom_utils.join_list(word_strings)
+    local summary_prefix = has_interesting and "st_wom_ask_recap_lowsummary"
+                                           or  "st_wom_ask_recap_lowsummary_alone"
+    return wom_dialogue_helper.pick_dialogue_variant(summary_prefix, summary_slots)
+end
+
+-- Assembles the body paragraph array for the recap.
+-- Busy day (5+ entries): interesting events listed chronologically; mundane events condensed.
+-- Quiet day: all events listed individually, grouped by time-of-day period.
+-- Mutates occurrence_counts in place.
+-- @param entries           table       array of { goal, record }, sorted oldest-first
+-- @param occurrence_counts table       { [goal] = n } mutable tracker
+-- @param plural            boolean
+-- @param current_smart     number|nil  smart_id where the NPC currently is
+-- @param now_gh            number      current cumulative in-game hours
+-- @param now_hod           number      current hour-of-day, 0-23
+-- @param now_game_sec      number      current raw game seconds
+-- @param npc_faction       string|nil  NPC speaker's community key
+-- @return table  array of paragraph strings
+local function build_body_parts(entries, occurrence_counts, plural, current_smart, now_gh, now_hod, now_game_sec, npc_faction)
+    local body_parts = {}
+    if #entries >= 5 then
+        -- Busy day: split entries into interesting and mundane.
+        local interesting_entries = {}
+        local mundane_word_order  = {}
+        local mundane_word_seen   = {}
+        for i = 1, #entries do
+            local entry = entries[i]
+            local word  = LOW_INTEREST[entry.goal]
+            if word then
+                if not mundane_word_seen[word] then
+                    mundane_word_seen[word] = true
+                    mundane_word_order[#mundane_word_order + 1] = word
+                end
+            else
+                interesting_entries[#interesting_entries + 1] = entry
+            end
+        end
+        local interesting_paragraphs = emit_grouped(
+            interesting_entries, occurrence_counts, plural, current_smart, now_gh, now_hod, now_game_sec, npc_faction)
+        for i = 1, #interesting_paragraphs do
+            body_parts[#body_parts + 1] = interesting_paragraphs[i]
+        end
+        local summary = build_mundane_summary(mundane_word_order, plural, #interesting_paragraphs > 0)
+        if summary ~= "" then body_parts[#body_parts + 1] = summary end
+    else
+        -- Quiet day: every event listed individually, grouped by time-of-day.
+        local all_paragraphs = emit_grouped(
+            entries, occurrence_counts, plural, current_smart, now_gh, now_hod, now_game_sec, npc_faction)
+        for i = 1, #all_paragraphs do
+            body_parts[#body_parts + 1] = all_paragraphs[i]
+        end
+    end
+    return body_parts
+end
+
+-- Composes the NPC's "What have you been up to?" recap as a multi-paragraph string.
+-- Returns a fallback no-news line when ALifePlus is absent, the NPC has no squad,
+-- or there are no events within the rolling 24-hour window.
+-- @param npc userdata  the NPC client game object passed from the dialog callback
+-- @return string
+function render_recap(npc)
+    local function no_news()
+        return wom_dialogue_helper.pick_dialogue_variant("st_wom_ask_recap_none", {})
+    end
+
+    if not (ap_api and ap_api.get_records) then return no_news() end
+
+    local squad = resolve_squad(npc)
+    if not squad then return no_news() end
+
+    local now_gh, now_hod, now_game_sec = wom_terminology_helper.get_now_context()
+    local entries              = collect_entries(squad, now_gh)
+    local plural               = squad_is_plural(squad)
+    local current_smart_object = wom_npc_role.current_smart(npc)
+    local current_smart        = current_smart_object and current_smart_object.id
+    local npc_faction          = npc:character_community()
+
+    entries = filter_visible_entries(entries, npc_faction)
+
+    -- Suppress the "And right now?" closing only when the NPC is actively posted,
+    -- resting, or settled at an animation point / campfire. Walkers, travellers, and
+    -- NPCs merely registered in a smart's npc_info while passing through all still
+    -- show their current ALifePlus goal.
+    local scheme_role  = wom_npc_role.scheme_role(npc)
+    local is_settled   = scheme_role == "posted" or scheme_role == "sleeping" or scheme_role == "settled"
+    local base_slots   = wom_dialogue_helper.make_pronoun_slots(plural)
+    local npc_rank_key = RANK_KEYS[npc:character_rank()] or "experienced"
+
+    -- Tries a rank-suffixed pool first (e.g. st_wom_ask_recap_quiet_veteran),
+    -- falls back to the generic pool when no rank-specific variants are authored.
+    local function pick_opener(prefix)
+        local ranked = wom_dialogue_helper.pick_dialogue_variant(prefix .. "_" .. npc_rank_key, base_slots)
+        return (ranked ~= "") and ranked or wom_dialogue_helper.pick_dialogue_variant(prefix, base_slots)
+    end
+
+    local n_interesting = 0
+    for i = 1, #entries do
+        if not LOW_INTEREST[entries[i].goal] then n_interesting = n_interesting + 1 end
+    end
+    local opener_prefix = (n_interesting >= 3 and "st_wom_ask_recap_intro")
+                       or (n_interesting >= 1 and "st_wom_ask_recap_intro_some")
+                       or "st_wom_ask_recap_quiet"
+    local opener = pick_opener(opener_prefix)
+
+    local occurrence_counts = {}
+    local body_parts = build_body_parts(
+        entries, occurrence_counts, plural, current_smart, now_gh, now_hod, now_game_sec, npc_faction)
+
+    -- Assemble: squad status first, then opener, then body paragraphs, separated by blank lines.
+    local result_parts = {}
+    if not is_companion_squad(squad.id) then
+        local squad_status_line = render_squad_status(npc, squad)
+        if squad_status_line ~= "" then result_parts[#result_parts + 1] = squad_status_line end
+    end
+    if opener ~= "" then result_parts[#result_parts + 1] = opener end
+    for i = 1, #body_parts do result_parts[#result_parts + 1] = body_parts[i] end
+
+    -- Closing current-action appendix: suppressed only for posted, sleeping, or settled NPCs.
+    -- Everyone else — walkers, travellers, NPCs passing through a smart en route to a goal — gets
+    -- the "And right now?" line so their ALifePlus goal is always disclosed.
+    -- This runs even when entries is empty (e.g. at game start) so a fresh stalker still
+    -- discloses their current goal.
+    if not is_settled then
+        local now_lead = wom_dialogue_helper.pick_dialogue_variant("st_wom_ask_recap_now_lead", base_slots)
+        local now_text = render_current_action(npc, squad, plural, nil)
+        if now_lead ~= "" and now_text ~= "" then
+            result_parts[#result_parts + 1] = now_lead .. " " .. now_text
+        end
+    end
+
+    if #result_parts == 0 then return no_news() end
+
+    return table.concat(result_parts, "\\n \\n")
+end

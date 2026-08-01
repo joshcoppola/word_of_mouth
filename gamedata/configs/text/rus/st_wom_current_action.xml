@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="windows-1251" ?>
+<string_table>
+
+  <!-- Current-action templates for the closing line of the "What have you been up to?" recap.  -->
+  <!-- Chosen by render_current_action() in wom_recap_npc.script via a goal+role cascade.      -->
+  <!-- These follow a now-lead transition (e.g. "And now?") already picked from                -->
+  <!-- st_wom_ask_recap_now_lead_* in st_wom_recap_day.xml.                                    -->
+  <!--                                                                                          -->
+  <!-- Slots:                                                                                   -->
+  <!--   #Im_Were_u#  "I'm" / "We're"                                                          -->
+  <!--   #I_We_u#     "I" / "We"                                                               -->
+  <!--   #I_we_l#     "i" / "we"                                                               -->
+  <!--   #Ive_Weve_u# "I've" / "We've"                                                         -->
+  <!--   #my_our_l#   "my" / "our"                                                             -->
+  <!--   #me_us_l#    "me" / "us"                                                              -->
+  <!--   #location#   smart terrain display name; falls back to "a location" when unknown      -->
+  <!--   #intent#     short goal fragment for role frames, "" when no template (gated)         -->
+  <!--   #some_members_other# faction that triggered this goal, e.g. "some Bandits"; "someone" when   -->
+  <!--                the AP record has no second party                                        -->
+  <!--   #a_member_other#    "a [Bandit]" / "someone" — singular form of the above                   -->
+
+
+  <!-- ============================================================ -->
+  <!-- NO-GOAL FALLBACK                                             -->
+  <!-- Used when no AP record exists for the squad.                 -->
+  <!-- ============================================================ -->
+
+  <string id="st_wom_ask_nogoal_001"><text>Не знаю, что дальше. Пока просто не высовываюсь.</text></string>
+  <string id="st_wom_ask_nogoal_002"><text>Жду, что будет дальше.</text></string>
+  <string id="st_wom_ask_nogoal_003"><text>Пока ничего на примете нет.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- GENERIC STATE FALLBACKS                                      -->
+  <!-- Used when no goal-specific or role-specific template matches. -->
+  <!-- ============================================================ -->
+
+  <string id="st_wom_ask_generic_arrived_001"><text>Пока что я здесь.</text></string>
+  <string id="st_wom_ask_generic_arrived_002"><text>Сейчас просто держу позицию.</text></string>
+  <string id="st_wom_ask_generic_arrived_003"><text>Кручусь тут, у #location#.</text></string>
+
+  <string id="st_wom_ask_generic_moving_001"><text>Я в пути.</text></string>
+  <string id="st_wom_ask_generic_moving_002"><text>Выдвигаюсь.</text></string>
+  <string id="st_wom_ask_generic_moving_003"><text>Иду к #location#.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- ROLE FRAMES                                                   -->
+  <!-- Used when the goal cascade has no match but the NPC's scheme  -->
+  <!-- is known. The #intent# slot is filled from the intent pool    -->
+  <!-- below; variants using #intent# are gated out when it is empty.-->
+  <!-- ============================================================ -->
+
+  <!-- posted: standing a watch or guard position -->
+  <string id="st_wom_ask_posted_001"><text>Стою на посту. #intent#</text></string>
+  <string id="st_wom_ask_posted_002"><text>Несу вахту прямо сейчас. #intent#</text></string>
+  <string id="st_wom_ask_posted_003"><text>Стою тут на страже.</text></string>
+  <string id="st_wom_ask_posted_004"><text>Присматриваю за обстановкой.</text></string>
+
+  <!-- settled: at rest, campfire, or animation point -->
+  <string id="st_wom_ask_settled_001"><text>Перевожу дух. #intent#</text></string>
+  <string id="st_wom_ask_settled_002"><text>Отдыхаю немного.</text></string>
+  <string id="st_wom_ask_settled_003"><text>Просто передышка.</text></string>
+
+  <!-- sleeping -->
+  <string id="st_wom_ask_sleeping_001"><text>Собираюсь поспать немного. #intent#</text></string>
+  <string id="st_wom_ask_sleeping_002"><text>Пока есть время, ловлю момент, чтобы поспать.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- INTENT FRAGMENTS                                             -->
+  <!-- Short present-tense clause, no pronoun. Fills the #intent#   -->
+  <!-- slot in role frames. One or two sentences max.               -->
+  <!-- ============================================================ -->
+
+ <string id="st_wom_ask_intent_area_conquer_001"><text>Пасу, кто в нашу сторону дышит. Нефиг тут шастать.</text></string>
+  <string id="st_wom_ask_intent_area_conquer_002"><text>Держим точку. Попробует кто отжать — быстро свинцом накормим.</text></string>
+  <string id="st_wom_ask_intent_area_infest_001"><text>Смотрю в оба, чтоб мутанты снова из всех щелей не поперли.</text></string>
+  <string id="st_wom_ask_intent_area_swarm_001"><text>Присматриваю тут за обстановкой... После той орды до сих пор поджилки трясутся.</text></string>
+  <string id="st_wom_ask_intent_massacre_investigate_001"><text>Ищу, чьих рук дело. Пацанов в мясо раскатали, так просто это не оставим.</text></string>
+  <string id="st_wom_ask_intent_massacre_loot_001"><text>Жду, пока утихнет. В жмуриках порыться — хабара поснимать, добру не пропадать же.</text></string>
+  <string id="st_wom_ask_intent_massacre_scavenge_001"><text>Тут после замеса есть чем поживиться, если руки не из жопы.</text></string>
+  <string id="st_wom_ask_intent_job_explore_001"><text>Да вот, решил тропки протоптать, местность разведкой прощупать.</text></string>
+  <string id="st_wom_ask_intent_job_outpost_001"><text>На посту торчу, точку караулю. Приказ есть приказ.</text></string>
+  <string id="st_wom_ask_intent_stash_loot_001"><text>Нырнул за нычкой — наводка была, грех не пощупать тайничок.</text></string>
+  <string id="st_wom_ask_intent_squadkill_revenge_001"><text>Кровищу за братух пустить пришли. Кто-то ж должен за этот беспредел ответить!</text></string>
+  <string id="st_wom_ask_intent_basekill_support_001"><text>Нашим пацанам бока зажимали, рванули на подмогу, пока всех не покрошили.</text></string>
+  <string id="st_wom_ask_intent_basekill_flee_001"><text>Да ну его нафиг, кусок бетона того не стоит, чтоб за него костьми лечь.</text></string>
+  <string id="st_wom_ask_intent_money_harvest_001"><text>За артефактами вышел. Болты бросаю, удачу за хвост ловлю.</text></string>
+  <string id="st_wom_ask_intent_harvest_rob_001"><text>У тех голубчиков хабара прессованного было — грех не попросить поделиться.</text></string>
+  <string id="st_wom_ask_intent_wounded_help_001"><text>Братка 300-го вытаскивать надо. В Зоне своих не бросают.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- MUNDANE GOALS (LOW_INTEREST set)                             -->
+  <!-- ============================================================ -->
+
+<!-- hunger_campfire: eating -->
+  <string id="st_wom_ask_hunger_campfire_arrived_001"><text>Да вот, тушёнку заточить решил, а то кишки скрутило.</text></string>
+  <string id="st_wom_ask_hunger_campfire_arrived_002"><text>Сижу, банку сгущёнки давлю в районе точки #location#.</text></string>
+  <string id="st_wom_ask_hunger_campfire_arrived_003"><text>Брюхо сосет немилосердно, вот закидываю хавчик.</text></string>
+  <string id="st_wom_ask_hunger_campfire_moving_001"><text>Чешу в район точки #location#, хоть жратвы нормально пожевать.</text></string>
+  <string id="st_wom_ask_hunger_campfire_moving_002"><text>Топаю на объект #location#, авось там разживусь чем перекусить.</text></string>
+
+  <!-- sleep_campfire: sleeping -->
+  <string id="st_wom_ask_sleep_campfire_arrived_001"><text>Всё, мужики, у меня отбой. Храпака давить буду.</text></string>
+  <string id="st_wom_ask_sleep_campfire_arrived_002"><text>Давану храпака тут, на объекте #location#.</text></string>
+  <string id="st_wom_ask_sleep_campfire_moving_001"><text>Держу курс на объект #location#, глаз прикрою хоть на пару часов.</text></string>
+  <string id="st_wom_ask_sleep_campfire_moving_002"><text>Иду в район точки #location#, поспать охота — сил нет.</text></string>
+
+  <!-- rest_campfire: resting -->
+  <string id="st_wom_ask_rest_campfire_arrived_001"><text>Кости грею у костерка, ноги совсем забились.</text></string>
+  <string id="st_wom_ask_rest_campfire_arrived_002"><text>Присел передохнуть на объекте #location#.</text></string>
+  <string id="st_wom_ask_rest_campfire_arrived_003"><text>Лясы точим да у огонька греемся в районе точки #location#.</text></string>
+  <string id="st_wom_ask_rest_campfire_moving_001"><text>Иду в район точки #location#, дух перевести да папироску сдуть.</text></string>
+  <string id="st_wom_ask_rest_campfire_moving_002"><text>Тянусь к объекту #location#, расслабить булки малость.</text></string>
+
+  <!-- social_base: socialising at base -->
+  <string id="st_wom_ask_social_base_arrived_001"><text>Да вот с пацанами язык чешем, новости перетираем.</text></string>
+  <string id="st_wom_ask_social_base_arrived_002"><text>Трём за жизнь со своими на объекте #location#.</text></string>
+  <string id="st_wom_ask_social_base_arrived_003"><text>С ребятами анекдоты травим, остываем после ходки.</text></string>
+  <string id="st_wom_ask_social_base_moving_001"><text>Надеюсь нормальную компанию застать в районе точки #location#.</text></string>
+  <string id="st_wom_ask_social_base_moving_002"><text>Шлёпаю на объект #location#, с народом потрепаться да слухи поспрашивать.</text></string>
+
+  <!-- social_campfire: socialising at a campfire -->
+  <string id="st_wom_ask_social_campfire_arrived_001"><text>У огонька греюсь, байки слушаю.</text></string>
+  <string id="st_wom_ask_social_campfire_arrived_002"><text>Балагурим у костра в районе точки #location#.</text></string>
+  <string id="st_wom_ask_social_campfire_arrived_003"><text>Время коротаю у костерка, пока тихо.</text></string>
+  <string id="st_wom_ask_social_campfire_moving_001"><text>Чешу к душевным пацанам у огонька в районе точки #location#.</text></string>
+  <string id="st_wom_ask_social_campfire_moving_002"><text>Иду на объект #location#, подсесть к какому-нибудь костру да чайку попить.</text></string>
+
+  <!-- heal_shelter: recovering from wounds -->
+  <string id="st_wom_ask_heal_shelter_arrived_001"><text>Подлатываюсь вот. Досталось от тварей, сука, еле шкуру унёс.</text></string>
+  <string id="st_wom_ask_heal_shelter_arrived_002"><text>Бинтую шрамы да дыры латаю на объекте #location#.</text></string>
+  <string id="st_wom_ask_heal_shelter_arrived_003"><text>Заливаюсь анальгином да бинты перетягиваю, помяли знатно.</text></string>
+  <string id="st_wom_ask_heal_shelter_moving_001"><text>Ползу в район точки #location#, аптечку потрошить да раны зализывать.</text></string>
+  <string id="st_wom_ask_heal_shelter_moving_002"><text>Иду на объект #location#, попробовать себя в кучу собрать, а то кровь капает.</text></string>
+
+  <!-- shelter_indoor: taking shelter indoors -->
+  <string id="st_wom_ask_shelter_indoor_arrived_001"><text>В четырёх стенах шхерюсь, пока снаружи адок.</text></string>
+  <string id="st_wom_ask_shelter_indoor_arrived_002"><text>Сижу под крышей в районе точки #location#, выжидаю.</text></string>
+  <string id="st_wom_ask_shelter_indoor_moving_001"><text>Лочусь в район точки #location#, под крышу решил спрятаться от всей этой чертовщины.</text></string>
+  <string id="st_wom_ask_shelter_indoor_moving_002"><text>Двигаю на объект #location#, сухой угол с крышей поискать.</text></string>
+
+  <!-- shelter_outdoor: taking shelter outside -->
+  <string id="st_wom_ask_shelter_outdoor_arrived_001"><text>Прижопился тут в кустах, нос не высовываю.</text></string>
+  <string id="st_wom_ask_shelter_outdoor_arrived_002"><text>Залег возле объекта #location#, караулю обстановку.</text></string>
+  <string id="st_wom_ask_shelter_outdoor_moving_001"><text>Хочу приткнуться где-нибудь в районе точки #location#.</text></string>
+  <string id="st_wom_ask_shelter_outdoor_moving_002"><text>Надеюсь намутить хоть какое укрытие возле объекта #location#.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- ACTIVE GOALS — ARRIVED AND MOVING VARIANTS                   -->
+  <!-- ============================================================ -->
+
+  <!-- area_conquer: claiming / holding territory -->
+  <!-- #some_members_other# = the faction being displaced, e.g. "some Duty soldiers"; "someone" when unknown -->
+  <string id="st_wom_ask_area_conquer_arrived_001"><text>Мы отжали эту точку. Пасу, чтоб никто из посторонних не сунулся.</text></string>
+  <string id="st_wom_ask_area_conquer_arrived_002"><text>Держу объект #location#, нос наружу не высовываю.</text></string>
+  <string id="st_wom_ask_area_conquer_arrived_003"><text>Выбили отсюда #some_members_other#. Теперь закрепились и держим оборону.</text></string>
+  <string id="st_wom_ask_area_conquer_moving_001"><text>Выдвигаюсь, чтобы закрепиться на объекте #location#.</text></string>
+  <string id="st_wom_ask_area_conquer_moving_002"><text>Рву когти, чтоб застолбить объект #location# за нашими.</text></string>
+
+  <!-- area_infest: mutants moving in on a location -->
+  <!-- #some_members_other# = the infesting species, e.g. "some Pseudodogs"; "someone" when unknown -->
+  <string id="st_wom_ask_area_infest_arrived_001"><text>Слежу за округой. #some_members_other# тут логово устроили, мудачье зубастое.</text></string>
+  <string id="st_wom_ask_area_infest_arrived_002"><text>Дежурю возле объекта #location# после того, как там разжились #some_members_other#.</text></string>
+  <string id="st_wom_ask_area_infest_moving_001"><text>Иду проверить, кто там из тварей гнездо свил на объекте #location#.</text></string>
+  <string id="st_wom_ask_area_infest_moving_002"><text>Двигаюсь нашпиговать свинцом #some_members_other# в районе точки #location#.</text></string>
+
+  <!-- area_swarm: mutant swarm -->
+  <!-- #some_members_other# = the swarming species, e.g. "some Snorks"; "someone" when unknown -->
+  <string id="st_wom_ask_area_swarm_arrived_001"><text>Присматриваю за обстановкой. После того набега мутантов до сих пор не по себе.</text></string>
+  <string id="st_wom_ask_area_swarm_arrived_002"><text>Пасу объект #location# после того, как там саранчой прошли #some_members_other#.</text></string>
+  <string id="st_wom_ask_area_swarm_moving_001"><text>Иду дать отпор той стае уродов в районе точки #location#.</text></string>
+  <string id="st_wom_ask_area_swarm_moving_002"><text>Иду навести порядок и проредить #some_members_other#.</text></string>
+
+  <!-- job_explore: scouting / exploring -->
+  <string id="st_wom_ask_job_explore_arrived_001"><text>Проламываюсь сквозь кусты, осматриваю объект #location#.</text></string>
+  <string id="st_wom_ask_job_explore_arrived_002"><text>Разведываю окрестности, тропки высматриваю.</text></string>
+  <string id="st_wom_ask_job_explore_arrived_003"><text>Да вот, осматриваюсь потихоньку. Мало ли что под ногами лежит.</text></string>
+  <string id="st_wom_ask_job_explore_moving_001"><text>Иду потихоньку прощупать объект #location#.</text></string>
+  <string id="st_wom_ask_job_explore_moving_002"><text>Выдвигаюсь разведать подходы в район точки #location#.</text></string>
+
+  <!-- job_outpost: manning a forward position -->
+  <string id="st_wom_ask_job_outpost_arrived_001"><text>Держу позицию возле объекта #location#. Приказ есть приказ.</text></string>
+  <string id="st_wom_ask_job_outpost_arrived_002"><text>Держу под прицелом объект #location#.</text></string>
+  <string id="st_wom_ask_job_outpost_arrived_003"><text>На посту торчу, кукую тут в одиночку.</text></string>
+  <string id="st_wom_ask_job_outpost_moving_001"><text>Чешу ставить секрет в районе точки #location#.</text></string>
+  <string id="st_wom_ask_job_outpost_moving_002"><text>Выдвигаюсь занять огневую позицию возле объекта #location#.</text></string>
+
+  <!-- massacre_investigate: investigating a massacre -->
+  <!-- #some_members_other# = the perpetrating faction, e.g. "some Mercs"; "someone" when unknown -->
+  <string id="st_wom_ask_massacre_investigate_arrived_001"><text>Выясняю, что за мясорубка тут была в районе точки #location#.</text></string>
+  <string id="st_wom_ask_massacre_investigate_arrived_002"><text>Разбираюсь, что за кровавую баню устроили #some_members_other# возле объекта #location#.</text></string>
+  <string id="st_wom_ask_massacre_investigate_arrived_003"><text>Кто-то тут знатно всех в фарш уложил. Смотрю, что за следы оставили #some_members_other#.</text></string>
+  <string id="st_wom_ask_massacre_investigate_moving_001"><text>Шлёпаю в район точки #location# разузнать, куда наши пропали.</text></string>
+  <string id="st_wom_ask_massacre_investigate_moving_002"><text>Иду выяснить, что за бесовщину учудили #some_members_other# возле объекта #location#.</text></string>
+
+  <!-- massacre_loot: looting massacre site -->
+  <string id="st_wom_ask_massacre_loot_arrived_001"><text>Перебираю хабар, что остался в районе точки #location#.</text></string>
+  <string id="st_wom_ask_massacre_loot_arrived_002"><text>Шмонаю жмуриков. Мёртвым-то оно без надобности, а мне сгодится.</text></string>
+  <string id="st_wom_ask_massacre_loot_moving_001"><text>Двигаю на объект #location#. Говорят, там после бойни куча добра без дела лежит.</text></string>
+
+  <!-- massacre_scavenge: scavenging massacre site -->
+  <string id="st_wom_ask_massacre_scavenge_arrived_001"><text>Собираю крохи да маслины в районе точки #location#.</text></string>
+  <string id="st_wom_ask_massacre_scavenge_arrived_002"><text>Потрошу гильзы да рюкзаки. Чем богаты, тем и рады.</text></string>
+  <string id="st_wom_ask_massacre_scavenge_moving_001"><text>Иду на объект #location# на разграбление. Авось хоть пару рожков наскребу.</text></string>
+
+  <!-- squadkill_revenge: pursuing those who attacked the squad -->
+  <!-- #some_members_other# = the attacking faction, e.g. "some Bandits"; "someone" when unknown -->
+  <string id="st_wom_ask_squadkill_revenge_arrived_001"><text>Пришёл свести счёты в район точки #location#. За пацанов!</text></string>
+  <string id="st_wom_ask_squadkill_revenge_arrived_002"><text>Охочусь на #some_members_other#, что на наш отряд из-за угла напали. Мстить буду.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_arrived_003"><text>Пришёл поквитаться с #some_members_other#. Должок за ними. Кровавый.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_arrived_004"><text>#some_members_other# нам задолжали по-крупному. Пришёл забрать проценты свинцом.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_moving_001"><text>Иду в район точки #location#, чтоб поквитаться с #some_members_other#.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_moving_002"><text>Иду выследить #some_members_other#, что наших подло покрошили.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_moving_003"><text>Топаю на объект #location#, устроить суровую расплату для #some_members_other#.</text></string>
+
+  <!-- basekill_support: reinforcing an allied position under attack -->
+  <!-- #some_members_other# = the attacking faction, e.g. "some Monolith fanatics"; "someone" when unknown -->
+  <string id="st_wom_ask_basekill_support_arrived_001"><text>Подкрепляю наших в районе точки #location#, а то им там жарко!</text></string>
+  <string id="st_wom_ask_basekill_support_arrived_002"><text>Пришёл помочь отбросить #some_members_other# возле объекта #location#.</text></string>
+  <string id="st_wom_ask_basekill_support_arrived_003"><text>Держу оборону, пока #some_members_other# на рожон лезут.</text></string>
+  <string id="st_wom_ask_basekill_support_moving_001"><text>Рву на всех парах на подмогу в район точки #location#!</text></string>
+  <string id="st_wom_ask_basekill_support_moving_002"><text>Иду помочь удержать объект #location#, а то #some_members_other# совсем обнаглели.</text></string>
+
+  <!-- basekill_flee: retreating after a base was destroyed -->
+  <string id="st_wom_ask_basekill_flee_arrived_001"><text>Прихожу в себя... Еле ноги унёс из той мясорубки в районе точки #location#.</text></string>
+  <string id="st_wom_ask_basekill_flee_arrived_002"><text>Драпанул от объекта #location#. Перевожу дух, руки до сих пор трясутся.</text></string>
+  <string id="st_wom_ask_basekill_flee_arrived_003"><text>Отошёл назад, а то б кости там оставил. Собираюсь с силами.</text></string>
+  <string id="st_wom_ask_basekill_flee_moving_001"><text>Отхожу подальше от объекта #location#, там полная задница.</text></string>
+  <string id="st_wom_ask_basekill_flee_moving_002"><text>Уношу ноги подальше от той заварухи, пока не прихлопнули.</text></string>
+
+  <!-- stash_loot: raiding a stash -->
+  <string id="st_wom_ask_stash_loot_arrived_001"><text>Роюсь в тайнике возле объекта #location#. Наводка верная оказалась.</text></string>
+  <string id="st_wom_ask_stash_loot_arrived_002"><text>Вскрываю нычку, которую по случаю заприметил.</text></string>
+  <string id="st_wom_ask_stash_loot_moving_001"><text>Иду вычистить тайничок в районе точки #location#.</text></string>
+  <string id="st_wom_ask_stash_loot_moving_002"><text>Лочусь на объект #location#, потрошить чужую нычку, гы-гы.</text></string>
+
+  <!-- stash_ambush: ambushing at a stash -->
+  <string id="st_wom_ask_stash_ambush_arrived_001"><text>В засаде сижу. Меньше знаешь — крепче спишь, сталкер.</text></string>
+  <string id="st_wom_ask_stash_ambush_arrived_002"><text>Держу ухо востро. Жду, пока какой-нибудь лох на огонек придет.</text></string>
+  <string id="st_wom_ask_stash_ambush_moving_001"><text>Есть наводка на жирный куш. Иду залечь в камышах да замутить засаду.</text></string>
+
+  <!-- money_harvest: artifact hunting -->
+  <string id="st_wom_ask_money_harvest_arrived_001"><text>Болты кидаю, выуживаю артефакты возле объекта #location#.</text></string>
+  <string id="st_wom_ask_money_harvest_arrived_002"><text>Детектором машу. Ищу, где Зона подарок оставила.</text></string>
+  <string id="st_wom_ask_money_harvest_moving_001"><text>Топаю в район точки #location#, может, свежий арт после выброса заспавнился.</text></string>
+  <string id="st_wom_ask_money_harvest_moving_002"><text>Чешу на объект #location# поохотиться за «камушками».</text></string>
+
+  <!-- harvest_rob: robbing artifact hunters -->
+  <string id="st_wom_ask_harvest_rob_arrived_001"><text>Забираю то, что другие дураки нашли. Закон Зоны прост: не поскребешь — не проживешь.</text></string>
+  <string id="st_wom_ask_harvest_rob_arrived_002"><text>Надыбал сталкеров возле объекта #location#, которым есть чем со мной поделиться.</text></string>
+  <string id="st_wom_ask_harvest_rob_moving_001"><text>Иду на «дело» в район точки #location#.</text></string>
+  <string id="st_wom_ask_harvest_rob_moving_002"><text>Иду немного потрясти #some_members_other# возле объекта #location#.</text></string>
+
+  <!-- alpha_promote / alphakill_targeted: squad hierarchy -->
+  <string id="st_wom_ask_alpha_promote_arrived_001"><text>Навожу порядок с субординацией, а то распустились тут.</text></string>
+  <string id="st_wom_ask_alpha_promote_arrived_002"><text>Перетираем с пацанами, кто теперь в бригаде старшим будет.</text></string>
+  <string id="st_wom_ask_alphakill_targeted_arrived_001"><text>Решаю вопрос с главным. Пора навести порядок.</text></string>
+  <string id="st_wom_ask_alphakill_targeted_arrived_002"><text>Это наши внутренние тёрки. Не суй нос — цельнее будешь.</text></string>
+  <string id="st_wom_ask_alphakill_targeted_moving_001"><text>Выдвигаюсь. Есть одно личное дело, со своими посчитаться.</text></string>
+
+  <!-- wounded_help: aiding an injured ally -->
+  <string id="st_wom_ask_wounded_help_arrived_001"><text>В районе точки #location# бедолаге помошь нужна была. Успел вроде!</text></string>
+  <string id="st_wom_ask_wounded_help_arrived_002"><text>Латаю подранка, перевязываю да колю обезбол.</text></string>
+  <string id="st_wom_ask_wounded_help_moving_001"><text>Бегу на всех парах вытаскивать того, кого зацепило возле объекта #location#.</text></string>
+  <string id="st_wom_ask_wounded_help_moving_002"><text>Выдвигаюсь. В районе точки #location# братка гибает, спасать надо!</text></string>
+
+  <!-- wounded_hunt: targeting an injured enemy -->
+  <!-- #a_member_other# = the wounded target (singular), e.g. "a Duty soldier"; "someone" when unknown -->
+  <string id="st_wom_ask_wounded_hunt_arrived_001"><text>Кончаю недобитка — #a_member_other# в районе точки #location#.</text></string>
+  <string id="st_wom_ask_wounded_hunt_arrived_002"><text>Доделываю работу. Мучить не буду — пулю в лоб и готово.</text></string>
+  <string id="st_wom_ask_wounded_hunt_moving_001"><text>Иду по кровавому следу, выслеживаю раненого #a_member_other# возле объекта #location#.</text></string>
+  <string id="st_wom_ask_wounded_hunt_moving_002"><text>Иду пустить под откос #a_member_other# в районе точки #location#.</text></string>
+
+  <!-- stash_fill: hiding / stocking a stash -->
+  <string id="st_wom_ask_stash_fill_arrived_001"><text>Прячу хабар в нычку возле объекта #location#, чтоб плечи не ломило.</text></string>
+  <string id="st_wom_ask_stash_fill_arrived_002"><text>Скидываю лишние шмотки, не таскать же весь этот хлам с собой.</text></string>
+  <string id="st_wom_ask_stash_fill_moving_001"><text>Иду к заветному кусту возле объекта #location#, заначку обустроить.</text></string>
+  <string id="st_wom_ask_stash_fill_moving_002"><text>Иду скинуть лишний груз в нычку возле объекта #location#.</text></string>
+
+  <!-- money_hunt: hunting for profit / bounty -->
+  <string id="st_wom_ask_money_hunt_arrived_001"><text>Выслеживаю добычу в районе точки #location#. За эту тушку щедро отвалят.</text></string>
+  <string id="st_wom_ask_money_hunt_arrived_002"><text>Отрабатываю заказ на охоту. Мутанты сами себя не перестреляют.</text></string>
+  <string id="st_wom_ask_money_hunt_moving_001"><text>Надеюсь поднять пару рубчиков на охоте возле объекта #location#.</text></string>
+  <string id="st_wom_ask_money_hunt_moving_002"><text>Иду проветрить ствол и настрелять упырей в районе точки #location#.</text></string>
+
+  <!-- supply_trader: heading to a trader -->
+  <string id="st_wom_ask_supply_trader_arrived_001"><text>Тару пополняю да патроны закупаю возле объекта #location#.</text></string>
+  <string id="st_wom_ask_supply_trader_arrived_002"><text>Закупаюсь аптечками да маслинами, на объекте #location# как раз есть всё нужная дрянь.</text></string>
+  <string id="st_wom_ask_supply_trader_arrived_003"><text>Пополняю запасы, а то рюкзак совсем похудел.</text></string>
+  <string id="st_wom_ask_supply_trader_moving_001"><text>Чешу к барыге в локации #location#, затариться патронами.</text></string>
+  <string id="st_wom_ask_supply_trader_moving_002"><text>Тащу хабар барыге в локацию #location#, пока не отобрали.</text></string>
+
+  <!-- supply_trader_offmap: trading run off the current map -->
+  <string id="st_wom_ask_supply_trader_offmap_arrived_001"><text>Вернулся из далекого рейда. Дорога — врагу не пожелаешь.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_arrived_002"><text>Только с рейса за хабаром притопал. Ноги аж отваливаются.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_moving_001"><text>Иду в локацию #location# за полноценной закупкой.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_moving_002"><text>Иду в локацию #location# разжиться припасами у местных барыг.</text></string>
+
+  <!-- job_research: research or data-gathering assignment -->
+  <string id="st_wom_ask_job_research_arrived_001"><text>Снимаю показатели с приборов возле объекта #location#.</text></string>
+  <string id="st_wom_ask_job_research_arrived_002"><text>Замеры делаю возле объекта #location#. Мудреная яйцеголовая работа.</text></string>
+  <string id="st_wom_ask_job_research_arrived_003"><text>Работаю по науке. Коммерческая тайна, извини.</text></string>
+  <string id="st_wom_ask_job_research_moving_001"><text>Иду снять показания с дозиметров в районе точки #location#.</text></string>
+  <string id="st_wom_ask_job_research_moving_002"><text>Иду в локацию #location# на калибровку приборов.</text></string>
+
+  <!-- job_explore_offmap: scouting run off the current map -->
+  <string id="st_wom_ask_job_explore_offmap_arrived_001"><text>Только вертанулся из дальнего рейда за кордон. Надо б разведать, что тут и как теперь.</text></string>
+  <string id="st_wom_ask_job_explore_offmap_moving_001"><text>Топаю в локацию #location# на дальнюю разведку.</text></string>
+  <string id="st_wom_ask_job_explore_offmap_moving_002"><text>Иду прощупать обстановку возле объекта #location#.</text></string>
+
+  <!-- social_offmap: travelling to meet up off the current map -->
+  <string id="st_wom_ask_social_offmap_arrived_001"><text>Пришёл со стрелки за пределами сектора.</text></string>
+  <string id="st_wom_ask_social_offmap_moving_001"><text>Ухожу с сектора на важную встречу.</text></string>
+  <string id="st_wom_ask_social_offmap_moving_002"><text>Иду перетереть за жизнь с пацанами возле объекта #location#.</text></string>
+
+  <!-- harvest_haunt: lurking near artifact zones to prey on hunters -->
+  <string id="st_wom_ask_harvest_haunt_arrived_001"><text>Сижу в кустах возле объекта #location#. Лох не мамонт, обязательно за артами притопает.</text></string>
+  <string id="st_wom_ask_harvest_haunt_arrived_002"><text>Пасу аномальное поле. Охотники со своими детекторами рано или поздно объявятся.</text></string>
+  <string id="st_wom_ask_harvest_haunt_moving_001"><text>Иду в район точки #location# караулить зевак с артефактами.</text></string>
+  <string id="st_wom_ask_harvest_haunt_moving_002"><text>Иду затаиться у аномальной плеши возле объекта #location#.</text></string>
+
+  <!-- SECRETIVE: deflecting answer when the NPC's current goal is secret and the player
+       is from a different faction. All secret goals share this one pool.
+       Pronoun slots (#my_our_l#, etc.) are available. -->
+  <string id="st_wom_ask_generic_secretive_001"><text>Шёл бы ты отсюда, сталкер. Тебя это вообще ебать не должно.</text></string>
+  <string id="st_wom_ask_generic_secretive_002"><text>Своими делами занимаюсь, не суй нос.</text></string>
+  <string id="st_wom_ask_generic_secretive_003"><text>Это только для своих ушей. А ты не из наших. Намёк понятен?</text></string>
+  <string id="st_wom_ask_generic_secretive_004"><text>Тебе этого знать не положено. Катись колбаской.</text></string>
+  <string id="st_wom_ask_generic_secretive_005"><text>Не твоё собачье дело, мужик.</text></string>
+  <string id="st_wom_ask_generic_secretive_006"><text>Без обид, но такие вещи чужим не рассказываем.</text></string>
+
+</string_table>

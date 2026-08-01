@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <!-- ========================================================================= -->
+  <!-- Word of Mouth / "How are you holding up?" answer pools                    -->
+  <!--                                                                           -->
+  <!-- HEALTH TIERS (based on npc:health 0.0-1.0):                              -->
+  <!--   fine     >= 0.75                                                        -->
+  <!--   worn     >= 0.40                                                        -->
+  <!--   bad      >= 0.20                                                        -->
+  <!--   critical  < 0.20                                                        -->
+  <!--                                                                           -->
+  <!-- NEED POOLS: _light when 1.0x-1.8x overdue, _heavy when 1.8x+.           -->
+  <!-- Each sentence stands alone; they are space-joined in the response.        -->
+  <!-- All lines must end with punctuation.                                      -->
+  <!-- ========================================================================= -->
+
+  <!-- Actor question -->
+  <string id="st_wom_ask_status"><text>Как ты вообще, держишься?</text></string>
+
+  <!-- ========================================================================= -->
+  <!-- RANK LEAD: always prepended as the first sentence of the status response.  -->
+  <!-- Should be a self-contained 1-2 sentence description of the NPC's           -->
+  <!-- experience level / relationship with the Zone. Health and need lines       -->
+  <!-- follow after, so end on a natural pause — not a segue.                    -->
+  <!-- ========================================================================= -->
+
+  <string id="st_wom_status_rank_novice_001"><text>Если честно, я тут ещё зелёный совсeм. От каждого шороха в кустах поджилки трясутся.</text></string>
+  <string id="st_wom_status_rank_novice_002"><text>Недавно в Зоне. Мало что ещё соображаю, учиться да учиться.</text></string>
+  <string id="st_wom_status_rank_novice_003"><text>Из свежего притока я. Зона так на психику давит — очко сжимается, чего уж греха таить.</text></string>
+  <string id="st_wom_status_rank_novice_004"><text>Салага я, скрывать нечего. Каждый день тут — как второй день рождения, если выжил.</text></string>
+
+  <string id="st_wom_status_rank_experienced_001"><text>Потоптал уже здешние тропы, знаю, где ухо востро держать и смотреть в оба.</text></string>
+  <string id="st_wom_status_rank_experienced_002"><text>Да вроде въезжаю потихоньку, что к чему в этой аномальной кутерьме.</text></string>
+  <string id="st_wom_status_rank_experienced_003"><text>Уже не обстрелянный желторотик, но Зона всё равно умеет сюрприз подкинуть.</text></string>
+  <string id="st_wom_status_rank_experienced_004"><text>Главное — пока кости целы и снорки не сожрали. Держимся.</text></string>
+
+  <string id="st_wom_status_rank_veteran_001"><text>Столько дерьма тут повидал, что меня уже хрен чем удивишь.</text></string>
+  <string id="st_wom_status_rank_veteran_002"><text>Зона меня давно не пугает. Привык к её выкрутасам.</text></string>
+  <string id="st_wom_status_rank_veteran_003"><text>Не первый год в ходоках. Знаю, где соломки подстелить, а куда лучше вообще не соваться.</text></string>
+
+  <string id="st_wom_status_rank_master_001"><text>Я тут почти с самого начала. Всякое видел, душой уже каменеешь.</text></string>
+  <string id="st_wom_status_rank_master_002"><text>Тертый калач. Всё, что Зона может подкинуть, я уже прожевал и выплюнул.</text></string>
+  <string id="st_wom_status_rank_master_003"><text>Годы провел в этой радиоактивной дыре... Легче не становится, но реакция уже на автомате.</text></string>
+  <string id="st_wom_status_rank_master_004"><text>Врассплох меня не застать. Ну, или я сам себе так заливаю, чтобы не сбрендить.</text></string>
+
+  <!-- ========================================================================= -->
+  <!-- RADIATION: inserted after health line when npc:radiation() >= threshold.  -->
+  <!-- No slots. Stand-alone sentences.                                           -->
+  <!-- ========================================================================= -->
+
+  <string id="st_wom_status_radiation_light_001"><text>Чёрт, ещё и свечусь немного — рентгенов нахватался.</text></string>
+  <string id="st_wom_status_radiation_light_002"><text>Вдобавок облучился слегонца, во рту аж медью отдаёт.</text></string>
+  <string id="st_wom_status_radiation_light_003"><text>Заразу радиоактивную подцепил, надо бы водочкой или антирадом выгнать.</text></string>
+
+  <string id="st_wom_status_radiation_heavy_001"><text>Волну хапнул конкретную, счётчик Гейгера просто заливается.</text></string>
+  <string id="st_wom_status_radiation_heavy_002"><text>Кроет знатно! Срочно нужен антирад или хоть чекушка, а то коньки отброшу.</text></string>
+  <string id="st_wom_status_radiation_heavy_003"><text>Радиация меня в край подкашивает, тошнит уже желчью.</text></string>
+
+  <!-- ========================================================================= -->
+  <!-- COMBAT LOSSES: inserted after radiation when recent squad losses exist.    -->
+  <!-- Slots: #losses_word# (e.g. "one", "two"), #a_member_other# (e.g. "a Bandit",    -->
+  <!-- "a Psy-dog") — gated, so variants using #a_member_other# are excluded when the  -->
+  <!-- enemy faction is unknown. Each pool needs at least one ungated fallback.  -->
+  <!-- ========================================================================= -->
+
+  <!-- light: 1 losses -->
+  <string id="st_wom_status_losses_light_001"><text>Схоронили одного из наших... Тварь эта, #a_member_other#, достала-таки его.</text></string>
+  <string id="st_wom_status_losses_light_002"><text>Минус пацан у нас. Не вывезли стычку, когда навалился #a_member_other#.</text></string>
+  <string id="st_wom_status_losses_light_003"><text>Недавно братуху потеряли — теперь двухсотый. Эх, не успели вытащить...</text></string>
+
+  <!-- heavy: 2+ losses -->
+  <string id="st_wom_status_losses_heavy_001"><text>Покрошили наших... #losses_word# человек полегло, когда этот хрен, #a_member_other#, налетел.</text></string>
+  <string id="st_wom_status_losses_heavy_002"><text>Знатно нам бока понамяли. #a_member_other# там устроил нам кровавую баню.</text></string>
+  <string id="st_wom_status_losses_heavy_003"><text>Парней жалко, пиздец. Сразу #losses_word# человек на тот свет отправились.</text></string>
+
+
+  <!-- ===== NO DATA fallback ===== -->
+  <!-- Appended to the health line when ap_ext_tracker has no DTO for this squad. -->
+  <!-- Must work naturally after any health tier line. -->
+  <string id="st_wom_status_no_data_001"><text>Короче, обычная рутина в Зоне.</text></string>
+  <string id="st_wom_status_no_data_002"><text>Зона расслабиться не даёт, держит за яйца.</text></string>
+  <string id="st_wom_status_no_data_003"><text>Живу одним днём — и слава Богу.</text></string>
+  <string id="st_wom_status_no_data_004"><text>Скриплю потихоньку, куда деваться.</text></string>
+  <string id="st_wom_status_no_data_005"><text>Да всё как всегда в этой глуши.</text></string>
+  <string id="st_wom_status_no_data_006"><text>Такие вот пироги, брат.</text></string>
+  <string id="st_wom_status_no_data_007"><text>А Зоне-матушке вообще побоку наши проблемы.</text></string>
+
+  <!-- Actor acknowledgement (leaf phrase, shared with other topics) -->
+
+  <!-- ===== HEALTH: fine ===== -->
+  <string id="st_wom_status_health_fine_001"><text>Да цел я, дырок не проделали.</text></string>
+  <string id="st_wom_status_health_fine_002"><text>Слава Зоне, шкура цела.</text></string>
+  <string id="st_wom_status_health_fine_003"><text>Даже царапины нет, пронесло!</text></string>
+  <string id="st_wom_status_health_fine_004"><text>Жив-здоров, хоть сейчас на снорка прыгай.</text></string>
+  <string id="st_wom_status_health_fine_005"><text>Ни синяков, ни лишних дырок в комбинезоне.</text></string>
+
+  <!-- ===== HEALTH: worn ===== -->
+  <string id="st_wom_status_health_worn_001"><text>Помяли меня немного, чёрт возьми.</text></string>
+  <string id="st_wom_status_health_worn_002"><text>Да так, бок немного ноет, ерунда.</text></string>
+  <string id="st_wom_status_health_worn_003"><text>Зацепило слегка, пара царапин кровоточит.</text></string>
+  <string id="st_wom_status_health_worn_004"><text>В целом на ногах, но шкура потрёпана.</text></string>
+  <string id="st_wom_status_health_worn_005"><text>Цепануло чуть-чуть, бинт затяну и нормуль.</text></string>
+  <string id="st_wom_status_health_worn_006"><text>Бывало и получше, но пока не копытнулся.</text></string>
+
+  <!-- ===== HEALTH: bad ===== -->
+  <string id="st_wom_status_health_bad_001"><text>Хреново мне, мужик, реально хреново.</text></string>
+  <string id="st_wom_status_health_bad_002"><text>Кажись, отбегался... Совсем расклеился.</text></string>
+  <string id="st_wom_status_health_bad_003"><text>Дела швах, кровь так и норовит вытечь.</text></string>
+  <string id="st_wom_status_health_bad_004"><text>Аптечку бы... Хоть синюю, хоть желтую, а то загнусь.</text></string>
+  <string id="st_wom_status_health_bad_005"><text>Досталось мне знатно, еле кряхчу.</text></string>
+  <string id="st_wom_status_health_bad_006"><text>Болит всё, сука, сил нет терпеть.</text></string>
+
+  <!-- ===== HEALTH: critical ===== -->
+  <string id="st_wom_status_health_critical_001"><text>Еле на ногах держусь, в глазах темно...</text></string>
+  <string id="st_wom_status_health_critical_002"><text>Всё, край... Кажется, откоптил я свое.</text></string>
+  <string id="st_wom_status_health_critical_003"><text>Ранения тяжелые, матерю всё и всех на свете...</text></string>
+  <string id="st_wom_status_health_critical_004"><text>Так больно ещё никогда не было, сдохну сейчас...</text></string>
+  <string id="st_wom_status_health_critical_005"><text>Не знаю, протяну ли ещё хоть пару минут...</text></string>
+
+
+
+  <!-- ===== NEED: hunger (light) ===== -->
+  <string id="st_wom_status_need_hunger_light_001"><text>Червячка бы заморить, а то в животе уже урчит.</text></string>
+  <string id="st_wom_status_need_hunger_light_002"><text>Давно кишку не забивал, тушёночка бы сейчас зашла.</text></string>
+  <string id="st_wom_status_need_hunger_light_003"><text>Не отказался бы от батона с колбасой.</text></string>
+
+  <!-- ===== NEED: hunger (heavy) ===== -->
+  <string id="st_wom_status_need_hunger_heavy_001"><text>С голодухи уже пузо к спине прилипло, сдохну скоро!</text></string>
+  <string id="st_wom_status_need_hunger_heavy_002"><text>Забыл уже, как нормальная жратва выглядит и пахнет.</text></string>
+  <string id="st_wom_status_need_hunger_heavy_003"><text>Желудок сам себя переваривает, сухаря бы хоть крошку...</text></string>
+
+
+
+  <!-- ===== NEED: social (light) ===== -->
+  <string id="st_wom_status_need_social_light_001"><text>Скучно в одно жало, перетереть бы с кем за жизнь.</text></string>
+  <string id="st_wom_status_need_social_light_002"><text>Одиноко тут, только ветер в ушах свистит.</text></string>
+  <string id="st_wom_status_need_social_light_003"><text>Кажется, сто лет ни с одним живым человеком не гутарил.</text></string>
+
+  <!-- ===== NEED: social (heavy) ===== -->
+  <string id="st_wom_status_need_social_heavy_001"><text>Крыша едет от этой тишины... Поговорить бы хоть с кем-то!</text></string>
+  <string id="st_wom_status_need_social_heavy_002"><text>Тоска смертная в одиночку бродить, с ума сойти можно.</text></string>
+  <string id="st_wom_status_need_social_heavy_003"><text>Сам с собой вслух бубнить начал, всё — привет, дурка.</text></string>
+
+
+
+  <!-- ===== NEED: sleep (light) ===== -->
+  <string id="st_wom_status_need_sleep_light_001"><text>Морфея бы придавить... Глаза слипаются.</text></string>
+  <string id="st_wom_status_need_sleep_light_002"><text>Нормального сна уже сто лет не помню.</text></string>
+  <string id="st_wom_status_need_sleep_light_003"><text>Вполглаза только кемарил, на полноценный сон времени не было.</text></string>
+
+  <!-- ===== NEED: sleep (heavy) ===== -->
+  <string id="st_wom_status_need_sleep_heavy_001"><text>Падаю с ног, веки будто свинцом залили.</text></string>
+  <string id="st_wom_status_need_sleep_heavy_002"><text>Уже спички в глаза вставил, засну щас прямо стоя.</text></string>
+  <string id="st_wom_status_need_sleep_heavy_003"><text>Вымотался в хлам, если не посплю — отрублюсь прямо в аномалии.</text></string>
+
+
+
+  <!-- ===== NEED: rest (light) ===== -->
+  <string id="st_wom_status_need_rest_light_001"><text>Костям бы отдохнуть, присесть где-нибудь у костерка.</text></string>
+  <string id="st_wom_status_need_rest_light_002"><text>Передышка нужна, а то ноги уже не держат.</text></string>
+  <string id="st_wom_status_need_rest_light_003"><text>Загнался я в последнее время, сил нет.</text></string>
+
+  <!-- ===== NEED: rest (heavy) ===== -->
+  <string id="st_wom_status_need_rest_heavy_001"><text>Всё, сдулся. Ствол еле в руках удерживаю.</text></string>
+  <string id="st_wom_status_need_rest_heavy_002"><text>Жилы тянет, каждая мышца гудит, как после качалки.</text></string>
+  <string id="st_wom_status_need_rest_heavy_003"><text>Организм тупо отказывается пахать дальше, привал нужен!</text></string>
+
+
+
+  <!-- ===== NEED: supply (light) ===== -->
+  <string id="st_wom_status_need_supply_light_001"><text>НЗ уже на исходе, хабара и патронов впритык.</text></string>
+  <string id="st_wom_status_need_supply_light_002"><text>К торговцу бы заглянуть, а то рожки пустые почти.</text></string>
+  <string id="st_wom_status_need_supply_light_003"><text>Магазины полупустые, патроны тают на глазах.</text></string>
+
+  <!-- ===== NEED: supply (heavy) ===== -->
+  <string id="st_wom_status_need_supply_heavy_001"><text>Голяк полный! Ни маслины, ни бинта в карманах!</text></string>
+  <string id="st_wom_status_need_supply_heavy_002"><text>Остался последний рожок, а дальше хоть прикладом отбивайся.</text></string>
+  <string id="st_wom_status_need_supply_heavy_003"><text>Срочно затариваться надо, иначе нам крышка без амуниции.</text></string>
+
+
+
+  <!-- ===== NEED: money (light) ===== -->
+  <string id="st_wom_status_need_money_light_001"><text>В карманах свистит, налички совсем мало.</text></string>
+  <string id="st_wom_status_need_money_light_002"><text>Халтурку бы какую денежную подогнать, а то совсем без гроша.</text></string>
+  <string id="st_wom_status_need_money_light_003"><text>Финансы поют диффирамбы, надо бы хабара нарыть.</text></string>
+
+  <!-- ===== NEED: money (heavy) ===== -->
+  <string id="st_wom_status_need_money_heavy_001"><text>Гол как сокол, даже на пачку сигарет не наскребу.</text></string>
+  <string id="st_wom_status_need_money_heavy_002"><text>Забыл уже, как хруст купюр звучит. Полный голяк.</text></string>
+  <string id="st_wom_status_need_money_heavy_003"><text>Ни гроша за душой, перебиваюсь корочками хлебными да бычками с пола.</text></string>
+
+
+
+
+
+  <!-- ========================================================================= -->
+  <!-- POSITIVE NEEDS: reported when a need was recently satisfied (elapsed <     -->
+  <!-- SATISFIED_RATIO of threshold). Negatives appear first, then these.         -->
+  <!-- Each line should read naturally as a standalone observation.               -->
+  <!-- ========================================================================= -->
+
+  <!-- ===== NEED: hunger (good) ===== -->
+  <string id="st_wom_status_need_hunger_good_001"><text>Пузо набито, тушёнка зашла — как дети в школу.</text></string>
+  <string id="st_wom_status_need_hunger_good_002"><text>С хавчиком порядок, сытый и довольный.</text></string>
+  <string id="st_wom_status_need_hunger_good_003"><text>По крайней мере, кишки от голода в узлы не закручиваются.</text></string>
+
+  <!-- ===== NEED: social (good) ===== -->
+  <string id="st_wom_status_need_social_good_001"><text>Душевно так у костра посидели, анекдоты потравили.</text></string>
+  <string id="st_wom_status_need_social_good_002"><text>Хоть языком почесал с нормальными пацанами, отлегло.</text></string>
+  <string id="st_wom_status_need_social_good_003"><text>Фронт общения закрыт, неплохо перетерли о том о сём.</text></string>
+
+  <!-- ===== NEED: sleep (good) ===== -->
+  <string id="st_wom_status_need_sleep_good_001"><text>Выспался отлично, аж глаза не слипаются.</text></string>
+  <string id="st_wom_status_need_sleep_good_002"><text>Массу даванул на славу, свежий, как огурчик.</text></string>
+  <string id="st_wom_status_need_sleep_good_003"><text>Наконец-то удалось нормально давануть храпака без этих выбросов.</text></string>
+
+  <!-- ===== NEED: rest (good) ===== -->
+  <string id="st_wom_status_need_rest_good_001"><text>Сил вагон! Готов хоть прямо сейчас к Монолиту топать.</text></string>
+  <string id="st_wom_status_need_rest_good_002"><text>Отдохнул душевно, мышцы снова в тонусе.</text></string>
+  <string id="st_wom_status_need_rest_good_003"><text>Кемарнул неплохо, бодрячком держусь.</text></string>
+
+  <!-- ===== NEED: supply (good) ===== -->
+  <string id="st_wom_status_need_supply_good_001"><text>Карманы маслинами забиты, грех жаловаться.</text></string>
+  <string id="st_wom_status_need_supply_good_002"><text>Снаряжен под завязку, ходячий склад прямо.</text></string>
+  <string id="st_wom_status_need_supply_good_003"><text>Патронов и аптек хватит на локальный армагеддон.</text></string>
+
+  <!-- ===== NEED: money (good) ===== -->
+  <string id="st_wom_status_need_money_good_001"><text>Карман притятно тянет, бабла хватает.</text></string>
+  <string id="st_wom_status_need_money_good_002"><text>С баблом пока порядок, артефакт удачно скинул.</text></string>
+  <string id="st_wom_status_need_money_good_003"><text>При деньгах я, могу себе и экзоскелет позволить... ну, почти.</text></string>
+
+</string_table>

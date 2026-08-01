@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <!-- Campfire ambient chatter templates for wom_campfire.script (needs path).
+         Delivered as overheard PDA messages from nearby resting NPCs.
+         Template keys: st_wom_campfire_need_{need}_{heavy|good}_{NNN}
+           heavy = need is 1.8x+ overdue (NPC is seriously lacking)
+           good  = need was very recently satisfied (ratio < 0.5x threshold)
+         No slots. Each line must stand alone as a complete sentence.
+         Needs: hunger, social, sleep, rest, supply, money -->
+
+    <!-- ===== HUNGER ===== -->
+    <!-- heavy: seriously hungry -->
+   <string id="st_wom_campfire_need_hunger_heavy_001"><text>Блин, жрать охота — аж кишки скручивает. Забыл уже, когда нормальную тушёнку видал.</text></string>
+    <string id="st_wom_campfire_need_hunger_heavy_002"><text>Сейчас бы и сырого кабана целиком зажевал, честное слово.</text></string>
+    <string id="st_wom_campfire_need_hunger_heavy_003"><text>Так жрать хочу, что и ляжку снорка под майонезом схомячил бы.</text></string>
+    <string id="st_wom_campfire_need_hunger_heavy_004"><text>Тьфу ты, блин... Аж в животе урчит так, будто там бюрер поселился.</text></string>
+
+    <!-- good: recently well-fed -->
+    <string id="st_wom_campfire_need_hunger_good_001"><text>Эх, наконец-то поел по-человечески! Сразу жизнь наладилась.</text></string>
+    <string id="st_wom_campfire_need_hunger_good_002"><text>Брюхо набито под завязку. Теперь можно и за хабаром сходить.</text></string>
+
+    <!-- ===== SLEEP ===== -->
+    <!-- heavy: badly sleep-deprived -->
+    <string id="st_wom_campfire_need_sleep_heavy_001"><text>Глаза сами слипаются, свинцом заплыли. Срочно надо массу давануть.</text></string>
+    <string id="st_wom_campfire_need_sleep_heavy_002"><text>Еле на ногах держусь, мужики. Скорей бы вырубиться где-нибудь в сухом углу.</text></string>
+    <string id="st_wom_campfire_need_sleep_heavy_003"><text>Вымотался в хлам. От недосыпа уже контролёры в глазах мерещатся.</text></string>
+
+    <!-- good: recently well-rested -->
+    <string id="st_wom_campfire_need_sleep_good_001"><text>Ух, наконец-то подушку придавил как следует. Бодрячком!</text></string>
+    <string id="st_wom_campfire_need_sleep_good_002"><text>Даванул храпака на славу. Свежий, как огурчик.</text></string>
+    <string id="st_wom_campfire_need_sleep_good_003"><text>Спал как убитый, даже сирены и выброс бы не разбудили. Редкость для Зоны.</text></string>
+
+    <!-- ===== REST ===== -->
+    <!-- heavy: exhausted, needs to stop -->
+    <string id="st_wom_campfire_need_rest_heavy_001"><text>Мне бы просто дух перевести у костерка, душу б папиросной пачкой размять.</text></string>
+    <string id="st_wom_campfire_need_rest_heavy_002"><text>Загнался в край, без продыху пашем. Надо бы присесть, а то ноги отвалятся.</text></string>
+    <string id="st_wom_campfire_need_rest_heavy_003"><text>Всё тело ломит, суставы гудят... Нам бы паузу взять, а то не дойдем.</text></string>
+
+    <!-- good: recently rested up -->
+    <string id="st_wom_campfire_need_rest_good_001"><text>Уф, передохнул душевно. Мышцы вроде отпустило, готов к марш-броску.</text></string>
+    <string id="st_wom_campfire_need_rest_good_002"><text>Хорошо, что привал сделали. А то я уже копыта отбрасывать начал.</text></string>
+    <string id="st_wom_campfire_need_rest_good_003"><text>Лепота... Просто посидеть, байки травить. Почти забыл, как это круто.</text></string>
+
+    <!-- ===== SOCIAL ===== -->
+    <!-- heavy: isolated, hasn't talked to anyone -->
+    <string id="st_wom_campfire_need_social_heavy_001"><text>Тишина эта уже давит... Сам с собой вслух бубнить начал, писец подкрался незаметно.</text></string>
+    <string id="st_wom_campfire_need_social_heavy_002"><text>Задолбался в одно жало бродить. Зона в одиночке так на мозги капает — крыша течёт.</text></string>
+    <string id="st_wom_campfire_need_social_heavy_003"><text>Сто лет с живыми людьми не трепался. Думал, языком разучился ворочать.</text></string>
+
+    <!-- good: recently socialized -->
+    <string id="st_wom_campfire_need_social_good_001"><text>Слава Зоне, хоть с пацанами перетёр. Не так тоскливо на душе стало.</text></string>
+    <string id="st_wom_campfire_need_social_good_002"><text>Кайф какой — просто расслабиться у огня да анекдоты потравить. Очищает мозги.</text></string>
+    <string id="st_wom_campfire_need_social_good_003"><text>Душевно посидели, почесали языками. Для разнообразия — самое то.</text></string>
+
+    <!-- ===== SUPPLY ===== -->
+    <!-- heavy: critically low on supplies -->
+    <string id="st_wom_campfire_need_supply_heavy_001"><text>В рюкзаке голяк полный. Надеюсь, скоро разживусь ходовым хабаром.</text></string>
+    <string id="st_wom_campfire_need_supply_heavy_002"><text>Маслин впритык, бинтов нет. С таким раскладом — только на корм слепышам.</text></string>
+    <string id="st_wom_campfire_need_supply_heavy_003"><text>Срочно надо к барыге топать, а то ни рожков, ни синенькой аптечки не осталось.</text></string>
+
+    <!-- good: recently restocked -->
+    <string id="st_wom_campfire_need_supply_good_001"><text>Наконец-то затарился! Теперь рюкзак приятную тяжесть имеет.</text></string>
+    <string id="st_wom_campfire_need_supply_good_002"><text>Закупился по полной. Приятно, когда не надо каждую маслину экономить.</text></string>
+    <string id="st_wom_campfire_need_supply_good_003"><text>Снаряги теперь полные карманы! На пару серьезных ходок точно хватит.</text></string>
+
+    <!-- ===== MONEY ===== -->
+    <!-- heavy: badly broke -->
+    <string id="st_wom_campfire_need_money_heavy_001"><text>В карманах ветер свистит. Надо срочно найти какую-то работу или артефакт нарыть.</text></string>
+    <string id="st_wom_campfire_need_money_heavy_002"><text>Полный меляк! Давеча даже на пачку «Примы» еле наскрёб.</text></string>
+    <string id="st_wom_campfire_need_money_heavy_003"><text>Эх, давненько я деревянных в руках не держал... Забыл уже, как хрустят.</text></string>
+
+    <!-- good: recently earned -->
+    <string id="st_wom_campfire_need_money_good_001"><text>Хех, бабки водятся! Теперь можно и у Бармена доппаёк взять.</text></string>
+    <string id="st_wom_campfire_need_money_good_002"><text>Разжился баблом, грех жаловаться. Куда веселее топать, когда карман греет.</text></string>
+    <string id="st_wom_campfire_need_money_good_003"><text>При деньгах нынче, можно жить! Главное — бандитам да гопоте какой на глаза не попадаться.</text></string>
+
+</string_table>

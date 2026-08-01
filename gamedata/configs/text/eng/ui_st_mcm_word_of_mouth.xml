@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+  <!-- MCM strings for Word of Mouth. Root id = word_of_mouth (see wom_mcm.script).
+       Tab label key:    ui_mcm_menu_<root_id>
+       Option label key: ui_mcm_<root_id>_<option_id>  (+ _desc for tooltip) -->
+
+  <!-- tab / mod entry -->
+  <string id="ui_mcm_menu_word_of_mouth"><text>Word of Mouth</text></string>
+  <string id="ui_mcm_word_of_mouth"><text>Word of Mouth</text></string>
+
+  <!-- page title and description -->
+  <string id="ui_mcm_word_of_mouth_title"><text>Word of Mouth</text></string>
+  <string id="ui_mcm_word_of_mouth_description"><text>Companion mod for ALifePlus by damian_sirbu. Requires ALifePlus to be enabled.</text></string>
+
+  <string id="ui_mcm_word_of_mouth_conversation_details"><text>This mod provides several new conversation options. "Any interesting news?" will give you some gossip about locations on the current map. "What have you been up to?" will give you a rundown of ALifePlus goals and combat encounters which occurred during the NPC's day. "How are you holding up?" will give you details about their rank, health, and ALifePlus needs.</text></string>
+
+  <string id="ui_mcm_word_of_mouth_chatter_details"><text>NPCs will also chatter. You'll hear nearby squad leaders announce ALifePlus goal changes, and you'll also hear stalkers in social areas spread gossip or talk about their ALifePlus needs.</text></string>
+
+  <!-- campfire chatter -->
+  <string id="ui_mcm_word_of_mouth_title_campfire"><text>Campfire Chatter</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_enabled"><text>Enable campfire chatter</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_enabled_desc"><text>Nearby stalkers at campfires and social areas will occasionally gossip about Zone events or their own day.</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_interval"><text>Chatter interval (seconds)</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_interval_desc"><text>How often the campfire chatter scan fires. Lower values mean more frequent messages.</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_range"><text>Detection range (meters)</text></string>
+  <string id="ui_mcm_word_of_mouth_campfire_range_desc"><text>How close you need to be to an idling stalker for them to gossip.</text></string>
+
+  <!-- goal announce -->
+  <string id="ui_mcm_word_of_mouth_title_chatter"><text>Squad chatter</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_enabled"><text>Enable squad chatter</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_enabled_desc"><text>The leaders of nearby stalker squads will chatter when their ALifePlus goal changes, as if you overheard them discuss their orders.</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_range"><text>Detection range (meters)</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_range_desc"><text>How close a squad member needs to be for their goal change chatter to reach you.</text></string>
+
+  <!-- MCM list content labels: MCM builds key as "ui_mcm_lst_" .. second_element (shared global prefix) -->
+  <string id="ui_mcm_lst_wom_public"><text>Public: Stalkers will tell anybody</text></string>
+  <string id="ui_mcm_lst_wom_faction"><text>Faction only: Stalkers will only tell those on same faction</text></string>
+  <string id="ui_mcm_lst_wom_none"><text>Hidden: Stalkers won't tell anybody</text></string>
+
+  <!-- event reaction barks -->
+  <string id="ui_mcm_word_of_mouth_title_reaction"><text>Event Reaction Barks</text></string>
+  <string id="ui_mcm_word_of_mouth_reaction_enabled"><text>Enable event reaction barks</text></string>
+  <string id="ui_mcm_word_of_mouth_reaction_enabled_desc"><text>When ALifePlus records a high-signal event involving your faction or its allies (massacre, base attack, territory claim, stash loot, mutant sighting), a stationed member of the affected faction sends you a short PDA message: Breaking news from anywhere in the simulation, not just your current map.</text></string>
+  <string id="ui_mcm_word_of_mouth_reaction_scope"><text>Who reports to you</text></string>
+  <string id="ui_mcm_word_of_mouth_reaction_scope_desc"><text>Faction only: only events involving your own faction trigger a bark. Faction and allies: events involving any friendly faction also reach you.</text></string>
+
+  <!-- outpost service discovery -->
+  <string id="ui_mcm_word_of_mouth_title_outpost"><text>Outpost Services</text></string>
+  <string id="ui_mcm_word_of_mouth_outpost_enabled"><text>Announce new outposts</text></string>
+  <string id="ui_mcm_word_of_mouth_outpost_enabled_desc"><text>ALifePlus lets a faction that holds a camp long enough grow real services there: a trader, barman, mechanic or medic you can actually use. They appear slowly and anywhere in the Zone, with nothing to tell you about it. With this on, the specialist sends you a PDA message when they set up, and stalkers will mention the outpost when you ask what's going on in the area.</text></string>
+  <string id="ui_mcm_word_of_mouth_outpost_scope"><text>Whose outposts you hear about</text></string>
+  <string id="ui_mcm_word_of_mouth_outpost_scope_desc"><text>Faction only: you are told about your own faction's outposts. Faction and allies: any friendly faction's outposts reach you too. Faction, allies and neutral: you also hear about outposts belonging to factions you are on neutral terms with. You can walk into their shop and trade, so it is worth knowing about. Hostile factions never tell you anything.</text></string>
+  <string id="ui_mcm_word_of_mouth_outpost_announce_services"><text>Announce every new specialist</text></string>
+  <string id="ui_mcm_word_of_mouth_outpost_announce_services_desc"><text>An outpost grows one service at a time. With this on, each new specialist announces their own arrival. With it off, only the outpost itself is announced and later arrivals stay quiet (you will still hear about them by asking a stalker about the area).</text></string>
+
+  <!-- MCM list content: scope options (prefix: ui_mcm_lst_) -->
+  <string id="ui_mcm_lst_wom_scope_allies"><text>Faction and allies</text></string>
+  <string id="ui_mcm_lst_wom_scope_faction"><text>Faction only</text></string>
+  <!-- Offered by the outpost scope only; reaction scope stops at "allies". -->
+  <string id="ui_mcm_lst_wom_scope_neutral"><text>Faction, allies and neutral</text></string>
+
+  <!-- secret goals -->
+  <string id="ui_mcm_word_of_mouth_title_secret"><text>Secret Goals</text></string>
+  <string id="ui_mcm_word_of_mouth_secret_money_harvest"><text>Who will stalkers tell about going on artifact hunts?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_money_harvest_desc"><text>Controls who will gossip about artifact-hunting operations. Faction only = only same-faction stalkers will mention it.</text></string> -->
+  <string id="ui_mcm_word_of_mouth_secret_harvest_rob"><text>Who will stalkers tell about robbing artifact hunters hunters?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_harvest_rob_desc"><text>Controls who will gossip about operations targeting artifact hunters.</text></string> -->
+  <string id="ui_mcm_word_of_mouth_secret_stash_fill"><text>Who will stalkers tell about going to fill a stash?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_stash_fill_desc"><text>Controls who will gossip about squads stashing supplies.</text></string> -->
+  <string id="ui_mcm_word_of_mouth_secret_stash_loot"><text>Who will stalkers tell about looting a stash?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_stash_loot_desc"><text>Controls who will gossip about squads looting known stashes.</text></string> -->
+  <string id="ui_mcm_word_of_mouth_secret_stash_ambush"><text>Who will stalkers tell about setting up ambushes near a stash?</text></string>
+  <!-- <string id="ui_mcm_word_of_mouth_secret_stash_ambush_desc"><text>Controls who will gossip about squads lying in wait at stashes.</text></string> -->
+
+  <string id="ui_mcm_word_of_mouth_area_recap_respects_secrets"><text>Hide faction-only and secret events from location recaps?</text></string>
+  <string id="ui_mcm_word_of_mouth_area_recap_respects_secrets_desc"><text>When enabled, the "Any interesting news?" dialog will also skip events tied to goals marked hidden or faction only. By default, area gossip treats all Zone events as public news (since these events have occurred in the past and thus word may have spread about them).</text></string>
+  <!-- reset button -->
+  <string id="ui_mcm_word_of_mouth_btn_reset_defaults"><text>Reset to defaults</text></string>
+
+  <!-- debug -->
+  <string id="ui_mcm_word_of_mouth_title_debug"><text>Debug</text></string>
+  <string id="ui_mcm_word_of_mouth_enable_logging"><text>Enable logging</text></string>
+  <string id="ui_mcm_word_of_mouth_enable_logging_desc"><text>Creates a logfile for combat encounters and another logfile for all conversation output. Leave OFF for normal play.</text></string>
+  <string id="ui_mcm_word_of_mouth_dev_mode"><text>Dev mode</text></string>
+
+</string_table>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <!-- Goal-announce templates for wom_chatter.script.
+         Delivered as PDA messages attributed to the squad commander when a nearby
+         squad changes its ALifePlus assigned goal.
+
+         Key format: st_wom_goal_{goal}_{faction} / st_wom_goal_{goal} / st_wom_goal_generic
+         Lookup order: faction-specific, goal-generic, catch-all (first non-empty wins).
+         Variants are numbered _001, _002, ... and one is picked at random.
+
+         Available slots:
+           #location# — target smart terrain name; variants referencing it are filtered
+                        when no destination is known, so every pool needs at least one
+                        location-free line.
+           #partner#  — squadmate's character name when the squad has 2 members;
+                        "team" when the squad has 3 or more members. Always non-empty. -->
+
+    <!-- partner slot fallbacks -->
+    <string id="st_wom_partner_solo"><text>напарник</text></string>
+    <string id="st_wom_partner_group"><text>отряд</text></string>
+
+  <!-- catch-all fallback -->
+    <string id="st_wom_goal_generic_001"><text>Выдвигаемся!</text></string>
+    <string id="st_wom_goal_generic_002"><text>Так, пора двигаться!</text></string>
+    <string id="st_wom_goal_generic_003"><text>Выходим.</text></string>
+    <string id="st_wom_goal_generic_004"><text>Пора двигаться в сторону точки #location#.</text></string>
+    <string id="st_wom_goal_generic_005"><text>Так, #partner#, пора двигаться.</text></string>
+    <string id="st_wom_goal_generic_006"><text>Ладно, #partner#, выдвигаемся.</text></string>
+    <string id="st_wom_goal_generic_007"><text>Так, #partner#, идём в район точки #location#.</text></string>
+
+    <!-- massacre -->
+    <string id="st_wom_goal_massacre_investigate_001"><text>Внимание, #partner#. Ребята на объекте #location# не выходят на связь. Плохое предчувствие, надо проверить.</text></string>
+    <string id="st_wom_goal_massacre_investigate_002"><text>Ладно, #partner#, идём проверим локацию #location#, что-то тут нечисто.</text></string>
+    <string id="st_wom_goal_massacre_investigate_003"><text>Держись рядом, #partner#. На объекте #location# что-то случилось, надо разобраться.</text></string>
+
+    <string id="st_wom_goal_massacre_loot_001"><text>Так, #partner#. Около точки #location# положили целую группу. Глянем, не оставили ли они нам подарков.</text></string>
+    <string id="st_wom_goal_massacre_loot_002"><text>Так, #partner#, пора на мародёрку. За мной в район точки #location#, смотри в оба, вдруг что ценное найдём.</text></string>
+
+    <string id="st_wom_goal_massacre_scavenge_001"><text>Эй, #partner#, глянем, осталось ли что после бойни в районе точки #location#.</text></string>
+    <string id="st_wom_goal_massacre_scavenge_002"><text>Ладно, #partner#, посмотрим, не оставили ли бедолаги на объекте #location# чего ценного.</text></string>
+
+    <!-- stash -->
+    <string id="st_wom_goal_stash_loot_001"><text>Так, #partner#, есть наводка на схрон в районе точки #location#. Идём вскрывать.</text></string>
+    <string id="st_wom_goal_stash_loot_002"><text>Эй, #partner#, пора почистить тайник в локации #location#.</text></string>
+
+    <string id="st_wom_goal_stash_ambush_001"><text>Эй, #partner#, слух прошёл — кто-то метит на схрон неподалёку от точки #location#. Устроим засаду.</text></string>
+    <string id="st_wom_goal_stash_ambush_002"><text>Эй, #partner#, пора устроить засаду у схрона в районе точки #location#.</text></string>
+
+    <!-- base defense / flight -->
+    <string id="st_wom_goal_basekill_flee_001"><text>Эй, #partner#, отходим в район точки #location#!</text></string>
+    <string id="st_wom_goal_basekill_flee_002"><text>Слушай, #partner#, отступаем к точке #location#!</text></string>
+    <string id="st_wom_goal_basekill_flee_003"><text>Так, #partner#, надо валить! Отходим на объект #location#!</text></string>
+
+    <string id="st_wom_goal_basekill_support_001"><text>Эй, #partner#, наших прижали на объекте #location#. Идём на подмогу.</text></string>
+    <string id="st_wom_goal_basekill_support_002"><text>Ладно, #partner#, выдвигаемся на подмогу нашим в район точки #location#.</text></string>
+
+    <!-- revenge -->
+    <string id="st_wom_goal_squadkill_revenge_001"><text>Эй, #partner#, выдвигаемся. Пора отомстить!</text></string>
+    <string id="st_wom_goal_squadkill_revenge_002"><text>Так, #partner#, идём поквитаться с группой, что ударила по нашим в районе точки #location#.</text></string>
+    <string id="st_wom_goal_squadkill_revenge_003"><text>Ладно, #partner#, выдвигаемся. Пора свести счёты неподалёку от точки #location#.</text></string>
+
+    <!-- territory -->
+    <string id="st_wom_goal_area_conquer_001"><text>Выдвигаемся, займём объект #location#.</text></string>
+    <string id="st_wom_goal_area_conquer_002"><text>Так, выдвигаемся и закрепимся на объекте #location#.</text></string>
+
+    <!-- jobs -->
+    <string id="st_wom_goal_job_explore_001"><text>Слушай, #partner#, пора выдвигаться и прочесать местность вокруг точки #location#.</text></string>
+    <string id="st_wom_goal_job_explore_002"><text>Ладно, #partner#, обычный патруль, идём в район точки #location#.</text></string>
+    <string id="st_wom_goal_job_explore_003"><text>Эй, #partner#, пройдёмся с зачисткой вокруг объекта #location#.</text></string>
+
+    <string id="st_wom_goal_job_outpost_001"><text>Эй, #partner#, выдвигаемся и занимаем позицию на объекте #location#.</text></string>
+    <string id="st_wom_goal_job_outpost_002"><text>Эй, #partner#, пора выдвигаться и выставить дозор в районе точки #location#.</text></string>
+
+    <string id="st_wom_goal_job_research_001"><text>Так, #partner#, пора двигаться. Задача — обследовать объект #location#.</text></string>
+    <string id="st_wom_goal_job_research_002"><text>Ладно, #partner#, идём снимать показания на локации #location#.</text></string>
+
+    <!-- social -->
+    <string id="st_wom_goal_social_base_001"><text>Эй, #partner#, заглянем на базу в районе точки #location#, передохнём немного.</text></string>
+    <string id="st_wom_goal_social_base_002"><text>Так, #partner#, пора перевести дух. Идём к точке #location#.</text></string>
+
+    <string id="st_wom_goal_social_campfire_001"><text>Так, #partner#, идём в район точки #location#, найдём местечко потрепаться.</text></string>
+    <string id="st_wom_goal_social_campfire_002"><text>Эй, #partner#, идём к точке #location#, давно не болтали.</text></string>
+
+    <!-- rest / needs -->
+    <string id="st_wom_goal_rest_campfire_001"><text>Ладно, #partner#, глянем, найдётся ли место отдохнуть в районе точки #location#.</text></string>
+    <string id="st_wom_goal_rest_campfire_002"><text>Эй, #partner#, проверим объект #location#, вдруг найдём место передохнуть.</text></string>
+
+    <string id="st_wom_goal_sleep_campfire_001"><text>Ладно, #partner#, глянем, найдётся ли место поспать в районе точки #location#.</text></string>
+    <string id="st_wom_goal_sleep_campfire_002"><text>Эй, #partner#, идём к точке #location#, устроимся на ночлег.</text></string>
+
+    <string id="st_wom_goal_hunger_campfire_001"><text>Кто ещё голодный? Идём в район точки #location#, глянем, где бы перекусить.</text></string>
+    <string id="st_wom_goal_hunger_campfire_002"><text>Ладно, #partner#, пора перекусить. Надеюсь, на объекте #location# найдётся местечко.</text></string>
+
+    <string id="st_wom_goal_heal_shelter_001"><text>Ладно, #partner#, глянем, можно ли укрыться в районе точки #location# и подлатать раны.</text></string>
+    <string id="st_wom_goal_heal_shelter_002"><text>Эй, #partner#, глянем, найдётся ли место подлечиться на объекте #location#.</text></string>
+
+    <!-- shelter -->
+    <string id="st_wom_goal_shelter_indoor_001"><text>Ладно, #partner#, давно не были под крышей. Идём к точке #location#, найдём место расслабиться.</text></string>
+    <string id="st_wom_goal_shelter_indoor_002"><text>Эй, #partner#, идём к точке #location#, попробуем найти где отдохнуть.</text></string>
+
+    <string id="st_wom_goal_shelter_outdoor_001"><text>Ладно, #partner#, идём в район точки #location#, отдохнём немного.</text></string>
+    <string id="st_wom_goal_shelter_outdoor_002"><text>Эй, #partner#, обоснуемся в районе точки #location#.</text></string>
+
+    <!-- wounded -->
+    <string id="st_wom_goal_wounded_help_001"><text>Внимание, #partner#, надо выдвигаться — раненым на объекте #location# нужна помощь.</text></string>
+    <string id="st_wom_goal_wounded_help_002"><text>Так, #partner#, в районе точки #location# ранен свой брат сталкер. Выдвигаемся, поможем!</text></string>
+
+    <string id="st_wom_goal_wounded_hunt_001"><text>Так, #partner#, за мной. Выследим того, кто уложил нашего неподалёку от точки #location#.</text></string>
+    <string id="st_wom_goal_wounded_hunt_002"><text>Эй, #partner#, кто-то мочит наших в районе точки #location#. Пора рассчитаться.</text></string>
+
+    <!-- money / harvest -->
+    <string id="st_wom_goal_money_harvest_001"><text>Эй, #partner#, кто у нас везунчик? Идём охотиться за артефактами в район точки #location#.</text></string>
+    <string id="st_wom_goal_money_harvest_002"><text>Ладно, #partner#, за мной к точке #location#, поищем артефакты детектором.</text></string>
+
+    <string id="st_wom_goal_harvest_rob_001"><text>Ладно, #partner#, пора тряхнуть добытчиков артефактов неподалёку от точки #location#.</text></string>
+    <string id="st_wom_goal_harvest_rob_002"><text>Эй, #partner#, лёгкие деньги. Идём к точке #location#, обчистим сталкеров-добытчиков.</text></string>
+
+    <string id="st_wom_goal_harvest_haunt_001"><text>Так, #partner#, выдвигаемся. Попугаем охотников за артефактами в районе точки #location#.</text></string>
+
+    <!-- money hunt -->
+    <string id="st_wom_goal_money_hunt_001"><text>Ладно, #partner#, пора немного развеяться. Глянем, есть ли мутанты на объекте #location#.</text></string>
+    <string id="st_wom_goal_money_hunt_002"><text>Эй, #partner#, идём охотиться на мутантов. За мной в район точки #location#, гляди в оба.</text></string>
+    <string id="st_wom_goal_money_hunt_003"><text>Гляди в оба, #partner#. Идём на охоту в район точки #location#.</text></string>
+
+    <!-- stash fill -->
+    <string id="st_wom_goal_stash_fill_001"><text>Ладно, #partner#, идём, спрячем шмотки в тайнике неподалёку от точки #location#.</text></string>
+    <string id="st_wom_goal_stash_fill_002"><text>Эй, #partner#, обустраиваем схрон про запас.</text></string>
+
+    <!-- roam -->
+    <string id="st_wom_goal_roam_001"><text>Ладно, #partner#, что-то не сидится на месте. Идём к точке #location#.</text></string>
+    <string id="st_wom_goal_roam_002"><text>Эй, #partner#, идём в район точки #location#, посмотрим, что там да как.</text></string>
+
+    <!-- supply -->
+    <string id="st_wom_goal_supply_trader_001"><text>Ладно, #partner#, пора за припасами, идём к точке #location#.</text></string>
+    <string id="st_wom_goal_supply_trader_002"><text>Эй, #partner#, выдвигаемся к точке #location# за припасами.</text></string>
+
+</string_table>

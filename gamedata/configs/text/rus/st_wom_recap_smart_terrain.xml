@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+
+ <!-- ================================================================= -->
+ <!-- ACTOR PROMPT AND EXITS            -->
+ <!-- ================================================================= -->
+
+ <string id="st_st_wom_ask_news">
+ <text>Есть какие-нибудь новости?</text>
+ </string>
+
+ <string id="st_wom_actor_thanks">
+ <text>Полезно знать. Спасибо.</text>
+ </string>
+
+ <string id="st_wom_actor_ok">
+ <text>Понятно.</text>
+ </string>
+
+
+ <!-- ================================================================= -->
+ <!-- NPC NO-NEWS RESPONSES            -->
+ <!-- ================================================================= -->
+
+ <string id="st_wom_no_news_001"><text>Нечего рассказать. Тихо сейчас там.</text></string>
+
+ <!-- ================================================================= -->
+ <!-- SLOT REFERENCE              -->
+ <!--                 -->
+ <!-- Available slots:             -->
+ <!-- #plural_subject#   plural party name  e.g. "Loners"   -->
+ <!-- #some_members_subject# get_some_faction   e.g. "some Loners"  -->
+ <!-- #a_squad_subject#  get_a_faction_squad  e.g. "a Loner crew"  -->
+ <!-- #a_member_subject#  get_a_faction   e.g. "a Loner"   -->
+ <!-- #count_subject#   get_count_faction(n)  e.g. "a Chimera"  -->
+ <!--       (only set when event carries subject_count;  -->
+ <!--        currently: alpha events, count=1)    -->
+ <!-- #plural_other#   plural other name  e.g. "Duty"    -->
+ <!-- #a_member_other#   get_a_faction or "someone" fallback    -->
+ <!-- #some_members_other#  get_some_faction or "some people" fallback  -->
+ <!-- #a_squad_other#   get_a_faction_squad or "a crew" fallback   -->
+ <!-- #count_other#   get_count_faction(other_initial_size)    -->
+ <!--       or "some people" fallback — only quantified on -->
+ <!--       combat events         -->
+ <!-- #kills#     number word for kill count e.g. "three"   -->
+ <!-- #losses#     number word for loss count e.g. "one"   -->
+ <!-- #location#    smart terrain name  e.g. "Cordon Checkpoint"-->
+ <!-- #participant_list#  all factions in a multi-way fight (combat_multi) -->
+ <!-- #top_faction_identity# identity name of the dominant faction (combat_multi) -->
+ <!--       may be empty; gate any template that relies on it -->
+ <!--                 -->
+ <!-- #other*# slots fall back to generic terms when the other party is -->
+ <!-- unknown (e.g. player kill — player has no ALifePlus squad).  -->
+ <!-- Single-party event templates (infest/swarm/conquer/stash/alpha) -->
+ <!-- do not reference #other*# slots, so no bleed-through occurs.  -->
+ <!--                 -->
+ <!-- Slot roles follow ALifePlus consequence conventions:    -->
+ <!-- infest/swarm/conquer: subject = acting faction/species   -->
+ <!-- massacre: subject = responding crew, other = killer   -->
+ <!-- basekill: subject = defender/backup, other = attacker  -->
+ <!-- squadkill: subject = revenge squad, other = killer faction -->
+ <!-- ================================================================= -->
+
+
+
+ <!-- ================================================================= -->
+ <!-- SOLO EVENT STRINGS             -->
+ <!-- Used when only one qualifying event exists for the chosen area. -->
+ <!-- Self-contained — no intro line needed. #location# is required; -->
+ <!-- same subject/other slot set as the slot reference above.   -->
+ <!-- ================================================================= -->
+
+ <!-- solo infest: mutants moved in and are denning at the area      -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_infest_001"><text>Слышал, отряд, состоящий из #some_members_subject#, засел в районе точки #location#.</text></string>
+ <string id="st_wom_event_solo_infest_002"><text>Говорят, отряд, состоящий из #some_members_subject#, обосновался в локации #location#.</text></string>
+ <string id="st_wom_event_solo_infest_003"><text>Объект #location# кишит бойцами, состоящими из #some_members_subject#, вроде как.</text></string>
+
+ <!-- solo swarm: mutants are swarming the area in large numbers      -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_swarm_001"><text>Говорят, отряд, состоящий из #some_members_subject#, кишит в районе точки #location#.</text></string>
+ <string id="st_wom_event_solo_swarm_002"><text>Слышал, там прям куча представителей, которыми являются #plural_subject#, рядом с точкой #location#. Будь осторожен.</text></string>
+
+ <!-- solo conquer: a faction moved in and took control of the area     -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_conquer_001"><text>Говорят, отряд, состоящий из #some_members_subject#, занял объект #location#.</text></string>
+ <string id="st_wom_event_solo_conquer_002"><text>Слышал, отряд, состоящий из #some_members_subject#, зашел в локацию #location# и закрепился там.</text></string>
+ <string id="st_wom_event_solo_conquer_003"><text>Отряд, состоящий из #some_members_subject#, держит объект #location# теперь, вроде как.</text></string>
+
+ <!-- solo alpha: a dominant alpha mutant has established itself near this location  -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #count_subject# (count=1, e.g. "a Chimera")       -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_alpha_001"><text>Говорят, возле объекта #location# завелся представитель в лице #a_member_subject#, уже успевший набить счет. Осторожнее там.</text></string>
+ <string id="st_wom_event_solo_alpha_002"><text>Слышал, представитель в лице #a_member_subject#, возле точки #location# показывает всем, кто тут главный.</text></string>
+ <string id="st_wom_event_solo_alpha_003"><text>Рядом с точкой #location# появился новый хищник — представитель в лице #a_member_subject#, судя по всему.</text></string>
+ <string id="st_wom_event_solo_alpha_004"><text>Представитель в лице #a_member_subject#, рядом с объектом #location# рвет там всех подряд. Крупная тварь, судя по всему.</text></string>
+
+
+ <!-- solo stash_loot: a squad cleaned out a stash in the area       -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_stash_loot_001"><text>Говорят, отряд, состоящий из #some_members_subject#, выпотрошил тайник рядом с точкой #location#.</text></string>
+ <string id="st_wom_event_solo_stash_loot_002"><text>Слышал, отряд, состоящий из #some_members_subject#, вычистил тайник неподалёку от объекта #location#.</text></string>
+ <string id="st_wom_event_solo_stash_loot_003"><text>Слышал, отряд, состоящий из #some_members_subject#, засек тайник в районе точки #location#.</text></string>
+
+ <!-- solo stash_ambush: a squad set an ambush near a stash in the area    -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_stash_ambush_001"><text>Слышал, отряд, состоящий из #some_members_subject#, устроил засаду у тайника возле объекта #location#.</text></string>
+ <string id="st_wom_event_solo_stash_ambush_002"><text>Говорят, отряд, состоящий из #some_members_subject#, пошел ставить ловушку у тайника неподалёку от точки #location#.</text></string>
+ <string id="st_wom_event_solo_stash_ambush_003"><text>Отряд, состоящий из #some_members_subject#, пошел караулить тайник рядом с объектом #location#.</text></string>
+
+
+ <!-- - - - - - - - - - - - - - - - - - CAN INCLUDE #OTHER# - - - - - - - - - - - - - - - - - -->
+
+
+ <!-- solo alphakill: an alpha was killed near this location; its pack is hunting the killer -->
+ <!-- subject = the revenge-hunting pack (same species as the dead alpha)    -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#       -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_alphakill_001"><text>Слышал, альфу возле объекта #location# завалили. Теперь #a_squad_subject# охотится на того, кто это сделал.</text></string>
+ <string id="st_wom_event_solo_alphakill_002"><text>Кто-то убил представителя в лице #a_member_subject#, неподалёку от точки #location#. Стая теперь охотится на отряд, состоящий из #some_members_other#, за это.</text></string>
+ <string id="st_wom_event_solo_alphakill_003"><text>Слух с точки #location#: представитель в лице #a_member_subject#, мертв, и остальные вышли мстить.</text></string>
+ <string id="st_wom_event_solo_alphakill_004"><text>Слышал, кто-то завалил представителя в лице #a_member_subject#, возле объекта #location#. Теперь вся стая жаждет крови.</text></string>
+ <string id="st_wom_event_solo_alphakill_005"><text>Отряд, состоящий из #some_members_other#, убил представителя в лице #a_member_subject#, в районе точки #location#. Эти твари ничего не забывают.</text></string>
+
+
+ <!-- solo basekill: generic fallback when consequence subtype is unknown     -->
+ <string id="st_wom_event_solo_basekill_001"><text>Слышал, там была серьезная драка за контроль над объектом #location#.</text></string>
+
+ <!-- solo basekill_support: a squad moved to reinforce allies under attack    -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#       -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_basekill_support_001"><text>Слышал, #a_squad_subject# подошла на подмогу своим против отряда, состоящего из #a_squad_other#, рядом с точкой #location#.</text></string>
+ <string id="st_wom_event_solo_basekill_support_002"><text>Говорят, #a_squad_subject# двинулась в район точки #location#, чтобы усилить своих против отряда, состоящего из #a_squad_other#.</text></string>
+
+ <!-- solo basekill_flee: a squad fell back after their position was hit     -->
+ <string id="st_wom_event_solo_basekill_flee_001"><text>Говорят, #a_squad_subject# отступила в район точки #location# после того, как отряд, состоящий из #a_squad_other#, их выбил оттуда.</text></string>
+ <string id="st_wom_event_solo_basekill_flee_002"><text>Слышал, #a_squad_subject# была вынуждена отойти к объекту #location# после атаки отряда, состоящего из #a_squad_other#.</text></string>
+ <string id="st_wom_event_solo_basekill_flee_003"><text>Слышал, #a_squad_subject# была вынуждена отступить после атаки отряда, состоящего из #a_squad_other#.</text></string>
+
+ <!-- solo squadkill: a squad was wiped out; a revenge crew went after the killers  -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#       -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_squadkill_001"><text>#a_squad_subject# отправилась в локацию #location#, чтобы поквитаться с отрядом, состоящим из #a_squad_other#.</text></string>
+ <string id="st_wom_event_solo_squadkill_002"><text>Слышал, #a_squad_subject# шла в район точки #location# сводить счеты с отрядом, состоящим из #a_squad_other#.</text></string>
+ <string id="st_wom_event_solo_squadkill_003"><text>Говорят, #a_squad_subject# искала мести против отряда, состоящего из #a_squad_other#, возле объекта #location#.</text></string>
+
+
+ <!-- solo massacre: a crew was wiped out; another squad was sent to investigate  -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#       -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_massacre_001"><text>Слышал, возле объекта #location# устроили резню, отряд, состоящий из #some_members_subject#, пошел разобраться.</text></string>
+ <string id="st_wom_event_solo_massacre_002"><text>Отряд, состоящий из #some_members_other#, вырезал целую группу в районе точки #location#, отряд, состоящий из #some_members_subject#, отправили проверить.</text></string>
+ <string id="st_wom_event_solo_massacre_003"><text>Говорят, отряд, состоящий из #some_members_subject#, пошел осмотреть объект #location# после того, как другая группа перестала выходить на связь.</text></string>
+
+
+ <!-- solo harvest_rob: stalkers jumped artifact hunters and took their finds   -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#       -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_harvest_rob_001"><text>Слышал, отряд, состоящий из #some_members_subject#, пошел прижать отряд, состоящий из #some_members_other#, неподалёку от точки #location#, надеясь урвать артефакт.</text></string>
+ <string id="st_wom_event_solo_harvest_rob_002"><text>Говорят, #a_squad_other# искала артефакты возле объекта #location#, но отряд, состоящий из #some_members_subject#, нагрянул их обчистить.</text></string>
+ <string id="st_wom_event_solo_harvest_rob_003"><text>Вроде как отряд, состоящий из #some_members_subject#, охотился на #a_squad_other# в поисках артефактов в районе точки #location#.</text></string>
+
+ <!-- solo harvest_haunt: a mutant attacked artifact hunters in the area    -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#       -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_harvest_haunt_001"><text>Слышал, представитель в лице #a_member_subject#, взял след противников, состоящих из #some_members_other#, пока те охотились за артефактами возле объекта #location#.</text></string>
+ <string id="st_wom_event_solo_harvest_haunt_002"><text>Говорят, на отряд, состоящий из #some_members_other#, в районе точки #location# охотилась #a_squad_subject#.</text></string>
+ <string id="st_wom_event_solo_harvest_haunt_003"><text>Вроде как отряд, состоящий из #some_members_subject#, пошел за #a_squad_other#, пока те искали артефакты неподалёку от точки #location#.</text></string>
+
+
+ <!-- solo wounded_help: someone was wounded near the area; allies went to help   -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- #other*# may be empty; use "someone" as a fallback noun       -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_wounded_help_001"><text>Слышал, кто-то словил пулю неподалёку от точки #location#, #a_squad_subject# пошла вытаскивать его.</text></string>
+ <string id="st_wom_event_solo_wounded_help_002"><text>Говорят, кто-то пострадал возле объекта #location#, отряд, состоящий из #some_members_subject#, пошел на помощь.</text></string>
+ <string id="st_wom_event_solo_wounded_help_003"><text>Слышал, отряд, состоящий из #some_members_subject#, вышел к объекту #location#, чтобы помочь раненому.</text></string>
+
+ <!-- solo wounded_hunt: a predator moved in on a wounded target in the area    -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- #other*# may be empty; use "someone" as a fallback noun       -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_wounded_hunt_001"><text>Слышал, кто-то серьезно пострадал возле объекта #location#, #a_squad_subject# насела на него.</text></string>
+ <string id="st_wom_event_solo_wounded_hunt_002"><text>Говорят, #a_squad_subject# пошла за раненой целью в район точки #location#.</text></string>
+ <string id="st_wom_event_solo_wounded_hunt_003"><text>Вроде как представитель в лице #a_member_subject#, зашел добить кого-то у объекта #location#.</text></string>
+
+
+
+ <!-- - - - - - - - - - - - - - - - - - COMBAT - - - - - - - - - - - - - - - - - -->
+
+
+<!-- solo combat_multi: multi-faction fight; has kills         -->
+ <!-- populated: #participant_list# (all sides), #top_faction_identity# (dominant faction) -->
+ <!-- populated: #kills# (always present), #location#          -->
+ <!-- #top_faction_identity# may be empty; variants 001/002/004 do not rely on it   -->
+ <string id="st_wom_event_solo_combat_multi_001"><text>Говорят, была большая заваруха между сторонами: #participant_list# — рядом с точкой #location#.</text></string>
+ <string id="st_wom_event_solo_combat_multi_002"><text>Слышал, была многосторонняя разборка возле объекта #location#, участники: #participant_list# — все схлестнулись.</text></string>
+ <string id="st_wom_event_solo_combat_multi_003"><text>В районе точки #location# была драка с участием сторон: #participant_list#, группировка #top_faction_identity# взяла верх, уложив врагов #kills#.</text></string>
+ <string id="st_wom_event_solo_combat_multi_004"><text>Говорят, стороны: #participant_list# — все сцепились неподалёку от объекта #location#.</text></string>
+
+ <!-- solo combat_multi_skirmish: multi-faction standoff, no kills       -->
+ <!-- populated: #participant_list#, #location#           -->
+ <string id="st_wom_event_solo_combat_multi_skirmish_001"><text>Говорят, стороны: #participant_list# — пересеклись возле объекта #location#, но никто не упал.</text></string>
+ <string id="st_wom_event_solo_combat_multi_skirmish_002"><text>Слышал, было напряженное противостояние между сторонами: #participant_list# — в районе точки #location#.</text></string>
+
+ <!-- solo combat_skirmish: both factions clashed but nobody died      -->
+ <!-- subject = aggressors other = opposing faction         -->
+ <!-- populated: #some_members_subject# #a_squad_subject#, #count_other# #some_members_other#   -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_combat_skirmish_001"><text>Говорят, отряд, состоящий из #some_members_subject#, наткнулся на группу противников, состоящих из #count_other#, возле объекта #location#, но никто не упал.</text></string>
+ <string id="st_wom_event_solo_combat_skirmish_002"><text>Слышал, было противостояние между #a_squad_subject# и группой противников, состоящих из #count_other#, неподалёку от точки #location#.</text></string>
+ <string id="st_wom_event_solo_combat_skirmish_003"><text>Слух с локации #location#: отряд, состоящий из #some_members_subject#, и группа противников, состоящих из #count_other#, столкнулись там, но обе стороны отступили.</text></string>
+
+ <!-- solo combat_kill1: a faction crossed paths with one enemy and killed them   -->
+ <!-- subject = winning faction other = losing faction        -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other# #count_other#   -->
+ <!-- populated: #location# #kills# = "one"           -->
+ <!-- falls back to solo_combat_* if no solo_combat_kill1_* are authored    -->
+ <string id="st_wom_event_solo_combat_kill1_001"><text>Говорят, отряд, состоящий из #some_members_subject#, наткнулся на представителя в лице #a_member_other#, возле объекта #location# и завалил его.</text></string>
+ <string id="st_wom_event_solo_combat_kill1_002"><text>Слышал, отряд, состоящий из #some_members_subject#, положил представителя в лице #a_member_other#, неподалёку от точки #location#.</text></string>
+ <string id="st_wom_event_solo_combat_kill1_003"><text>Отряд, состоящий из #some_members_subject#, столкнулся с отрядом, состоящим из #a_member_other#, в районе точки #location#. Одним гадом меньше.</text></string>
+ <string id="st_wom_event_solo_combat_kill1_004"><text>Слух с точки #location#: отряд, состоящий из #some_members_subject#, наткнулся на представителя в лице #a_member_other#, и разобрался с ним.</text></string>
+
+ <!-- solo combat: 2+ kills — subject faction dominated the engagement     -->
+ <!-- subject = faction with most kills other = faction with most losses    -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#       -->
+ <!-- populated: #count_other# (count-aware) #kills# (always present)    -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_solo_combat_001"><text>Говорят, отряд, по-моему #some_members_subject#, сцепился с группой противников, состоящих из #count_other#, возле объекта #location#.</text></string>
+ <string id="st_wom_event_solo_combat_002"><text>Слышал, была стычка между ребятами, вроде как #a_squad_subject#, и группой противников, состоящих из #count_other#, в районе точки #location#.</text></string>
+ <string id="st_wom_event_solo_combat_003"><text>Такая инфа: группа, вроде как #a_squad_subject#, ударила по группе противников, состоящих из #count_other#, неподалёку от точки #location#, положив врагов #kills#.</text></string>
+ <string id="st_wom_event_solo_combat_004"><text>Слышал, отряд, вроде как #some_members_subject#, наткнулся на группу противников, состоящих из #count_other#, возле объекта #location#, уложив врагов #kills#.</text></string>
+
+
+
+
+
+ <!-- ================================================================= -->
+ <!-- MULTI EVENT STRINGS             -->
+ <!-- Used when 2+ qualifying events exist for the chosen area.   -->
+ <!-- Preceded by a st_wom_report_intro_* line. Individual event strings -->
+ <!-- are appended in sequence. Same slot set as the slot reference above.-->
+ <!-- ================================================================= -->
+
+ <!-- ================================================================= -->
+ <!-- NPC REPORT INTRO             -->
+ <!-- #location# = resolved smart terrain display name     -->
+ <!-- ================================================================= -->
+
+ <string id="st_wom_report_intro_001"><text>В районе точки #location# было неспокойно.</text></string>
+ <string id="st_wom_report_intro_002"><text>Была движуха на объекте #location#.</text></string>
+ <string id="st_wom_report_intro_003"><text>Много всего творится в локации #location#.</text></string>
+ <string id="st_wom_report_intro_004"><text>Нескучный денек выдался в районе точки #location#.</text></string>
+ <string id="st_wom_report_intro_005"><text>Вот что слышно про объект #location#.</text></string>
+ <string id="st_wom_report_intro_006"><text>Вот последние новости из локации #location#.</text></string>
+ <string id="st_wom_report_intro_007"><text>В районе точки #location# было неспокойно, скажу я тебе.</text></string>
+ <string id="st_wom_report_intro_008"><text>Вот что я слышал про объект #location#.</text></string>
+ <string id="st_wom_report_intro_009"><text>Будь начеку возле объекта #location#.</text></string>
+
+
+
+ <!-- area_infest: mutants claim a location as a den       -->
+ <!-- subject = infesting species other* = empty (single-party event)  -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_infest_001a"><text>там завелись бойцы, состоящие из #some_members_subject#.</text></string>
+ <string id="st_wom_event_infest_001b"><text>Отряд, состоящий из #some_members_subject#, обосновался в округе.</text></string>
+ <string id="st_wom_event_infest_001c"><text>Отряд, состоящий из #some_members_subject#, устроил там свое логово.</text></string>
+ <string id="st_wom_event_infest_001d"><text>Отряд, состоящий из #some_members_subject#, зашел и объявил округу своей территорией.</text></string>
+ <string id="st_wom_event_infest_002a"><text>там снова завелись бойцы, состоящие из #some_members_subject#.</text></string>
+ <string id="st_wom_event_infest_002b"><text>Отряд, состоящий из #some_members_subject#, превратил округу в очередное логово.</text></string>
+ <string id="st_wom_event_infest_003a"><text>там снова завелась живность, отряд, состоящий из #some_members_subject#, устроил логово.</text></string>
+
+ <!-- area_swarm: mutants swarm and hold a location       -->
+ <!-- subject = swarming species other* = empty (single-party event)  -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_swarm_001a"><text>Отряд, состоящий из #some_members_subject#, наводнил округу.</text></string>
+ <string id="st_wom_event_swarm_001b"><text>там кишело бойцами, состоящими из #some_members_subject#.</text></string>
+ <string id="st_wom_event_swarm_001c"><text>Отряд, состоящий из #some_members_subject#, хлынул в округу.</text></string>
+ <string id="st_wom_event_swarm_001d"><text>Отряд, состоящий из #some_members_subject#, налетел на округу.</text></string>
+ <string id="st_wom_event_swarm_002a"><text>округа снова кишела бойцами, состоящими из #some_members_subject#.</text></string>
+ <string id="st_wom_event_swarm_002b"><text>снова нахлынула орда, отряд, состоящий из #some_members_subject#, заполонил округу.</text></string>
+ <string id="st_wom_event_swarm_002c"><text>снова явилась орда, отряд, состоящий из #some_members_subject#, начал заполонять округу.</text></string>
+
+ <!-- area_conquer: human faction moves in and holds a location    -->
+ <!-- subject = conquering faction other* = empty (single-party event)  -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_conquer_001a"><text>Отряд, состоящий из #some_members_subject#, заявил права на округу.</text></string>
+ <string id="st_wom_event_conquer_001b"><text>Отряд, состоящий из #some_members_subject#, закрепился там.</text></string>
+ <string id="st_wom_event_conquer_002a"><text>Отряд, состоящий из #some_members_subject#, обосновался и занял округу.</text></string>
+ <string id="st_wom_event_conquer_003a"><text>округу снова заняли бойцы, состоящие из #some_members_subject#.</text></string>
+
+ <!-- alpha: a dominant alpha mutant established itself in the area     -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #count_subject# (count=1, e.g. "a Chimera")       -->
+ <!-- no #location# — alpha is not a solo string; used in multi-event context   -->
+ <string id="st_wom_event_alpha_001a"><text>Представитель в лице #a_member_subject#, набрал изрядный счет в округе.</text></string>
+ <string id="st_wom_event_alpha_001b"><text>Представитель в лице #a_member_subject#, стал главным хищником округи.</text></string>
+ <string id="st_wom_event_alpha_001c"><text>Представитель в лице #a_member_subject#, показал всем, кто тут главный.</text></string>
+
+
+
+ <!-- stash_loot: subject = looting squad other* = empty (single-party) -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_stash_loot_001a"><text>Отряд, состоящий из #some_members_subject#, зашел вычистить тайник.</text></string>
+ <string id="st_wom_event_stash_loot_001b"><text>Отряд, состоящий из #some_members_subject#, отправился вскрыть тайник.</text></string>
+ <string id="st_wom_event_stash_loot_001c"><text>#a_squad_subject# отправилась потрошить тайник там.</text></string>
+
+ <!-- stash_ambush: subject = ambushers other* = empty (single-party)  -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_stash_ambush_001a"><text>Отряд, состоящий из #some_members_subject#, пошел засесть у тайника поблизости.</text></string>
+ <string id="st_wom_event_stash_ambush_001b"><text>Отряд, состоящий из #some_members_subject#, отправился приглядывать за тайником.</text></string>
+
+ <!-- - - - - - - - - - - - - - - - - - CAN INCLUDE #OTHER# - - - - - - - - - - - - - - - - - -->
+
+
+ <!-- harvest_haunt: subject = aberrant mutant species other = the victims -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#     -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_harvest_haunt_001a"><text>#a_squad_subject# напала на отряд, состоящий из #some_members_other#, когда те собирали там артефакты.</text></string>
+ <string id="st_wom_event_harvest_haunt_001b"><text>Что-то напало на отряд, состоящий из #some_members_other#, пока те собирали артефакты.</text></string>
+
+ <!-- wounded_help: subject = helpers other = wounded faction (may be nil) -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- #other*# may be empty; #a_member_other# = other_a or "someone" when empty  -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_wounded_help_001a"><text>Отряд, состоящий из #some_members_subject#, пришел на помощь раненому представителю в лице #a_member_other#.</text></string>
+ <string id="st_wom_event_wounded_help_001b"><text>Это, такое дело: группа из #a_squad_subject# пошла помочь представителю в лице #a_member_other#, который был ранен неподалеку.</text></string>
+ <string id="st_wom_event_wounded_help_001c"><text>Раненый парень, вроде как в лице #member_other#, позвал отряд состоящий из #a_squad_subject# на помощь.</text></string> 
+ <string id="st_wom_event_wounded_help_001d"><text>Истекающий кровью чувак, известный как #member_other#, запросил помощь у отряда, которого описали как #a_squad_subject#.</text></string>
+ 
+
+ <!-- wounded_hunt: subject = predator/mutant other = wounded target (may be nil) -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#    -->
+ <!-- #other*# may be empty; use "someone" as a fallback noun      -->
+ <!-- populated: #location#               -->
+ <string id="st_wom_event_wounded_hunt_001a"><text>Раненый представитель в лице #a_member_other#, приманил #a_squad_subject#.</text></string>
+ <string id="st_wom_event_wounded_hunt_001b"><text>#a_squad_subject# пошла добивать представителя в лице #a_member_other#.</text></string>
+ <string id="st_wom_event_wounded_hunt_001c"><text>#a_squad_subject# взяла кровавый след какого-то бедолаги.</text></string>
+ <string id="st_wom_event_wounded_hunt_001d"><text>Запах крови представителя в лице #a_member_other#, приманил #a_squad_subject#.</text></string>
+ <string id="st_wom_event_wounded_hunt_002a"><text>Свежая кровь снова привлекла #a_squad_subject#.</text></string>
+ <string id="st_wom_event_wounded_hunt_002b"><text>Представитель в лице #a_member_other#, со свежими ранами заманил #a_squad_subject# на охоту.</text></string>
+ <string id="st_wom_event_wounded_hunt_002c"><text>Очередное ранение в округе привлекло #a_squad_subject#.</text></string>
+ <string id="st_wom_event_wounded_hunt_003a"><text>Очередная охота, #a_squad_subject# идет по следу представителя в лице #a_member_other#.</text></string>
+ <string id="st_wom_event_wounded_hunt_003b"><text>Еще один раненый бедолага увел #a_squad_subject# за собой.</text></string>
+ <string id="st_wom_event_wounded_hunt_004a"><text>Представляешь, #a_squad_subject# опять пошла охотиться на раненого сталкера?</text></string>
+
+ <!-- harvest_rob: subject = robbers other = the artifact hunters robbed -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#     -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_harvest_rob_001a"><text>Отряд, состоящий из #some_members_subject#, нагрянул обчистить #a_squad_other# на предмет артефактов.</text></string>
+ <string id="st_wom_event_harvest_rob_001b"><text>Отряд, состоящий из #some_members_subject#, отправился избавить #a_squad_other# от их артефактов.</text></string>
+ <string id="st_wom_event_harvest_rob_001c"><text>Отряд, состоящий из #some_members_subject#, пошел прижать #a_squad_other#, собиравших артефакты.</text></string>
+
+ <!-- alphakill: an alpha was killed; its pack is now hunting the killer    -->
+ <!-- subject = the revenge-hunting pack (same species as the dead alpha)    -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#       -->
+ <!-- no #location# — alphakill is not a solo string; used in multi-event context  -->
+ <string id="st_wom_event_alphakill_001a"><text>Отряд, состоящий из #some_members_subject#, вышел на охоту после того, как отряд, состоящий из #some_members_other#, убил их альфу.</text></string>
+ <string id="st_wom_event_alphakill_001b"><text>Альфу представителя в лице #a_member_subject#, завалили, и сородичи теперь мстят, охотясь на отряд, состоящий из #some_members_other#.</text></string>
+
+ <!-- massacre_scavenge: subject = scavengers, other = the wiped crew   -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#     -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_massacre_scavenge_001a"><text>Отряд, состоящий из #some_members_subject#, отправился обшаривать тела павших врагов состоящих из #some_members_other#.</text></string>
+ <string id="st_wom_event_massacre_scavenge_001b"><text>#a_squad_subject# зашла после резни поживиться остатками отряда, состоящего из #some_members_other#.</text></string>
+ <string id="st_wom_event_massacre_scavenge_001c"><text>Отряд, состоящий из #some_members_other#, вырезали неподалеку, так что отряд, состоящий из #some_members_subject#, сразу ринулся мародерить.</text></string>
+ <string id="st_wom_event_massacre_scavenge_002a"><text>Вырезали еще одну группу, что заставило отряд, состоящий из #some_members_subject#, зайти пограбить.</text></string>
+ <string id="st_wom_event_massacre_scavenge_002b"><text>Снова мародерка, отряд, состоящий из #some_members_subject#, зашел обшаривать тела павших врагов, состоящих из #some_members_other#.</text></string>
+
+ <!-- basekill: generic fallback when consequence subtype is unknown   -->
+ <string id="st_wom_event_basekill_001a"><text>Отряд, состоящий из #some_members_subject#, оказался втянуты там в перестрелку.</text></string>
+
+ <!-- basekill_support: a squad moved to reinforce allies under attack   -->
+ <!-- subject = defending/backup faction other = attacking faction   -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#     -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_basekill_support_001a"><text>#a_squad_subject# зашла туда усилить оборону против отряда, вроде бы #a_squad_other#.</text></string>
+ <string id="st_wom_event_basekill_support_001b"><text>#a_squad_subject# пошла укрепить защиту против отряда, вроде бы #a_squad_other#.</text></string>
+ <string id="st_wom_event_basekill_support_002a"><text>Очередная атака заставила #a_squad_subject# отправиться туда в надежде оттеснить отряд, вроде бы #a_squad_other#.</text></string>
+ <string id="st_wom_event_basekill_support_002b"><text>Снова подкрепления двинулись туда, #a_squad_subject# вышла отбить атаку отряда, вроде бы #a_squad_other#.</text></string>
+
+ <!-- basekill_flee: a squad fell back after their position was overrun  -->
+ <string id="st_wom_event_basekill_flee_001a"><text>#a_squad_subject# получила по зубам от отряда, вроде бы #a_squad_other#, и отошла к #location# перегруппироваться.</text></string>
+ <string id="st_wom_event_basekill_flee_001b"><text>Атака отряда, вроде бы #a_squad_other#, в другом месте выбила #a_squad_subject#, заставив ее отступить к #location#.</text></string>
+ <string id="st_wom_event_basekill_flee_002a"><text>Еще одна группа перевела дух в этой округе, на этот раз #a_squad_subject# отступила от отряда, вроде бы #a_squad_other#.</text></string>
+ <string id="st_wom_event_basekill_flee_002b"><text>Очередное отступление закончилось там, #a_squad_subject# отошла от отряда, вроде бы #a_squad_other#.</text></string>
+
+
+ <!-- squadkill: a squad was wiped            -->
+ <!-- subject = revenge crew other = the killers they are hunting   -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#     -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_squadkill_001a"><text>Говорят, кто-то, вроде бы #a_squad_other#, вырезала целую группу, что подтолкнуло #a_squad_subject# на месть.</text></string>
+ <string id="st_wom_event_squadkill_001b"><text>Слышал, кто-то, вроде бы #a_squad_other#, перебила группу, и #a_squad_subject# такого не спустила.</text></string>
+ <string id="st_wom_event_squadkill_001c"><text>Весть о том, что бойцы, состоящие из #some_members_other#, положили целую группу, заставила отряд, состоящий из #some_members_subject#, выступить в отместку.</text></string>
+ <string id="st_wom_event_squadkill_001d"><text>Резня не осталась без ответа, #a_squad_subject# взяла след тех самых, ну ты понял — #a_squad_other#.</text></string>
+ <string id="st_wom_event_squadkill_002a"><text>Такая тема: #a_squad_subject# вышла мстить после того, как кто-то, вроде бы #a_squad_other#, вырезала целую группу.</text></string>
+ <string id="st_wom_event_squadkill_002b"><text>Пацаны, слухайте: #a_squad_subject# отправилась свести счеты после того, как кто-то, как мне показалось, #a_squad_other#, положил целый отряд.</text></string>
+ <string id="st_wom_event_squadkill_003a"><text>Снова пришло время сводить счеты, #a_squad_subject# выследила отряд, состоящий из #a_squad_other#.</text></string>
+ <string id="st_wom_event_squadkill_003b"><text>Снова месть, #a_squad_subject# преследует отряд, состоящий из #a_squad_other#.</text></string>
+ <string id="st_wom_event_squadkill_003c"><text>Очередная вендетта разгорелась, #a_squad_subject# пошла за отрядом, состоящим из #a_squad_other#.</text></string>
+
+ <!-- massacre_investigate: subject = investigation crew sent in, other = the killer -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#     -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_massacre_investigate_001a"><text>Бойцы, состоящие из #some_members_other#, вырезали там целую группу, и отряд, состоящий из #some_members_subject#, отправили разобраться.</text></string>
+ <string id="st_wom_event_massacre_investigate_001b"><text>Отряд, состоящий из #some_members_subject#, пошел осмотреть груду тел, которую оставила там #a_squad_other#.</text></string>
+ <string id="st_wom_event_massacre_investigate_002a"><text>Вырезали еще одну группу, вроде как это бойцы, состоящие из #some_members_other#, отряд, состоящий из #some_members_subject#, пошел проверить.</text></string>
+ <string id="st_wom_event_massacre_investigate_003a"><text>Снова вырезали группу, виновата #a_squad_other#, отряд, состоящий из #some_members_subject#, отправился расследовать.</text></string>
+
+ <!-- massacre_loot: subject = looters/scavengers, other = the wiped crew  -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#   -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#     -->
+ <!-- populated: #location#             -->
+ <string id="st_wom_event_massacre_loot_001a"><text>Есть инфа: #a_squad_subject# зашла обшарить останки вырезанной #a_squad_other#.</text></string>
+ <string id="st_wom_event_massacre_loot_001b"><text>Отряд, состоящий из #some_members_subject#, зашел пограбить после гибели #a_squad_other#.</text></string>
+
+
+ <!-- - - - - - - - - - - - - - - - - - COMBAT - - - - - - - - - - - - - - - - - -->
+
+
+ <!-- combat_multi: multi-faction fight at this area; has kills       -->
+ <!-- populated: #participant_list# (all sides), #top_faction_identity# (dominant faction) -->
+ <!-- populated: #kills# (always present)             -->
+ <!-- #top_faction_identity# may be empty; variants 001a/001c/002a do not rely on it  -->
+ <string id="st_wom_event_combat_multi_001a"><text>там была большая многосторонняя схватка с участием сторон: #participant_list#.</text></string>
+ <string id="st_wom_event_combat_multi_001b"><text>Стороны: #participant_list# — все сцепились там, группировка #top_faction_identity# положила врагов #kills#.</text></string>
+ <string id="st_wom_event_combat_multi_001c"><text>там была драка между сторонами: #participant_list#, группировка #top_faction_identity# уложила противников #kills#.</text></string>
+ <string id="st_wom_event_combat_multi_002a"><text>там была еще одна крупная драка, на этот раз стороны: #participant_list# — все сцепились, группировка #top_faction_identity# вышла победителями, завалив врагов #kills#.</text></string>
+ <string id="st_wom_event_combat_multi_002b"><text>Группировка #top_faction_identity# положила врагов #kills# во время новой драки, на этот раз участвовали все стороны: #participant_list#.</text></string>
+
+ <!-- combat_multi_skirmish: multi-faction standoff, no kills       -->
+ <!-- populated: #participant_list#             -->
+ <string id="st_wom_event_combat_multi_skirmish_001a"><text>там было противостояние между сторонами: #participant_list#, но никто не пострадал.</text></string>
+ <string id="st_wom_event_combat_multi_skirmish_001b"><text>Стороны: #participant_list# — пересеклись там, никто не пострадал.</text></string>
+ <string id="st_wom_event_combat_multi_skirmish_002a"><text>снова напряженное противостояние между сторонами: #participant_list#.</text></string>
+
+ <!-- combat_skirmish: both factions clashed but nobody died       -->
+ <!-- subject = aggressors other = opposing faction         -->
+ <!-- populated: #some_members_subject# #a_squad_subject#, #count_other# #some_members_other#   -->
+ <string id="st_wom_event_combat_skirmish_001a"><text>Отряд, состоящий из #some_members_subject#, сцепился там с группой противников, состоящих из #count_other#, но никто не взял верх.</text></string>
+ <string id="st_wom_event_combat_skirmish_001b"><text>Отряд, состоящий из #some_members_subject#, столкнулся там с группой противников, состоящих из #count_other#, но обе стороны обошлись без потерь.</text></string>
+ <string id="st_wom_event_combat_skirmish_001c"><text>там было противостояние между отрядом, состоящим из #some_members_subject#, и группой противников, состоящих из #count_other#.</text></string>
+ <string id="st_wom_event_combat_skirmish_002a"><text>снова была безрезультатная стычка, ни отряд, состоящий из #some_members_subject#, ни группа противников, состоящих из #count_other#, не смогли взять верх.</text></string>
+ <string id="st_wom_event_combat_skirmish_002b"><text>снова было противостояние, ни отряд, состоящий из #some_members_subject#, ни группа противников, состоящих из #count_other#, не добились ни одного убийства.</text></string>
+
+
+ <!-- combat_kill1: tracked fight where the winning side killed exactly one enemy  -->
+ <!-- subject = winning faction other = the losing faction       -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other# #count_other#   -->
+ <!-- populated: #location#               -->
+ <!-- #kills# = "one"                 -->
+ <!-- falls back to combat_* strings when no combat_kill1_* are authored    -->
+ <string id="st_wom_event_combat_kill1_001a"><text>Отряд, состоящий из #some_members_subject#, убил представителя в лице #a_member_other#.</text></string>
+ <string id="st_wom_event_combat_kill1_001b"><text>Отряд, состоящий из #some_members_subject#, наткнулся там на представителя в лице #a_member_other#, и завалил его.</text></string>
+ <string id="st_wom_event_combat_kill1_001c"><text>Отряд, состоящий из #some_members_subject#, срезал встреченного представителя в лице #a_member_other#.</text></string>
+ <string id="st_wom_event_combat_kill1_001d"><text>Отряд, состоящий из #some_members_subject#, замочил представителя в лице #a_member_other#, на которого наткнулся.</text></string>
+ <string id="st_wom_event_combat_kill1_001e"><text>Отряд, состоящий из #some_members_subject#, наткнулся на представителя в лице #a_member_other#, и прикончил его.</text></string>
+ <string id="st_wom_event_combat_kill1_002a"><text>была еще одна драка, отряд, состоящий из #some_members_subject#, положил представителя в лице #a_member_other#.</text></string>
+ <string id="st_wom_event_combat_kill1_002b"><text>случилась новая стычка, отряд, состоящий из #some_members_subject#, уложил представителя в лице #a_member_other#.</text></string>
+ <string id="st_wom_event_combat_kill1_002c"><text>снова кровавая баня, отряд, состоящий из #some_members_subject#, положил представителя в лице #a_member_other#.</text></string>
+
+
+
+ <!-- combat: 2+ kills: subject faction dominated the engagement      -->
+ <!-- subject = faction with most kills other = faction with most losses    -->
+ <!-- populated: #plural_subject# #some_members_subject# #a_squad_subject# #a_member_subject#     -->
+ <!-- populated: #plural_other# #some_members_other# #a_squad_other# #a_member_other#       -->
+ <!-- populated: #count_other# (count-aware: "two Fleshes", "a pack of Fleshes")  -->
+ <!-- populated: #kills# (always present)            -->
+ <string id="st_wom_event_combat_001a"><text>Отряд, состоящий из #some_members_subject#, сцепился там с группой противников, состоящих из #count_other#, убив противника #kills#.</text></string>
+ <string id="st_wom_event_combat_001b"><text>Отряд, состоящий из #some_members_subject#, ударил по группе противников, состоящих из #count_other#, и убил врагов #kills#.</text></string>
+ <string id="st_wom_event_combat_001c"><text>Отряд, состоящий из #some_members_subject#, наткнулся на группу противников, состоящих из #count_other#, и оставил врагов — трупов #kills#.</text></string>
+ <string id="st_wom_event_combat_002a"><text>было еще одно столкновение, отряд, состоящий из #some_members_subject#, сцепился с группой противников, состоящих из #count_other#, убив врагов #kills#.</text></string>
+ <string id="st_wom_event_combat_002b"><text>была еще одна драка, отряд, состоящий из #some_members_subject#, наткнулся на группу противников, состоящих из #count_other#, уложив врагов #kills#.</text></string>
+ <string id="st_wom_event_combat_003a"><text>было еще больше драк, отряд, состоящий из #some_members_subject#, наткнулся на группу противников, состоящих из #count_other# и положил врагов #kills#.</text></string>
+
+</string_table>

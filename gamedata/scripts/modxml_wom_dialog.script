@@ -1,0 +1,292 @@
+--- modxml_wom_dialog.script
+--- Dialog wiring and engine-facing callbacks for all Word of Mouth dialog topics.
+---
+--- The three WoM topics live inside the vanilla "I want to ask you something."
+--- menu (dm_universal_dialog / dm_universal_dialog2, both built at runtime by
+--- dialog_manager.init_new_dialog). on_game_start wraps that init function so
+--- the original phrase tree is built first, then our topics are appended under
+--- the NPC's opening reply (phrase id "1") alongside the vanilla job/anomalies/
+--- information/tips topics. No dialogs are injected or attached by this mod.
+---
+--- Because the universal dialog only exists on generic stalker profiles
+--- (character_dialogs.xml), special NPCs — traders, faction leaders, mechanics,
+--- named quest givers — never see these topics; neither do companions
+--- (dialogs_axr_companion.is_not_actor_companion on the dialog) nor zombied/
+--- monolith NPCs (dialog_manager.uni_dialog_precond).
+---
+--- NOTE — the "modxml_" filename is kept for compatibility: GAMMA's dxml_core
+--- scans for modxml_*.script and calls on_xml_read() on each, so a stub is
+--- provided below. Renaming the file would also require updating every
+--- "modxml_wom_dialog.*" callback string in TOPICS.
+---
+--- Depends on: wom_utils (phrase helper), wom_recap_smart_terrain,
+---             wom_dialogue_helper, wom_recap_npc, wom_npc_status
+
+-- Topics appended to the "I want to ask you something." menu. Each becomes a
+-- three-node chain under the NPC's opening reply: gated actor question →
+-- NPC dynamic reply → actor thanks. Callback names must resolve as
+-- modxml_wom_dialog.<fn>, so those functions stay global.
+local TOPICS = {
+    { id_prefix = "wom_news",   question_key = "st_st_wom_ask_news",
+      precondition_name = "modxml_wom_dialog.can_ask_news",
+      text_callback_name = "modxml_wom_dialog.get_news_text" },
+    { id_prefix = "wom_recap",  question_key = "st_wom_ask_recap",
+      precondition_name = "modxml_wom_dialog.can_ask_recap",
+      text_callback_name = "modxml_wom_dialog.get_recap_text" },
+    { id_prefix = "wom_status", question_key = "st_wom_ask_status",
+      precondition_name = "modxml_wom_dialog.can_ask_status",
+      text_callback_name = "modxml_wom_dialog.get_status_text" },
+    { id_prefix = "wom_territory", question_key = "st_wom_ask_territory",
+      precondition_name = "modxml_wom_dialog.can_ask_territory",
+      text_callback_name = "modxml_wom_dialog.get_territory_text" },
+}
+
+-- Phrase id of the NPC's opening reply ("What do you want to know?") inside
+-- dialog_manager.init_new_dialog's tree — the parent of every topic question.
+local UNIVERSAL_NPC_START_ID = 1
+
+local INVALID_GROUP_ID = 65535
+
+-- Resolves the NPC speaker without dialogs.who_is_npc, which indexes first_speaker
+-- and errors if the engine passes a nil speaker — it does during dialog-list
+-- building, the same path that gates phrase preconditions.
+--
+-- Ids go through wom_utils.get_object_id rather than `a.id and a:id()`. That older
+-- guard reads as a shape test but is not one: on a server object `.id` is a number,
+-- which is truthy, so the guard passes and `a:id()` then raises "attempt to call
+-- method 'id' (a number value)" — inside a precondition, which would take the whole
+-- dialog menu down with it. Speakers are client objects in practice, so this never
+-- fired; it is still the wrong test.
+-- @param a userdata|nil
+-- @param b userdata|nil
+-- @return userdata|nil  the NPC game object, or nil
+local function npc_speaker(a, b)
+    local actor_id = wom_utils.get_object_id(db.actor)
+    local a_id = wom_utils.get_object_id(a)
+    if a_id and a_id ~= actor_id then return a end
+    local b_id = wom_utils.get_object_id(b)
+    if b_id and b_id ~= actor_id then return b end
+    return nil
+end
+
+-- Shared gate: true only for ordinary, talkable, non-special NPCs.
+-- Hides topics when ALifePlus is absent, on Monolith, and on special/unique
+-- NPCs (faction leaders, named traders, technicians, medics, quest givers,
+-- companions). All three topic preconditions delegate here. (Mostly redundant
+-- with the universal dialog's own gating, but kept as a belt-and-braces guard
+-- and for the ALifePlus check.)
+--
+-- xcreature.is_unscriptable is a strict superset of the bare story_id test it
+-- replaced: it checks story_id, squad story_id, the companion has_info signal,
+-- and xdata.unscriptable_npcs (the curated section list, which catches special
+-- NPCs carrying no story_id at all), and caches per game object. Falls back to
+-- the story_id test when xlibs is absent.
+--
+-- xsmart.is_trader_npc catches what the curated list cannot: ALifePlus 1.8.4
+-- spawns real service NPCs (trader, barman, mechanic, medic) at held outposts
+-- via xcreature.make_trader, which deliberately leaves character_community and
+-- the section untouched. Those NPCs carry no story_id and are not in the
+-- curated list, so without a runtime role check they would be the first
+-- shopkeepers in the game to offer these topics. Detection is by role set, so
+-- it also covers addon traders. Drop this branch if outpost barmen gossiping
+-- is wanted.
+-- @param first_speaker  userdata|nil
+-- @param second_speaker userdata|nil
+-- @return boolean
+local function is_ordinary_stalker(first_speaker, second_speaker)
+    if not (ap_api and ap_api.get_records) then return false end
+    local npc = npc_speaker(first_speaker, second_speaker)
+    if not npc then return false end
+    if npc:character_community() == "monolith" then return false end
+    if xcreature and xcreature.is_unscriptable then
+        if xcreature.is_unscriptable(npc) then return false end
+    elseif get_object_story_id and get_object_story_id(npc:id()) then
+        return false
+    end
+    if xsmart and xsmart.get_npc_roles and next(xsmart.get_npc_roles(npc)) ~= nil then
+        return false
+    end
+    return true
+end
+
+-- Precondition for "Any interesting news?". Returning false removes the topic
+-- from the "I want to ask you something." menu.
+-- @param first_speaker  userdata|nil
+-- @param second_speaker userdata|nil
+-- @return boolean
+function can_ask_news(first_speaker, second_speaker)
+    return is_ordinary_stalker(first_speaker, second_speaker)
+end
+
+-- Precondition for "What have you been up to?". Same gate as can_ask_news.
+-- @param first_speaker  userdata|nil
+-- @param second_speaker userdata|nil
+-- @return boolean
+function can_ask_recap(first_speaker, second_speaker)
+    return is_ordinary_stalker(first_speaker, second_speaker)
+end
+
+-- [UNUSED] Precondition for a future posted-NPC topic (e.g. "Anything happening here?").
+-- True only for ordinary stalkers who are actively standing a watch post.
+-- Not wired to any topic in TOPICS — kept for future use.
+-- function can_ask_posted(first_speaker, second_speaker)
+--     if not is_ordinary_stalker(first_speaker, second_speaker) then return false end
+--     local npc = npc_speaker(first_speaker, second_speaker)
+--     return npc ~= nil and wom_npc_role.is_posted(npc)
+-- end
+
+-- Dynamic NPC reply text. Reports recent qualifying events at one area on the
+-- current level, or a "nothing to report" line. Called by the engine at display
+-- time (speakers are valid here).
+-- @param first_speaker  userdata
+-- @param second_speaker userdata
+-- @return string
+function get_news_text(first_speaker, second_speaker)
+    local report = wom_recap_smart_terrain.collect_eligible_news()
+    local result
+    if not report then
+        result = wom_dialogue_helper.get_nothing_text()
+    else
+        local npc = npc_speaker(first_speaker, second_speaker)
+        local npc_faction = npc and npc:character_community()
+        local sim = alife and alife()
+        local server_npc = sim and npc and sim:object(npc:id())
+        local npc_squad_id = server_npc and server_npc.group_id
+        if npc_squad_id == INVALID_GROUP_ID then npc_squad_id = nil end
+        result = wom_dialogue_helper.render_report(report, npc_faction, npc_squad_id)
+    end
+    wom_debug.log_response("NEWS", result)
+    return result
+end
+
+-- Dynamic NPC reply text for "What have you been up to?". Delegates to
+-- wom_recap_npc to build the full multi-paragraph recap. Called by the engine
+-- at display time (both speakers are valid here).
+-- @param first_speaker  userdata
+-- @param second_speaker userdata
+-- @return string
+function get_recap_text(first_speaker, second_speaker)
+    local npc = npc_speaker(first_speaker, second_speaker)
+    if not npc then return "..." end
+    local result = wom_recap_npc.render_recap(npc)
+    wom_debug.log_response("RECAP", result)
+    return result
+end
+
+-- Precondition for "How are you holding up?". Same gate as can_ask_recap.
+-- @param first_speaker  userdata|nil
+-- @param second_speaker userdata|nil
+-- @return boolean
+function can_ask_status(first_speaker, second_speaker)
+    return is_ordinary_stalker(first_speaker, second_speaker)
+end
+
+-- Dynamic NPC reply text for "How are you holding up?". Delegates to
+-- wom_npc_status to build a health + needs response. Called by the engine
+-- at display time (both speakers are valid here).
+-- @param first_speaker  userdata
+-- @param second_speaker userdata
+-- @return string
+function get_status_text(first_speaker, second_speaker)
+    local npc = npc_speaker(first_speaker, second_speaker)
+    if not npc then return "..." end
+    if not (wom_npc_status and wom_npc_status.render_status) then return "..." end
+    local result = wom_npc_status.render_status(npc)
+    wom_debug.log_response("STATUS", result)
+    return result
+end
+
+-- Precondition for "Who's holding ground around here?". Same gate as can_ask_news.
+-- @param first_speaker  userdata|nil
+-- @param second_speaker userdata|nil
+-- @return boolean
+function can_ask_territory(first_speaker, second_speaker)
+    return is_ordinary_stalker(first_speaker, second_speaker)
+end
+
+-- Dynamic NPC reply text for "Who's holding ground around here?". Delegates to
+-- wom_territory, which builds a hearsay ledger of territory takeovers on this level.
+-- Called by the engine at display time (both speakers are valid here).
+-- @param first_speaker  userdata
+-- @param second_speaker userdata
+-- @return string
+function get_territory_text(first_speaker, second_speaker)
+    local npc = npc_speaker(first_speaker, second_speaker)
+    if not npc then return "..." end
+    if not (wom_territory and wom_territory.render_territory) then return "..." end
+    local result = wom_territory.render_territory(npc)
+    -- Every pool can gate out at once (unauthored locale, all slots empty); an empty
+    -- phrase would render as a blank line of dialogue.
+    if result == "" then result = "..." end
+    wom_debug.log_response("TERRITORY", result)
+    return result
+end
+
+-- Appends every WoM topic to an already-built universal-dialog phrase tree.
+-- The dynamic SetScriptText sits on the NPC reply, never the actor question —
+-- a dynamic actor phrase crashes dialog-list building (nil first_speaker).
+-- Phrase ids are prefixed strings ("wom_news_q" etc.) so they can never
+-- collide with dialog_manager's numeric get_id() counter.
+-- @param dialog userdata  the CPhraseDialog populated by init_new_dialog
+local function add_wom_topics(dialog)
+    for i = 1, #TOPICS do
+        local topic = TOPICS[i]
+        local question_id = topic.id_prefix .. "_q"
+        local answer_id   = topic.id_prefix .. "_a"
+        local thanks_id   = topic.id_prefix .. "_t"
+        local question = wom_utils.add_phrase(dialog, UNIVERSAL_NPC_START_ID, question_id, topic.question_key)
+        if question then question:AddPrecondition(topic.precondition_name) end
+        local answer = wom_utils.add_phrase(dialog, question_id, answer_id, "...")
+        if answer then answer:SetScriptText(topic.text_callback_name) end
+        wom_utils.add_phrase(dialog, answer_id, thanks_id, "st_wom_actor_thanks")
+    end
+end
+
+-- DXML: dxml_core calls this on every modxml_*.script. WoM no longer injects
+-- any dialog XML, so this is a deliberate no-op stub.
+function on_xml_read()
+end
+
+-- Wraps dialog_manager.init_new_dialog so the WoM topics are inserted into the
+-- "I want to ask you something." menu. The dialog UI lists answers in the order
+-- phrases were added, and the vanilla builder adds "Never mind"
+-- (dm_universal_actor_exit) last — so while the vanilla tree is being built,
+-- dialog_manager.add_dialog is temporarily intercepted (init_new_dialog resolves
+-- it through the module environment at call time) and the WoM topics are added
+-- just before that exit phrase, placing them above "Never mind". If the exit
+-- phrase is never seen (another mod renamed/removed it), the topics are appended
+-- after the tree instead. The engine resolves the init_func by name at
+-- dialog-construction time, so replacing the module field is sufficient. Chains
+-- cleanly with any other mod that wraps the same function.
+local original_init_new_dialog = nil
+
+function on_game_start()
+    if original_init_new_dialog then return end
+    if not (dialog_manager and dialog_manager.init_new_dialog) then
+        if printf then printf("![wom] dialog_manager.init_new_dialog not found; WoM dialog topics disabled") end
+        return
+    end
+    original_init_new_dialog = dialog_manager.init_new_dialog
+    dialog_manager.init_new_dialog = function(dialog)
+        local topics_added = false
+        local original_add_dialog = dialog_manager.add_dialog
+        if original_add_dialog then
+            dialog_manager.add_dialog = function(parent_id, id, phrase_id, condition, action)
+                if phrase_id == "dm_universal_actor_exit" and not topics_added then
+                    topics_added = true
+                    add_wom_topics(dialog)
+                end
+                return original_add_dialog(parent_id, id, phrase_id, condition, action)
+            end
+        end
+        local ok, build_error = pcall(original_init_new_dialog, dialog)
+        if original_add_dialog then
+            dialog_manager.add_dialog = original_add_dialog
+        end
+        if not ok then error(build_error) end
+        if not topics_added then
+            add_wom_topics(dialog)
+        end
+    end
+    if printf then printf("~[wom] topics hooked into dm_universal_dialog") end
+end

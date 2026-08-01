@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="windows-1251" ?>
+<string_table>
+
+  <!-- Current-action templates for the closing line of the "What have you been up to?" recap.  -->
+  <!-- Chosen by render_current_action() in wom_recap_npc.script via a goal+role cascade.      -->
+  <!-- These follow a now-lead transition (e.g. "And now?") already picked from                -->
+  <!-- st_wom_ask_recap_now_lead_* in st_wom_recap_day.xml.                                    -->
+  <!--                                                                                          -->
+  <!-- Slots:                                                                                   -->
+  <!--   #Im_Were_u#  "I'm" / "We're"                                                          -->
+  <!--   #I_We_u#     "I" / "We"                                                               -->
+  <!--   #I_we_l#     "i" / "we"                                                               -->
+  <!--   #Ive_Weve_u# "I've" / "We've"                                                         -->
+  <!--   #my_our_l#   "my" / "our"                                                             -->
+  <!--   #me_us_l#    "me" / "us"                                                              -->
+  <!--   #location#   smart terrain display name; falls back to "a location" when unknown      -->
+  <!--   #intent#     short goal fragment for role frames, "" when no template (gated)         -->
+  <!--   #some_members_other# faction that triggered this goal, e.g. "some Bandits"; "someone" when   -->
+  <!--                the AP record has no second party                                        -->
+  <!--   #a_member_other#    "a [Bandit]" / "someone" — singular form of the above                   -->
+
+
+  <!-- ============================================================ -->
+  <!-- NO-GOAL FALLBACK                                             -->
+  <!-- Used when no AP record exists for the squad.                 -->
+  <!-- ============================================================ -->
+
+  <string id="st_wom_ask_nogoal_001"><text>Not sure what's next. Just keeping #my_our_l# head down for now.</text></string>
+  <string id="st_wom_ask_nogoal_002"><text>#Im_Were_u# just waiting to see what comes next.</text></string>
+  <string id="st_wom_ask_nogoal_003"><text>Nothing lined up at the moment.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- GENERIC STATE FALLBACKS                                      -->
+  <!-- Used when no goal-specific or role-specific template matches. -->
+  <!-- ============================================================ -->
+
+  <string id="st_wom_ask_generic_arrived_001"><text>#Im_Were_u# here for now.</text></string>
+  <string id="st_wom_ask_generic_arrived_002"><text>Right now, just holding position.</text></string>
+  <string id="st_wom_ask_generic_arrived_003"><text>Keeping busy at #location#.</text></string>
+
+  <string id="st_wom_ask_generic_moving_001"><text>#Im_Were_u# on the move.</text></string>
+  <string id="st_wom_ask_generic_moving_002"><text>Heading out.</text></string>
+  <string id="st_wom_ask_generic_moving_003"><text>On #my_our_l# way to #location#.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- ROLE FRAMES                                                   -->
+  <!-- Used when the goal cascade has no match but the NPC's scheme  -->
+  <!-- is known. The #intent# slot is filled from the intent pool    -->
+  <!-- below; variants using #intent# are gated out when it is empty.-->
+  <!-- ============================================================ -->
+
+  <!-- posted: standing a watch or guard position -->
+  <string id="st_wom_ask_posted_001"><text>#Im_Were_u# keeping watch. #intent#</text></string>
+  <string id="st_wom_ask_posted_002"><text>On guard duty right now. #intent#</text></string>
+  <string id="st_wom_ask_posted_003"><text>#Im_Were_u# standing watch here.</text></string>
+  <string id="st_wom_ask_posted_004"><text>Keeping an eye on things.</text></string>
+
+  <!-- settled: at rest, campfire, or animation point -->
+  <string id="st_wom_ask_settled_001"><text>Taking a breather. #intent#</text></string>
+  <string id="st_wom_ask_settled_002"><text>#Im_Were_u# resting up a bit.</text></string>
+  <string id="st_wom_ask_settled_003"><text>Just taking a moment.</text></string>
+
+  <!-- sleeping -->
+  <string id="st_wom_ask_sleeping_001"><text>About to get some sleep. #intent#</text></string>
+  <string id="st_wom_ask_sleeping_002"><text>#Im_Were_u# grabbing some sleep while #I_we_l# can.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- INTENT FRAGMENTS                                             -->
+  <!-- Short present-tense clause, no pronoun. Fills the #intent#   -->
+  <!-- slot in role frames. One or two sentences max.               -->
+  <!-- ============================================================ -->
+
+  <string id="st_wom_ask_intent_area_conquer_001"><text>Keeping an eye on who comes through.</text></string>
+  <string id="st_wom_ask_intent_area_conquer_002"><text>Making sure nobody reclaims the place.</text></string>
+  <string id="st_wom_ask_intent_area_infest_001"><text>Watching for trouble from those creatures.</text></string>
+  <string id="st_wom_ask_intent_area_swarm_001"><text>Keeping watch after that swarm came through.</text></string>
+  <string id="st_wom_ask_intent_massacre_investigate_001"><text>Still watching for whoever hit them.</text></string>
+  <string id="st_wom_ask_intent_massacre_loot_001"><text>Might as well pick over what's left.</text></string>
+  <string id="st_wom_ask_intent_massacre_scavenge_001"><text>There's salvage worth taking.</text></string>
+  <string id="st_wom_ask_intent_job_explore_001"><text>Good a time as any to check the area out.</text></string>
+  <string id="st_wom_ask_intent_job_outpost_001"><text>Keeping the position manned.</text></string>
+  <string id="st_wom_ask_intent_stash_loot_001"><text>There was a stash worth checking.</text></string>
+  <string id="st_wom_ask_intent_squadkill_revenge_001"><text>Someone had to answer for it.</text></string>
+  <string id="st_wom_ask_intent_basekill_support_001"><text>Those boys needed backup.</text></string>
+  <string id="st_wom_ask_intent_basekill_flee_001"><text>Place wasn't worth dying for.</text></string>
+  <string id="st_wom_ask_intent_money_harvest_001"><text>Artifact hunt.</text></string>
+  <string id="st_wom_ask_intent_harvest_rob_001"><text>Those hunters had something worth taking.</text></string>
+  <string id="st_wom_ask_intent_wounded_help_001"><text>Someone needed a hand.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- MUNDANE GOALS (LOW_INTEREST set)                             -->
+  <!-- ============================================================ -->
+
+  <!-- hunger_campfire: eating -->
+  <string id="st_wom_ask_hunger_campfire_arrived_001"><text>#Im_Were_u# getting something to eat.</text></string>
+  <string id="st_wom_ask_hunger_campfire_arrived_002"><text>Grabbing a bite at #location#.</text></string>
+  <string id="st_wom_ask_hunger_campfire_arrived_003"><text>Stomach was empty. Taking care of that.</text></string>
+  <string id="st_wom_ask_hunger_campfire_moving_001"><text>Heading to #location# to get something to eat.</text></string>
+  <string id="st_wom_ask_hunger_campfire_moving_002"><text>Hoping to find a spot to eat at #location#.</text></string>
+
+  <!-- sleep_campfire: sleeping -->
+  <string id="st_wom_ask_sleep_campfire_arrived_001"><text>#Im_Were_u# grabbing some sleep.</text></string>
+  <string id="st_wom_ask_sleep_campfire_arrived_002"><text>Getting some rest at #location#.</text></string>
+  <string id="st_wom_ask_sleep_campfire_moving_001"><text>Hoping to find a spot to sleep at #location#.</text></string>
+  <string id="st_wom_ask_sleep_campfire_moving_002"><text>Headed to #location# to see if there are any places to crash.</text></string>
+
+  <!-- rest_campfire: resting -->
+  <string id="st_wom_ask_rest_campfire_arrived_001"><text>Taking a rest.</text></string>
+  <string id="st_wom_ask_rest_campfire_arrived_002"><text>Resting up at #location#.</text></string>
+  <string id="st_wom_ask_rest_campfire_arrived_003"><text>#Im_Were_u# by the fire at #location#.</text></string>
+  <string id="st_wom_ask_rest_campfire_moving_001"><text>Heading to #location# to take a breather.</text></string>
+  <string id="st_wom_ask_rest_campfire_moving_002"><text>On #my_our_l# way to #location# to take it easy for a bit.</text></string>
+
+  <!-- social_base: socialising at base -->
+  <string id="st_wom_ask_social_base_arrived_001"><text>#Im_Were_u# just talking with the others.</text></string>
+  <string id="st_wom_ask_social_base_arrived_002"><text>Passing the time with #my_our_l# crew at #location#.</text></string>
+  <string id="st_wom_ask_social_base_arrived_003"><text>Catching up with the others.</text></string>
+  <string id="st_wom_ask_social_base_moving_001"><text>Hoping to find some good company at #location#.</text></string>
+  <string id="st_wom_ask_social_base_moving_002"><text>Hoping #I_we_l# can find a good spot to shoot the breeze at #location#.</text></string>
+
+  <!-- social_campfire: socialising at a campfire -->
+  <string id="st_wom_ask_social_campfire_arrived_001"><text>#Im_Were_u# at the campfire.</text></string>
+  <string id="st_wom_ask_social_campfire_arrived_002"><text>Shooting the breeze around the fire at #location#.</text></string>
+  <string id="st_wom_ask_social_campfire_arrived_003"><text>Passing the time by the fire.</text></string>
+  <string id="st_wom_ask_social_campfire_moving_001"><text>Hoping to find a warm spot to swap stories at #location#.</text></string>
+  <string id="st_wom_ask_social_campfire_moving_002"><text>Headed to #location# in search of warmth and merriment.</text></string>
+
+  <!-- heal_shelter: recovering from wounds -->
+  <string id="st_wom_ask_heal_shelter_arrived_001"><text>Patching up. Took some damage.</text></string>
+  <string id="st_wom_ask_heal_shelter_arrived_002"><text>#Im_Were_u# getting patched up at #location#.</text></string>
+  <string id="st_wom_ask_heal_shelter_arrived_003"><text>Getting #my_our_l# wounds seen to.</text></string>
+  <string id="st_wom_ask_heal_shelter_moving_001"><text>Hoping to find a place to patch up at #location#.</text></string>
+  <string id="st_wom_ask_heal_shelter_moving_002"><text>Heading to #location# to try and get #my_our_l# wounds seen to.</text></string>
+
+  <!-- shelter_indoor: taking shelter indoors -->
+  <string id="st_wom_ask_shelter_indoor_arrived_001"><text>Taking shelter inside.</text></string>
+  <string id="st_wom_ask_shelter_indoor_arrived_002"><text>Waiting it out indoors at #location#.</text></string>
+  <string id="st_wom_ask_shelter_indoor_moving_001"><text>Hoping to find a spot at #location# to get out of the wilderness.</text></string>
+  <string id="st_wom_ask_shelter_indoor_moving_002"><text>Heading to #location# to find a spot indoors.</text></string>
+
+  <!-- shelter_outdoor: taking shelter outside -->
+  <string id="st_wom_ask_shelter_outdoor_arrived_001"><text>Taking cover out here.</text></string>
+  <string id="st_wom_ask_shelter_outdoor_arrived_002"><text>Sheltering near #location#.</text></string>
+  <string id="st_wom_ask_shelter_outdoor_moving_001"><text>Hoping to find somewhere at #location# to post up.</text></string>
+  <string id="st_wom_ask_shelter_outdoor_moving_002"><text>Hoping to find some kind of shelter at #location#.</text></string>
+
+
+  <!-- ============================================================ -->
+  <!-- ACTIVE GOALS — ARRIVED AND MOVING VARIANTS                   -->
+  <!-- ============================================================ -->
+
+  <!-- area_conquer: claiming / holding territory -->
+  <!-- #some_members_other# = the faction being displaced, e.g. "some Duty soldiers"; "someone" when unknown -->
+  <string id="st_wom_ask_area_conquer_arrived_001"><text>#I_We_u# took the place. #Im_Were_u# making sure it stays ours.</text></string>
+  <string id="st_wom_ask_area_conquer_arrived_002"><text>#Im_Were_u# holding #location#.</text></string>
+  <string id="st_wom_ask_area_conquer_arrived_003"><text>Pushed #some_members_other# out of here. Now holding it.</text></string>
+  <string id="st_wom_ask_area_conquer_moving_001"><text>Moving out to secure #location#.</text></string>
+  <string id="st_wom_ask_area_conquer_moving_002"><text>On #my_our_l# way to stake a claim to #location#.</text></string>
+
+  <!-- area_infest: mutants moving in on a location -->
+  <!-- #some_members_other# = the infesting species, e.g. "some Pseudodogs"; "someone" when unknown -->
+  <string id="st_wom_ask_area_infest_arrived_001"><text>Watching the area. #some_members_other# moved in.</text></string>
+  <string id="st_wom_ask_area_infest_arrived_002"><text>Keeping watch at #location# after #some_members_other# showed up.</text></string>
+  <string id="st_wom_ask_area_infest_moving_001"><text>Heading out to check what's moved in at #location#.</text></string>
+  <string id="st_wom_ask_area_infest_moving_002"><text>Moving to deal with #some_members_other# near #location#.</text></string>
+
+  <!-- area_swarm: mutant swarm -->
+  <!-- #some_members_other# = the swarming species, e.g. "some Snorks"; "someone" when unknown -->
+  <string id="st_wom_ask_area_swarm_arrived_001"><text>#Im_Were_u# keeping an eye out after that swarm.</text></string>
+  <string id="st_wom_ask_area_swarm_arrived_002"><text>Watching #location# after #some_members_other# came through.</text></string>
+  <string id="st_wom_ask_area_swarm_moving_001"><text>Moving out to deal with that swarm near #location#.</text></string>
+  <string id="st_wom_ask_area_swarm_moving_002"><text>Going to deal with #some_members_other#.</text></string>
+
+  <!-- job_explore: scouting / exploring -->
+  <string id="st_wom_ask_job_explore_arrived_001"><text>Checking out #location#.</text></string>
+  <string id="st_wom_ask_job_explore_arrived_002"><text>#Im_Were_u# scouting around here.</text></string>
+  <string id="st_wom_ask_job_explore_arrived_003"><text>Having a look around.</text></string>
+  <string id="st_wom_ask_job_explore_moving_001"><text>On #my_our_l# way to check out #location#.</text></string>
+  <string id="st_wom_ask_job_explore_moving_002"><text>Moving out to scout around #location#.</text></string>
+
+  <!-- job_outpost: manning a forward position -->
+  <string id="st_wom_ask_job_outpost_arrived_001"><text>Manning the position at #location#.</text></string>
+  <string id="st_wom_ask_job_outpost_arrived_002"><text>#Im_Were_u# keeping #location# covered.</text></string>
+  <string id="st_wom_ask_job_outpost_arrived_003"><text>Holding this post.</text></string>
+  <string id="st_wom_ask_job_outpost_moving_001"><text>On #my_our_l# way to set up an outpost at #location#.</text></string>
+  <string id="st_wom_ask_job_outpost_moving_002"><text>Moving out to take up a position at #location#.</text></string>
+
+  <!-- massacre_investigate: investigating a massacre -->
+  <!-- #some_members_other# = the perpetrating faction, e.g. "some Mercs"; "someone" when unknown -->
+  <string id="st_wom_ask_massacre_investigate_arrived_001"><text>#Im_Were_u# checking what happened at #location#.</text></string>
+  <string id="st_wom_ask_massacre_investigate_arrived_002"><text>Looking into what #some_members_other# did at #location#.</text></string>
+  <string id="st_wom_ask_massacre_investigate_arrived_003"><text>Someone hit this place hard. Seeing what #some_members_other# left behind.</text></string>
+  <string id="st_wom_ask_massacre_investigate_moving_001"><text>Heading to #location# to investigate some missing stalkers.</text></string>
+  <string id="st_wom_ask_massacre_investigate_moving_002"><text>Going to find out what #some_members_other# did at #location#.</text></string>
+
+  <!-- massacre_loot: looting massacre site -->
+  <string id="st_wom_ask_massacre_loot_arrived_001"><text>Picking over what's left at #location#.</text></string>
+  <string id="st_wom_ask_massacre_loot_arrived_002"><text>#Im_Were_u# going through whatever's left behind.</text></string>
+  <string id="st_wom_ask_massacre_loot_moving_001"><text>Heading to #location#. There's salvage from that firefight.</text></string>
+
+  <!-- massacre_scavenge: scavenging massacre site -->
+  <string id="st_wom_ask_massacre_scavenge_arrived_001"><text>Scavenging what #I_we_l# can from #location#.</text></string>
+  <string id="st_wom_ask_massacre_scavenge_arrived_002"><text>Going through the leftovers here.</text></string>
+  <string id="st_wom_ask_massacre_scavenge_moving_001"><text>On #my_our_l# way to #location# for some scavenging.</text></string>
+
+  <!-- squadkill_revenge: pursuing those who attacked the squad -->
+  <!-- #some_members_other# = the attacking faction, e.g. "some Bandits"; "someone" when unknown -->
+  <string id="st_wom_ask_squadkill_revenge_arrived_001"><text>Came to settle a score at #location#.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_arrived_002"><text>#Im_Were_u# hunting #some_members_other# who hit #me_us_l#.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_arrived_003"><text>Came to settle accounts with #some_members_other#.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_arrived_004"><text>#some_members_other# owe #me_us_l#. #Im_Were_u# here to collect.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_moving_001"><text>Moving to #location# to get some revenge on #some_members_other#.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_moving_002"><text>On #my_our_l# way to track down #some_members_other# who attacked #me_us_l#.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_moving_003"><text>Moving to #location# to dispense some payback against #some_members_other#.</text></string>
+
+  <!-- basekill_support: reinforcing an allied position under attack -->
+  <!-- #some_members_other# = the attacking faction, e.g. "some Monolith fanatics"; "someone" when unknown -->
+  <string id="st_wom_ask_basekill_support_arrived_001"><text>#Im_Were_u# backing up the boys at #location#.</text></string>
+  <string id="st_wom_ask_basekill_support_arrived_002"><text>Came to help push back #some_members_other# at #location#.</text></string>
+  <string id="st_wom_ask_basekill_support_arrived_003"><text>Holding the line against #some_members_other#.</text></string>
+  <string id="st_wom_ask_basekill_support_moving_001"><text>On #my_our_l# way to reinforce #location#.</text></string>
+  <string id="st_wom_ask_basekill_support_moving_002"><text>Moving to help hold #location# against #some_members_other#.</text></string>
+
+  <!-- basekill_flee: retreating after a base was destroyed -->
+  <string id="st_wom_ask_basekill_flee_arrived_001"><text>#Im_Were_u# regrouping after that mess at #location#.</text></string>
+  <string id="st_wom_ask_basekill_flee_arrived_002"><text>Fell back from #location#. Regrouping now.</text></string>
+  <string id="st_wom_ask_basekill_flee_arrived_003"><text>Fell back. Regrouping.</text></string>
+  <string id="st_wom_ask_basekill_flee_moving_001"><text>Pulling back from #location#.</text></string>
+  <string id="st_wom_ask_basekill_flee_moving_002"><text>Getting clear of that mess.</text></string>
+
+  <!-- stash_loot: raiding a stash -->
+  <string id="st_wom_ask_stash_loot_arrived_001"><text>Looking through a stash at #location#.</text></string>
+  <string id="st_wom_ask_stash_loot_arrived_002"><text>Checking out a stash #I_we_l# found.</text></string>
+  <string id="st_wom_ask_stash_loot_moving_001"><text>On #my_our_l# way to raid a stash at #location#.</text></string>
+  <string id="st_wom_ask_stash_loot_moving_002"><text>Heading to pop a stash at #location#.</text></string>
+
+  <!-- stash_ambush: ambushing at a stash -->
+  <string id="st_wom_ask_stash_ambush_arrived_001"><text>#Im_Were_u# lying in wait. Don't ask.</text></string>
+  <string id="st_wom_ask_stash_ambush_arrived_002"><text>Just keeping #my_our_l# eyes open here.</text></string>
+  <string id="st_wom_ask_stash_ambush_moving_001"><text>Got a lead on something. Moving to set up.</text></string>
+
+  <!-- money_harvest: artifact hunting -->
+  <string id="st_wom_ask_money_harvest_arrived_001"><text>#Im_Were_u# hunting artifacts at #location#.</text></string>
+  <string id="st_wom_ask_money_harvest_arrived_002"><text>Out looking for artifacts.</text></string>
+  <string id="st_wom_ask_money_harvest_moving_001"><text>On #my_our_l# way to #location# for an artifact run.</text></string>
+  <string id="st_wom_ask_money_harvest_moving_002"><text>Heading to #location# to hunt for artifacts.</text></string>
+
+  <!-- harvest_rob: robbing artifact hunters -->
+  <string id="st_wom_ask_harvest_rob_arrived_001"><text>Taking what someone else found. Zone law.</text></string>
+  <string id="st_wom_ask_harvest_rob_arrived_002"><text>Found some hunters near #location# who can spare a few things.</text></string>
+  <string id="st_wom_ask_harvest_rob_moving_001"><text>Moving on a target near #location#.</text></string>
+  <string id="st_wom_ask_harvest_rob_moving_002"><text>Moving to shake down #some_members_other# at #location#.</text></string>
+
+  <!-- alpha_promote / alphakill_targeted: squad hierarchy -->
+  <string id="st_wom_ask_alpha_promote_arrived_001"><text>#Im_Were_u# asserting the chain of command.</text></string>
+  <string id="st_wom_ask_alpha_promote_arrived_002"><text>Sorting out who's in charge around here.</text></string>
+  <string id="st_wom_ask_alphakill_targeted_arrived_001"><text>#Im_Were_u# settling a leadership matter.</text></string>
+  <string id="st_wom_ask_alphakill_targeted_arrived_002"><text>Internal matter. Nothing to worry about.</text></string>
+  <string id="st_wom_ask_alphakill_targeted_moving_001"><text>Moving out. Internal matter to deal with.</text></string>
+
+  <!-- wounded_help: aiding an injured ally -->
+  <string id="st_wom_ask_wounded_help_arrived_001"><text>Someone needed help at #location#. #Im_Were_u# here now.</text></string>
+  <string id="st_wom_ask_wounded_help_arrived_002"><text>Helping out a wounded stalker.</text></string>
+  <string id="st_wom_ask_wounded_help_moving_001"><text>On #my_our_l# way to help someone who got hurt near #location#.</text></string>
+  <string id="st_wom_ask_wounded_help_moving_002"><text>Moving out. Someone needs help at #location#.</text></string>
+
+  <!-- wounded_hunt: targeting an injured enemy -->
+  <!-- #a_member_other# = the wounded target (singular), e.g. "a Duty soldier"; "someone" when unknown -->
+  <string id="st_wom_ask_wounded_hunt_arrived_001"><text>Following up on a weakened #a_member_other# at #location#.</text></string>
+  <string id="st_wom_ask_wounded_hunt_arrived_002"><text>Finishing what someone else started.</text></string>
+  <string id="st_wom_ask_wounded_hunt_moving_001"><text>Moving on a weakened #a_member_other# near #location#.</text></string>
+  <string id="st_wom_ask_wounded_hunt_moving_002"><text>Heading to finish off #a_member_other# at #location#.</text></string>
+
+  <!-- stash_fill: hiding / stocking a stash -->
+  <string id="st_wom_ask_stash_fill_arrived_001"><text>Dropping some gear at a stash near #location#.</text></string>
+  <string id="st_wom_ask_stash_fill_arrived_002"><text>Stowing some things #I_we_l# don't want to carry.</text></string>
+  <string id="st_wom_ask_stash_fill_moving_001"><text>On #my_our_l# way to a spot near #location# where #I_we_l# can stow some gear.</text></string>
+  <string id="st_wom_ask_stash_fill_moving_002"><text>Heading to make a deposit at a stash near #location#.</text></string>
+
+  <!-- money_hunt: hunting for profit / bounty -->
+  <string id="st_wom_ask_money_hunt_arrived_001"><text>Tracking a target near #location#. Pays well.</text></string>
+  <string id="st_wom_ask_money_hunt_arrived_002"><text>#Im_Were_u# running down a bounty.</text></string>
+  <string id="st_wom_ask_money_hunt_moving_001"><text>Hoping to find some mutants to hunt near #location#.</text></string>
+  <string id="st_wom_ask_money_hunt_moving_002"><text>Hoping to make some cash at #location# hunting mutants.</text></string>
+
+  <!-- supply_trader: heading to a trader -->
+  <string id="st_wom_ask_supply_trader_arrived_001"><text>Resupplying at #location#.</text></string>
+  <string id="st_wom_ask_supply_trader_arrived_002"><text>Picking up supplies, #location# has what #I_we_l# need.</text></string>
+  <string id="st_wom_ask_supply_trader_arrived_003"><text>Getting restocked.</text></string>
+  <string id="st_wom_ask_supply_trader_moving_001"><text>On #my_our_l# way to resupply the trader at #location#.</text></string>
+  <string id="st_wom_ask_supply_trader_moving_002"><text>Hauling some goods to the trader at #location#.</text></string>
+
+  <!-- supply_trader_offmap: trading run off the current map -->
+  <string id="st_wom_ask_supply_trader_offmap_arrived_001"><text>Back from a supply run. Took a while.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_arrived_002"><text>Just finished a resupply trip.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_moving_001"><text>Off to #location# on a supply run.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_moving_002"><text>Headed out to #location# to resupply the trader.</text></string>
+
+  <!-- job_research: research or data-gathering assignment -->
+  <string id="st_wom_ask_job_research_arrived_001"><text>#Im_Were_u# gathering data at #location#.</text></string>
+  <string id="st_wom_ask_job_research_arrived_002"><text>Running some research at #location#. Don't ask.</text></string>
+  <string id="st_wom_ask_job_research_arrived_003"><text>On a research job. Keeping it quiet.</text></string>
+  <string id="st_wom_ask_job_research_moving_001"><text>On #my_our_l# way to take some readings at #location#.</text></string>
+  <string id="st_wom_ask_job_research_moving_002"><text>Headed to #location# to do some survey work.</text></string>
+
+  <!-- job_explore_offmap: scouting run off the current map -->
+  <string id="st_wom_ask_job_explore_offmap_arrived_001"><text>Just got back from a sweep outside the area.</text></string>
+  <string id="st_wom_ask_job_explore_offmap_moving_001"><text>Headed to #location# for a sweep.</text></string>
+  <string id="st_wom_ask_job_explore_offmap_moving_002"><text>Doing some scouting at #location#.</text></string>
+
+  <!-- social_offmap: travelling to meet up off the current map -->
+  <string id="st_wom_ask_social_offmap_arrived_001"><text>Back from a meetup outside the area.</text></string>
+  <string id="st_wom_ask_social_offmap_moving_001"><text>Heading out of the area for a meetup.</text></string>
+  <string id="st_wom_ask_social_offmap_moving_002"><text>Meeting up with some people at #location#.</text></string>
+
+  <!-- harvest_haunt: lurking near artifact zones to prey on hunters -->
+  <string id="st_wom_ask_harvest_haunt_arrived_001"><text>Waiting near #location#. Someone will come looking for artifacts.</text></string>
+  <string id="st_wom_ask_harvest_haunt_arrived_002"><text>Keeping watch near an anomaly zone. Hunters always show up eventually.</text></string>
+  <string id="st_wom_ask_harvest_haunt_moving_001"><text>Moving to #location# to wait for artifact hunters.</text></string>
+  <string id="st_wom_ask_harvest_haunt_moving_002"><text>Going to lurk near the anomaly fields near #location#.</text></string>
+
+  <!-- SECRETIVE: deflecting answer when the NPC's current goal is secret and the player
+       is from a different faction. All secret goals share this one pool.
+       Pronoun slots (#my_our_l#, etc.) are available. -->
+  <string id="st_wom_ask_generic_secretive_001"><text>Nothing that concerns you.</text></string>
+  <string id="st_wom_ask_generic_secretive_002"><text>Just minding #my_our_l# own business.</text></string>
+  <string id="st_wom_ask_generic_secretive_003"><text>That's on a need-to-know basis.</text></string>
+  <string id="st_wom_ask_generic_secretive_004"><text>Can't share that with you.</text></string>
+  <string id="st_wom_ask_generic_secretive_005"><text>None of your business.</text></string>
+  <string id="st_wom_ask_generic_secretive_006"><text>Afraid I can't disclose that.</text></string>
+
+</string_table>

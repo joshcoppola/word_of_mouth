@@ -1,0 +1,832 @@
+--- wom_dialogue_helper.script
+--- Assembles complete dialogue strings from AP event report tables and XML templates.
+--- Template loading and slot substitution patterns mirror ap_ext_news.script.
+--- Depends on: wom_utils.script, wom_terminology_helper.script
+
+local MAX_TEMPLATE_VARIANTS = 10
+
+-- Loads an indexed pool of template strings from localisation XML.
+-- Scans keys from prefix_001 to prefix_N until a key returns itself (not found).
+-- @param prefix string  localisation key prefix e.g. "st_wom_event_massacre"
+-- @return table  indexed array of template strings (may be empty)
+local function load_variants(prefix)
+    local variants = {}
+    for index = 1, MAX_TEMPLATE_VARIANTS do
+        local key  = string.format("%s_%03d", prefix, index)
+        local text = game.translate_string(key)
+        if text == key or text == nil or text == "" then break end
+        variants[#variants + 1] = text
+    end
+    return variants
+end
+
+-- Substitutes #slot# placeholders in a template string using a slot table.
+-- Unknown placeholders are replaced with an empty string.
+-- @param template string  template with #slot# tokens
+-- @param slots    table   map of slot name → replacement string
+-- @return string  substituted result
+local function substitute(template, slots)
+    return (string.gsub(template, "#([%w_]+)#", function(key)
+        return slots[key] or ""
+    end))
+end
+
+-- Cleans whitespace and punctuation artifacts left by empty slot substitutions.
+-- @param text string
+-- @return string  cleaned text
+local function clean_output(text)
+    if not text or text == "" then return "" end
+    text = string.gsub(text, "^%s+", "")
+    text = string.gsub(text, "%s+$", "")
+    text = string.gsub(text, "  +", " ")
+    text = string.gsub(text, "%s+([%.,%!%?;])", "%1")
+    text = string.gsub(text, ",[%s]*,", ",")
+    text = string.gsub(text, "%([%s]*%)", "")
+    -- Remove dangling em-dash from empty #plural_other# slot (e.g. "— ." or "— ,")
+    text = string.gsub(text, "[%s]*%—[%s]*([%.,%!%?;])", "%1")
+    text = string.gsub(text, "[%s]*%—[%s]*$", "")
+    -- Remove dangling semicolon from empty #plural_subject#/#plural_other# in basekill template
+    text = string.gsub(text, ";[%s]*$", ".")
+    text = string.gsub(text, "  +", " ")
+    text = string.gsub(text, "^%s+", "")
+    text = string.gsub(text, "%s+$", "")
+    if text ~= "" then text = text:sub(1,1):upper() .. text:sub(2) end
+    return text
+end
+
+-- Removes pool entries that reference a gated token whose slot value is nil or "".
+-- Returns the original pool unchanged when gated_tokens is nil or empty.
+-- @param pool         table     array of template strings
+-- @param slots        table|nil map of token names to replacement strings
+-- @param gated_tokens table|nil array of token name strings to gate on
+-- @return table  filtered array (may be empty), or the original pool
+local function _filter_gated(pool, slots, gated_tokens)
+    if not (gated_tokens and #gated_tokens > 0) then return pool end
+    local filtered = {}
+    for i = 1, #pool do
+        local keep = true
+        for j = 1, #gated_tokens do
+            local token = gated_tokens[j]
+            if string.find(pool[i], "#" .. token .. "#", 1, true) then
+                local slot_value = slots and slots[token]
+                if not slot_value or slot_value == "" then
+                    keep = false
+                    break
+                end
+            end
+        end
+        if keep then filtered[#filtered + 1] = pool[i] end
+    end
+    return filtered
+end
+
+-- Overrides subject/other slots in `slots` when the NPC's own squad was directly involved
+-- in the event. Mutates `slots` in place; no-op when npc_squad_id is nil.
+-- @param slots             table        slot map to mutate
+-- @param npc_squad_id      number|nil   speaker's squad id
+-- @param event             table        AP event record
+-- @param subject_community string|nil   community key for the subject side
+-- @param other_community   string|nil   community key for the other side
+local function _apply_squad_self_reference(slots, npc_squad_id, event, subject_community, other_community)
+    if not npc_squad_id then return end
+    local is_subject = (event.squad_id == npc_squad_id)
+                       or (event.subject_squad_ids and event.subject_squad_ids[npc_squad_id])
+    local is_other   = (event.other_squad_id == npc_squad_id)
+                       or (event.other_squad_ids and event.other_squad_ids[npc_squad_id])
+    if is_subject then
+        local squad_phrase = wom_terminology_helper.get_squad_self_squad_phrase(subject_community or "")
+        slots.some_members_subject = squad_phrase
+        slots.a_squad_subject      = squad_phrase
+        slots.a_member_subject     = wom_terminology_helper.get_squad_self_a_member()
+        slots.plural_subject       = squad_phrase
+        slots.subject_identity     = squad_phrase
+    end
+    if is_other then
+        local squad_phrase = wom_terminology_helper.get_squad_self_squad_phrase(other_community or "")
+        slots.some_members_other   = squad_phrase
+        slots.a_squad_other        = squad_phrase
+        slots.a_member_other       = wom_terminology_helper.get_squad_self_a_member()
+        slots.plural_other         = squad_phrase
+        slots.other_identity       = squad_phrase
+    end
+end
+
+-- Builds the full slot table for an area event.
+-- @param event         table       one entry from collect_eligible_news().events
+-- @param location_name string      resolved display name for the smart terrain
+-- @param npc_faction   string|nil  speaker's community key; when set, subject/other
+--                                  slots resolve to first-person phrasing on faction match
+-- @param npc_squad_id  number|nil  speaker's squad id; when set and matches event squad,
+--                                  subject/other slots resolve to squad-level self-reference
+-- @return table  populated slot map
+local function build_event_slots(event, location_name, npc_faction, npc_squad_id)
+    local subject_community = wom_terminology_helper.extract_community_key(event.subject_faction_key, event.subject_species_key)
+    local other_community   = wom_terminology_helper.extract_community_key(event.other_faction_key,   event.other_species_key)
+
+    local subject_text  = wom_terminology_helper.get_party_name(event.subject_faction_key, event.subject_species_key)
+    local other_text    = wom_terminology_helper.get_party_name(event.other_faction_key,   event.other_species_key)
+
+    local subject_identity = subject_community and wom_terminology_helper.get_faction_identity(subject_community)             or ""
+    local other_identity   = other_community   and wom_terminology_helper.get_faction_identity(other_community)               or ""
+    local subject_some  = subject_community and wom_terminology_helper.get_some_faction(subject_community, npc_faction)    or ""
+    local subject_squad = subject_community and wom_terminology_helper.get_a_faction_squad(subject_community, npc_faction) or ""
+    local subject_a     = subject_community and wom_terminology_helper.get_a_faction(subject_community, npc_faction)       or ""
+    local other_some    = other_community   and wom_terminology_helper.get_some_faction(other_community, npc_faction)      or ""
+    local other_squad   = other_community   and wom_terminology_helper.get_a_faction_squad(other_community, npc_faction)   or ""
+    local other_a       = other_community   and wom_terminology_helper.get_a_faction(other_community, npc_faction)         or ""
+    local subject_squad_bare  = subject_community and wom_terminology_helper.get_faction_squad_bare(subject_community)      or ""
+    local subject_member_bare = subject_community and wom_terminology_helper.get_faction_member_singular(subject_community) or ""
+    local other_squad_bare    = other_community   and wom_terminology_helper.get_faction_squad_bare(other_community)        or ""
+    local other_member_bare   = other_community   and wom_terminology_helper.get_faction_member_singular(other_community)   or ""
+
+    -- Subject slots always get generic fallbacks. subject_community should be present on
+    -- every AP event, so nil only means an unrecognised faction key — the template should
+    -- still render generically rather than be silently filtered out.
+    --
+    -- Other slots also get fallbacks, sourced from st_wom_term_unknown_* in XML.
+    -- The nil-community case arises when the player kills a squad (player has no squad
+    -- in ALifePlus, so _capture_side returns nil for the other party). Single-party
+    -- event templates (infest/swarm/conquer/stash/alpha) never reference #other*# slots,
+    -- so the fallbacks don't bleed into those outputs. Slots without fallbacks that can
+    -- legitimately be empty (location, kills, ...) are handled by render_event_from_pool
+    -- gating on GATED_EVENT_TOKENS: variants referencing an empty one are filtered out.
+    local slots = {
+        plural_subject       = subject_text ~= "" and subject_text
+                               or wom_terminology_helper.get_unknown_plural(),
+        subject_identity     = subject_identity,
+        some_members_subject = (subject_some  ~= "" and subject_some)
+                               or wom_terminology_helper.get_unknown_some(),
+        a_squad_subject      = (subject_squad ~= "" and subject_squad)
+                               or wom_terminology_helper.get_unknown_squad(),
+        a_member_subject     = (subject_a     ~= "" and subject_a)
+                               or wom_terminology_helper.get_unknown_member(),
+        plural_other         = other_text ~= "" and other_text
+                               or wom_terminology_helper.get_unknown_plural(),
+        other_identity       = other_identity,
+        some_members_other   = (other_some  ~= "" and other_some)
+                               or wom_terminology_helper.get_unknown_some(),
+        a_squad_other        = (other_squad ~= "" and other_squad)
+                               or wom_terminology_helper.get_unknown_squad(),
+        a_member_other       = (other_a ~= "" and other_a)
+                               or wom_terminology_helper.get_unknown_member(),
+        -- Bare (article-less) counterparts of a_squad_*/a_member_*, for templates
+        -- that supply their own determiner ("the #squad_subject#", "that #member_other#").
+        -- Always third-person; unknown parties fall back to bare generic terms
+        -- ("group"/"individual") that still read correctly after a determiner.
+        squad_subject        = (subject_squad_bare  ~= "" and subject_squad_bare)
+                               or wom_terminology_helper.get_unknown_squad_bare(),
+        member_subject       = (subject_member_bare ~= "" and subject_member_bare)
+                               or wom_terminology_helper.get_unknown_member_bare(),
+        squad_other          = (other_squad_bare  ~= "" and other_squad_bare)
+                               or wom_terminology_helper.get_unknown_squad_bare(),
+        member_other         = (other_member_bare ~= "" and other_member_bare)
+                               or wom_terminology_helper.get_unknown_member_bare(),
+        location             = location_name,
+        kills                = event.kills_word  or "",
+        losses               = event.losses_word or "",
+    }
+    if other_community then
+        if type(event.other_initial_size) == "number" then
+            slots.count_other = wom_terminology_helper.get_count_faction(
+                other_community, event.other_initial_size, npc_faction)
+        else
+            slots.count_other = "some"
+        end
+    else
+        slots.count_other = wom_terminology_helper.get_unknown_some()
+    end
+    -- count_subject mirrors count_other: "some" when community is known but no explicit
+    -- count (currently only alpha events supply a count, but the fallback keeps behaviour
+    -- consistent if other event types gain subject_count later).
+    if subject_community then
+        if type(event.subject_count) == "number" then
+            slots.count_subject = wom_terminology_helper.get_count_faction(
+                subject_community, event.subject_count, npc_faction)
+        else
+            slots.count_subject = "some"
+        end
+    end
+    -- Multi-faction combat slots: pre-built strings stored directly on the event record.
+    if event.participant_list     then slots.participant_list     = event.participant_list     end
+    if event.enemy_list           then slots.enemy_list           = event.enemy_list           end
+    if event.top_faction_identity then slots.top_faction_identity = event.top_faction_identity end
+    -- Outpost slots: role phrases pre-rendered by wom_outpost, which owns that vocabulary.
+    if event.service_list         then slots.service_list         = event.service_list         end
+    if event.service_role         then slots.service_role         = event.service_role         end
+
+    _apply_squad_self_reference(slots, npc_squad_id, event, subject_community, other_community)
+
+    return slots
+end
+
+-- Event-slot tokens that may legitimately resolve to "" (e.g. #location# when the
+-- smart terrain can no longer be resolved). Variants referencing one of these
+-- tokens are excluded from selection when its value is empty, so pools must keep
+-- at least one variant that avoids them all.
+local GATED_EVENT_TOKENS = {
+    "location", "kills", "losses",
+    "subject_identity", "other_identity", "count_subject",
+    "participant_list", "enemy_list", "top_faction_identity",
+    "service_list", "service_role",
+}
+
+-- Renders an area event against the given template pool.
+-- When occurrence is provided, uses the occurrence-indexed lettered sub-pool
+-- (prefix_001a/b/c..., prefix_002a/b/c...) via pick_indexed_dialogue_variant.
+-- When occurrence is nil, falls back to the flat numbered pool (prefix_001, _002, ...)
+-- for solo strings which are not occurrence-indexed.
+-- Variants that reference a GATED_EVENT_TOKENS token whose slot value is empty
+-- are excluded before selection (both flat and occurrence-indexed paths).
+-- Returns "" when the pool is empty or every variant is filtered out.
+-- @param prefix        string      localisation key prefix e.g. "st_wom_event_infest"
+-- @param event         table       one entry from collect_eligible_news().events
+-- @param location_name string      resolved display name for the smart terrain
+-- @param npc_faction   string|nil  speaker's community key
+-- @param npc_squad_id  number|nil  speaker's squad id for squad-level self-reference
+-- @param occurrence    number|nil  1-based occurrence count; nil = flat pool
+-- @return string  rendered sentence, or ""
+local function render_event_from_pool(prefix, event, location_name, npc_faction, npc_squad_id, occurrence)
+    local slots = build_event_slots(event, location_name, npc_faction, npc_squad_id)
+    if occurrence then
+        return pick_indexed_dialogue_variant(prefix, occurrence, slots, GATED_EVENT_TOKENS)
+    end
+    local variants = load_variants(prefix)
+    if #variants == 0 then return "" end
+    local filtered = _filter_gated(variants, slots, GATED_EVENT_TOKENS)
+    if #filtered == 0 then return "" end
+    return clean_output(substitute(wom_utils.pick_random_item(filtered), slots))
+end
+
+-- Renders one event entry as a single dialogue sentence.
+-- Tries the consequence-specific pool first (e.g. "st_wom_event_harvest_rob"),
+-- falls back to the cause-level category pool (e.g. "st_wom_event_harvest").
+-- When occurrence is provided, uses the occurrence-indexed lettered sub-pool so
+-- repeated events of the same type get different flavors (see render_event_from_pool).
+-- Returns "" when no template is found or output is empty.
+-- @param event         table       one entry from wom_recap_smart_terrain.collect_eligible_news().events
+-- @param location_name string      resolved display name for the smart terrain
+-- @param npc_faction   string|nil  speaker's community key
+-- @param npc_squad_id  number|nil  speaker's squad id for squad-level self-reference
+-- @param occurrence    number|nil  1-based occurrence count for this event type; nil = flat pool
+-- @return string  rendered sentence, or ""
+function render_event(event, location_name, npc_faction, npc_squad_id, occurrence)
+    local consequence_suffix = event.consequence_key
+                               and event.consequence_key:match("^consequence:(.+)")
+    if consequence_suffix then
+        local result = render_event_from_pool(
+            "st_wom_event_" .. consequence_suffix, event, location_name, npc_faction, npc_squad_id, occurrence)
+        if result ~= "" then return result end
+    end
+    return render_event_from_pool("st_wom_event_" .. event.category, event, location_name, npc_faction, npc_squad_id, occurrence)
+end
+
+-- Renders one event as a self-contained gossip sentence, preferring the solo
+-- template pool (st_wom_event_solo_*) which includes a #location# slot.
+-- Falls back to the standard render_event when no solo template is authored.
+-- @param event         table       one entry from collect_eligible_news().events
+-- @param location_name string      resolved display name for the smart terrain
+-- @param npc_faction   string|nil  speaker's community key for first-person phrasing
+-- @param npc_squad_id  number|nil  speaker's squad id for squad-level self-reference
+-- @return string  rendered sentence, or ""
+function render_solo_event(event, location_name, npc_faction, npc_squad_id)
+    local consequence_suffix = event.consequence_key
+                               and event.consequence_key:match("^consequence:(.+)")
+    if consequence_suffix then
+        local result = render_event_from_pool(
+            "st_wom_event_solo_" .. consequence_suffix, event, location_name, npc_faction, npc_squad_id)
+        if result ~= "" then return result end
+    end
+    local category_result = render_event_from_pool(
+        "st_wom_event_solo_" .. event.category, event, location_name, npc_faction, npc_squad_id)
+    if category_result ~= "" then return category_result end
+    return render_event(event, location_name, npc_faction, npc_squad_id)
+end
+
+-- Renders one event as a present-tense "just heard" reaction bark.
+-- Uses the st_wom_reaction_* pool, which carries short radio-style lines written
+-- in the present tense (e.g. "Just picked up something — sounds like trouble at #location#.").
+-- Tries consequence-specific prefix first (st_wom_reaction_<consequence>), then
+-- category-level (st_wom_reaction_<category>), then generic (st_wom_reaction_generic).
+-- Falls back to render_solo_event when no reaction pool is authored.
+-- @param event         table       one entry from wom_recap_smart_terrain.record_to_event()
+-- @param location_name string      resolved display name for the smart terrain
+-- @param npc_faction   string|nil  speaker's community key
+-- @param npc_squad_id  number|nil  speaker's squad id
+-- @return string  rendered sentence, or ""
+function render_reaction(event, location_name, npc_faction, npc_squad_id)
+    local consequence_suffix = event.consequence_key
+                               and event.consequence_key:match("^consequence:(.+)")
+    if consequence_suffix then
+        local result = render_event_from_pool(
+            "st_wom_reaction_" .. consequence_suffix, event, location_name, npc_faction, npc_squad_id)
+        if result ~= "" then return result end
+    end
+    local category_result = render_event_from_pool(
+        "st_wom_reaction_" .. event.category, event, location_name, npc_faction, npc_squad_id)
+    if category_result ~= "" then return category_result end
+    local generic_result = render_event_from_pool(
+        "st_wom_reaction_generic", event, location_name, npc_faction, npc_squad_id)
+    if generic_result ~= "" then return generic_result end
+    return render_solo_event(event, location_name, npc_faction, npc_squad_id)
+end
+
+-- Returns the template key used to look up st_wom_event_* pools for an event.
+-- Matches the consequence-suffix-first lookup order in render_event, so occurrence
+-- counts stay aligned with which pool actually gets used.
+-- @param event table  one entry from collect_eligible_news().events
+-- @return string  e.g. "massacre_inv", "combat", "infest"
+local function get_event_template_key(event)
+    if event.consequence_key then
+        local suffix = event.consequence_key:match("^consequence:(.+)")
+        if suffix then return suffix end
+    end
+    return event.category
+end
+
+-- Returns the emit_fn closure used by render_report's group_into_paragraphs call.
+-- Handles occurrence tracking, two stamp paths (timeless vs normal), sequence connector
+-- fallback, and capitalization. Extracted so render_report reads as linear flow.
+-- @param report            table       report from collect_eligible_news()
+-- @param npc_faction       string|nil  speaker's community key
+-- @param npc_squad_id      number|nil  speaker's squad id
+-- @param now_gh            number      current cumulative game hours
+-- @param occurrence_counts table       mutable { [key] = n } tracker (shared with caller)
+-- @return function  emit_fn(event, is_block_lead, period) -> string|nil
+local function _make_report_emit_fn(report, npc_faction, npc_squad_id, now_gh, occurrence_counts)
+    -- Time of the previously narrated event, for same-time connector detection.
+    -- Reset to nil after a timeless event: "At the same time" must only refer to
+    -- the immediately preceding sentence, and timeless events surface no time.
+    local previous_clock, previous_game_hours
+    return function(event, is_block_lead, period)
+        local key = get_event_template_key(event)
+        occurrence_counts[key] = (occurrence_counts[key] or 0) + 1
+        local body = render_event(event, report.location_name, npc_faction, npc_squad_id, occurrence_counts[key])
+        if body == "" then return nil end
+        body = decapitalize_clause(body)
+        local lead
+        if is_block_lead then
+            if event.is_timeless then
+                -- Mutant events: replace the TOD stamp ("This morning around 3:45") with a
+                -- vague phrase ("At some point") — the event time is still used for ordering
+                -- but is not surfaced to the player.
+                local stamp = pick_dialogue_variant("st_wom_event_stamp_timeless", {})
+                lead = stamp ~= "" and stamp or "At some point"
+            else
+                lead = make_time_stamp(period, event.started_clock, event.game_hours, now_gh)
+            end
+        else
+            -- Two events within a few in-game minutes of each other (typically sibling
+            -- consequences of the same cause) read wrong with a sequential connector
+            -- ("Next", "After that") — use a same-time connector instead.
+            if not event.is_timeless and is_same_time(
+                    previous_clock, previous_game_hours, event.started_clock, event.game_hours) then
+                lead = pick_dialogue_variant("st_wom_ask_recap_seq_same_time", {})
+            end
+            if not lead or lead == "" then
+                -- For timeless events, pass empty clock/ago so the gated_tokens filter inside
+                -- pick_dialogue_variant discards clock-referencing variants ("Then around 3:45"),
+                -- leaving only generic connectors ("After that", "Then", etc.).
+                local clock_value = not event.is_timeless and wom_terminology_helper.format_clock(event.started_clock) or ""
+                local ago_value   = not event.is_timeless and wom_terminology_helper.get_ago_phrase(event.game_hours, now_gh) or ""
+                lead = pick_dialogue_variant(
+                    "st_wom_ask_recap_seq_mid",
+                    { clock = clock_value, Ago = ago_value },
+                    { "clock", "Ago" })
+            end
+            if lead == "" then lead = "Then" end
+        end
+        if event.is_timeless then
+            previous_clock, previous_game_hours = nil, nil
+        else
+            previous_clock, previous_game_hours = event.started_clock, event.game_hours
+        end
+        return lead .. ", " .. body
+    end
+end
+
+-- Renders a full NPC news report as a multi-paragraph string.
+-- When only one qualifying event exists, uses a self-contained st_wom_event_solo_*
+-- string instead of the intro + sections structure, falling back to the normal path
+-- when that pool is not authored. For two or more events: localised intro line naming
+-- the location, then events grouped into time-of-day sections separated by blank lines.
+-- Each section opens with an event-stamp lead (st_wom_event_stamp_*), and subsequent
+-- events are joined by sequence connectors (st_wom_ask_recap_seq_mid_*).
+-- Repeated events of the same type pick from successive occurrence sub-pools
+-- (e.g. the first infest uses _001a/b/c..., the second uses _002a/b/c...).
+-- @param report        table       result from wom_recap_smart_terrain.collect_eligible_news()
+-- @param npc_faction   string|nil  speaker's community key; when set, matching faction slots
+--                                  resolve to first-person phrasing ("one of our fireteams")
+-- @param npc_squad_id  number|nil  speaker's squad id; when set and matches event squad,
+--                                  slots resolve to squad-level self-reference ("our squad")
+-- @return string  the complete report text
+function render_report(report, npc_faction, npc_squad_id)
+    -- Single-event shortcut: use a self-contained solo string that needs no intro.
+    -- Tries consequence-specific prefix first, falls back to cause-level category.
+    -- Solo strings use the flat (non-occurrence-indexed) pool.
+    if #report.events == 1 then
+        local event = report.events[1]
+        local consequence_suffix = event.consequence_key
+                                   and event.consequence_key:match("^consequence:(.+)")
+        if consequence_suffix then
+            local solo = render_event_from_pool(
+                "st_wom_event_solo_" .. consequence_suffix, event, report.location_name, npc_faction, npc_squad_id)
+            if solo ~= "" then return solo end
+        end
+        local solo = render_event_from_pool(
+            "st_wom_event_solo_" .. event.category, event, report.location_name, npc_faction, npc_squad_id)
+        if solo ~= "" then return solo end
+    end
+
+    local intro_variants = load_variants("st_wom_report_intro")
+    local intro_line
+
+    if #intro_variants > 0 then
+        local intro_template = wom_utils.pick_random_item(intro_variants)
+        intro_line = clean_output(substitute(intro_template, { location = report.location_name }))
+    else
+        intro_line = report.location_name
+    end
+
+    -- Gather time context for bucketing and stamp generation.
+    local now_gh, now_hod, now_game_sec = wom_terminology_helper.get_now_context()
+
+    -- Sort events chronologically (same key as wom_recap_npc.collect_entries).
+    local function event_sort_key(event)
+        local clock  = event.started_clock
+        local minute = clock and (tonumber(tostring(clock):sub(4, 5)) or 0) or 0
+        return (event.game_hours or now_gh) * 60 + minute
+    end
+    local sorted_events = {}
+    for i = 1, #report.events do sorted_events[i] = report.events[i] end
+    table.sort(sorted_events, function(a, b) return event_sort_key(a) < event_sort_key(b) end)
+
+    local function period_fn(event)
+        return wom_terminology_helper.get_stamped_period_key(event, now_game_sec, now_gh, now_hod)
+    end
+
+    -- Track how many times each event-type key has appeared so repeat occurrences
+    -- pick from successive sub-pools (_001a/b/c..., _002a/b/c...).
+    local occurrence_counts = {}
+    local emit_fn = _make_report_emit_fn(report, npc_faction, npc_squad_id, now_gh, occurrence_counts)
+
+    local paragraphs = group_into_paragraphs(sorted_events, period_fn, emit_fn)
+
+    if #paragraphs == 0 then
+        return intro_line
+    end
+
+    local result_parts = { intro_line }
+    for i = 1, #paragraphs do result_parts[#result_parts + 1] = paragraphs[i] end
+    return table.concat(result_parts, "\\n \\n")
+end
+
+-- Returns a random "nothing to report" line from the localisation XML.
+-- @return string
+function get_nothing_text()
+    return pick_dialogue_variant("st_wom_no_news", {})
+end
+
+-- Localisation keys whose translated values are the military-rank "first name"
+-- pools used by GENERATE_NAME profiles (st_generate_fnames.xml). Generated
+-- military/Duty names have the shape "<rank> <surname>" with no real first name,
+-- and a rank can be one or two words ("Sergeant", "Senior Sergeant").
+local RANK_NAME_KEYS = {
+    "name_private_0", "name_private_1",
+    "name_sergeant_0", "name_sergeant_1",
+    "name_senior_sergeant_0", "name_senior_sergeant_1",
+    "name_lieutenant_0", "name_lieutenant_1", "name_lieutenant_2",
+    "name_captain_0",
+}
+
+-- Rank words that can appear in authored (non-generated) character names but are
+-- not covered by the vanilla generated-name pools above.
+local EXTRA_RANK_WORDS = { "Corporal", "Major", "Colonel", "Recruit", "Warrant", "Officer" }
+
+-- Lazily-built caches; nil until first use so game.translate_string and ini_file
+-- are only touched once the engine is fully up.
+local cached_is_english = nil
+local cached_rank_word_set = nil
+
+-- Returns true when the game's text language is English ("eng" in localization.ltx).
+-- First-name extraction is English-only; other locales always get the full name.
+-- @return boolean
+local function is_english_localization()
+    if cached_is_english == nil then
+        local ok, language = pcall(function()
+            local ini = ini_file("localization.ltx")
+            return ini and ini:r_string_ex("string_table", "language")
+        end)
+        cached_is_english = (ok and language == "eng") or false
+    end
+    return cached_is_english
+end
+
+-- Returns a set of individual words that make up military rank titles, built from
+-- the translated generated-name rank pools plus EXTRA_RANK_WORDS.
+-- @return table  map of rank word → true
+local function get_rank_word_set()
+    if cached_rank_word_set then return cached_rank_word_set end
+    cached_rank_word_set = {}
+    for index = 1, #RANK_NAME_KEYS do
+        local key        = RANK_NAME_KEYS[index]
+        local translated = game.translate_string(key)
+        if translated and translated ~= "" and translated ~= key then
+            for word in string.gmatch(translated, "%S+") do
+                cached_rank_word_set[word] = true
+            end
+        end
+    end
+    for index = 1, #EXTRA_RANK_WORDS do
+        cached_rank_word_set[EXTRA_RANK_WORDS[index]] = true
+    end
+    return cached_rank_word_set
+end
+
+-- Returns the informal address form of a full name string (English locale only).
+-- Skips leading military rank words so "Senior Sergeant Babich" yields "Babich"
+-- and "Sergeant Boris Dinosaur" yields "Boris"; plain names yield their first
+-- word ("Artyom Volkov" → "Artyom"). Always keeps at least the final word, so a
+-- rank-plus-surname name falls through to the surname. Non-English locales get
+-- the full name back unchanged, since rank detection only knows English words.
+-- @param full_name string  e.g. "Artyom Volkov", "Wolf", "Senior Sergeant Babich"
+-- @return string  e.g. "Artyom", "Wolf", "Babich"
+function first_name_from_full_name(full_name)
+    if not is_english_localization() then return full_name end
+    local words = {}
+    for word in string.gmatch(full_name, "%S+") do
+        words[#words + 1] = word
+    end
+    if #words <= 1 then return full_name end
+    local rank_words = get_rank_word_set()
+    local index = 1
+    while index < #words and rank_words[words[index]] do
+        index = index + 1
+    end
+    return words[index]
+end
+
+-- Returns the full character name of an NPC from their server object ID.
+-- Falls back to "them" when the server object cannot be resolved.
+-- @param server_id number  alife server object ID
+-- @return string  full name e.g. "Artyom Volkov", or "them"
+function get_npc_full_name(server_id)
+    if not server_id then return "them" end
+    local sim = alife and alife()
+    if not sim then return "them" end
+    local server_object = sim:object(server_id)
+    if not server_object then return "them" end
+    local ok, full_name = pcall(function() return server_object:character_name() end)
+    if not ok or not full_name or full_name == "" then return "them" end
+    return full_name
+end
+
+-- Returns the informal address form of an NPC's name from their server object ID
+-- (see first_name_from_full_name — skips rank words, English locale only).
+-- Falls back to "them" when the server object cannot be resolved.
+-- @param server_id number  alife server object ID
+-- @return string  first name / surname word, or "them"
+function get_npc_first_name(server_id)
+    local full_name = get_npc_full_name(server_id)
+    if full_name == "them" then return "them" end
+    return first_name_from_full_name(full_name)
+end
+
+-- Builds the substitution-slot table for the seven pronoun tokens.
+-- plural=true uses "we" forms (squad of two or more); plural=false uses "I" forms.
+-- @param plural boolean  true when the NPC's squad has two or more present members
+-- @return table  map of pronoun token names to replacement strings
+function make_pronoun_slots(plural)
+    local prefix = plural and "st_wom_term_pronoun_pl_" or "st_wom_term_pronoun_sg_"
+    local function ucfirst(s) return s:sub(1, 1):upper() .. s:sub(2) end
+    local base_i_we     = game.translate_string(prefix .. "i_we")
+    local base_im_were  = game.translate_string(prefix .. "im_were")
+    local base_ive_weve = game.translate_string(prefix .. "ive_weve")
+    return {
+        Im_Were_u    = ucfirst(base_im_were),
+        Ive_Weve_u   = ucfirst(base_ive_weve),
+        I_We_u       = ucfirst(base_i_we),
+        I_we_l       = base_i_we,
+        I_we_blank_l = base_i_we,
+        my_our_l     = game.translate_string(prefix .. "my_our"),
+        me_us_l      = game.translate_string(prefix .. "me_us"),
+        Iwas         = game.translate_string(prefix .. "iwas_wewere"),
+    }
+end
+
+-- Fills "other party" slots in a pre-existing slot table.
+-- Extracts the community key from other_faction_key/other_species_key, then fills:
+--   plural_other, other_identity, some_members_other, a_squad_other, a_member_other.
+-- When other_initial_size is a number, also fills count_other via get_count_faction;
+-- otherwise falls back to st_wom_term_count_fallback.
+-- Always applies unknown fallbacks for a_member_other and some_members_other so
+-- templates using those slots are safe even when no other party is known.
+-- @param slots              table       slot table to mutate in place
+-- @param other_faction_key  string|nil
+-- @param other_species_key  string|nil
+-- @param npc_faction        string|nil  speaker's community key (for faction-aware phrasing)
+-- @param other_initial_size number|nil  pre-battle enemy squad size for count_other slot
+function fill_other_community_slots(slots, other_faction_key, other_species_key, npc_faction, other_initial_size)
+    local other_community = wom_terminology_helper.extract_community_key(other_faction_key, other_species_key)
+    if other_community then
+        slots.plural_other       = wom_terminology_helper.get_faction_members_plural(other_community)
+        slots.other_identity     = wom_terminology_helper.get_faction_identity(other_community)
+        slots.some_members_other = wom_terminology_helper.get_some_faction(other_community, npc_faction)
+        slots.a_squad_other      = wom_terminology_helper.get_a_faction_squad(other_community, npc_faction)
+        slots.a_member_other     = wom_terminology_helper.get_a_faction(other_community, npc_faction)
+        if type(other_initial_size) == "number" then
+            slots.count_other = wom_terminology_helper.get_count_faction(
+                other_community, other_initial_size, npc_faction)
+        else
+            slots.count_other = game.translate_string("st_wom_term_count_fallback")
+        end
+    end
+    slots.a_member_other     = (slots.a_member_other     and slots.a_member_other     ~= "") and slots.a_member_other     or wom_terminology_helper.get_unknown_member()
+    slots.some_members_other = (slots.some_members_other and slots.some_members_other ~= "") and slots.some_members_other or wom_terminology_helper.get_unknown_some()
+end
+
+-- Picks one line from a numbered template pool, substitutes slots, and cleans.
+-- Loads variants from prefix_001, prefix_002, ... stopping at the first missing key.
+-- Returns "" when the pool is empty.
+--
+-- Optional third argument gated_tokens: an array of token names. Any variant that
+-- references one of those tokens (as #token#) when the corresponding slots value is
+-- nil or "" is discarded before random selection. This provides an implicit
+-- "noclock fallback": pass { "clock", "Ago" } when building event stamps and the
+-- variants that need a clock/ago value are automatically excluded when unavailable.
+--
+-- @param prefix        string    localisation key prefix, e.g. "st_wom_ask_recap_quiet"
+-- @param slots         table     map of token names to replacement strings
+-- @param gated_tokens  table|nil optional array of token names to gate on
+-- @return string  substituted and cleaned result, or ""
+function pick_dialogue_variant(prefix, slots, gated_tokens)
+    local variants = load_variants(prefix)
+    if #variants == 0 then return "" end
+    local filtered = _filter_gated(variants, slots, gated_tokens)
+    if #filtered == 0 then return "" end
+    return clean_output(substitute(wom_utils.pick_random_item(filtered), slots or {}))
+end
+
+-- Picks one line from an occurrence-indexed, lettered sub-pool.
+-- Pool naming: prefix_001a/b/c... for the first occurrence of the goal, prefix_002a/b/c...
+-- for the second, and so on. The highest authored occurrence is reused for any excess
+-- repeats. The 'a' variant marks a slot as present; returns "" when none is authored.
+-- Optional gated_tokens: array of slot names — variants referencing a gated token whose
+-- slot value is empty are excluded before random pick (same semantics as pick_dialogue_variant).
+-- @param prefix       string    localisation key prefix, e.g. "st_wom_ask_recap_stash_loot"
+-- @param occurrence   number    1-based occurrence count for this goal in today's recap
+-- @param slots        table     map of token names to replacement strings
+-- @param gated_tokens table|nil slot names to gate on (see pick_dialogue_variant)
+-- @return string  substituted and cleaned result, or ""
+function pick_indexed_dialogue_variant(prefix, occurrence, slots, gated_tokens)
+    local LETTERS = "abcdefghijklmnopqrstuvwxyz"
+    -- Find the highest authored occurrence (scan until the 'a' sub-variant is missing).
+    local max_occurrence = 0
+    for k = 1, MAX_TEMPLATE_VARIANTS do
+        local id = string.format("%s_%03da", prefix, k)
+        local text = game.translate_string(id)
+        if text == id or text == nil or text == "" then break end
+        max_occurrence = k
+    end
+    if max_occurrence == 0 then return "" end
+    -- Clamp the requested occurrence to the authored range.
+    local index = occurrence or 1
+    if index < 1 then index = 1 elseif index > max_occurrence then index = max_occurrence end
+    local base = string.format("%s_%03d", prefix, index)
+    -- Gather lettered sub-variants for this occurrence (a, b, c, ...).
+    local candidates = {}
+    for i = 1, #LETTERS do
+        local id = base .. LETTERS:sub(i, i)
+        local text = game.translate_string(id)
+        if text == id or text == nil or text == "" then break end
+        candidates[#candidates + 1] = text
+    end
+    if #candidates == 0 then return "" end
+    local filtered = _filter_gated(candidates, slots, gated_tokens)
+    if #filtered == 0 then return "" end
+    return clean_output(substitute(wom_utils.pick_random_item(filtered), slots or {}))
+end
+
+-- Lowercases the first character of a body clause string, preserving the
+-- pronoun "I" and contractions starting with "I'" (e.g. "I've", "I'm").
+-- @param text string  the clause to decapitalize
+-- @return string  decapitalized result, or the original when it starts with "I"
+function decapitalize_clause(text)
+    if not text or text == "" then return text or "" end
+    -- Preserve the pronoun "I": it is always followed by a non-lowercase character
+    -- (space, apostrophe, comma, end of string, etc.), never by a-z.
+    if text:sub(1, 1) == "I" then
+        local second = text:sub(2, 2)
+        if second == "" or not second:match("%l") then return text end
+    end
+    return text:sub(1, 1):lower() .. text:sub(2)
+end
+
+-- Builds the timestamp lead string for the first event of a time-of-day section.
+-- Picks a period phrase from the st_wom_ask_recap_tod_<period> pool (e.g. "This
+-- morning"), assembles token slots for the st_wom_event_stamp_* pool, filters out
+-- stamp variants that need a clock or ago value that isn't available (implicit
+-- noclock fallback), picks one at random, and strips the trailing comma so callers
+-- can append ", " themselves. Falls back to the plain period phrase when no stamp
+-- template matches.
+-- @param period           string      period key e.g. "morning"
+-- @param started_clock    string|nil  "HH:MM" string from an AP record
+-- @param game_hours       number|nil  cumulative in-game hour the event was recorded
+-- @param now_game_hours   number      current cumulative in-game hour
+-- @return string  e.g. "This morning", "At about 3:45 this morning", "About 6 hours ago"
+function make_time_stamp(period, started_clock, game_hours, now_game_hours)
+    if period == "just_now" then
+        return game.translate_string("st_wom_term_just_now_para")
+    end
+    if period == "recent" then
+        return game.translate_string("st_wom_term_recent_para")
+    end
+    local period_phrase = pick_dialogue_variant("st_wom_ask_recap_tod_" .. period, {})
+    if period_phrase == "" then period_phrase = "Earlier" end
+    local clock_value = wom_terminology_helper.format_clock(started_clock)
+    local ago_value   = wom_terminology_helper.get_ago_phrase(game_hours, now_game_hours)
+    local slots = {
+        Period = period_phrase,
+        period = period_phrase:lower(),
+        clock  = clock_value,
+        Ago    = ago_value,
+    }
+    local stamp = pick_dialogue_variant("st_wom_event_stamp", slots, { "clock", "Ago" })
+    if stamp == "" then stamp = period_phrase end
+    -- Strip any trailing comma and whitespace so callers uniformly append ", "
+    stamp = string.gsub(stamp, "[,%s]+$", "")
+    return stamp
+end
+
+-- Two events count as simultaneous when their clocks are within this many in-game minutes.
+local SAME_TIME_THRESHOLD_MINUTES = 5
+
+-- Parses an "HH:MM" clock string into minutes since midnight.
+-- @param started_clock string|nil  "HH:MM" string from an AP record
+-- @return number|nil  minute-of-day 0-1439, or nil when unparsable
+local function clock_to_minutes(started_clock)
+    if not started_clock then return nil end
+    local hour_string, minute_string = string.match(tostring(started_clock), "^(%d+):(%d+)")
+    if not hour_string then return nil end
+    return tonumber(hour_string) * 60 + tonumber(minute_string)
+end
+
+-- Returns true when two events started within SAME_TIME_THRESHOLD_MINUTES of each
+-- other — typically two ALifePlus consequences dispatched off the same cause (e.g.
+-- wounded_help and wounded_hunt reacting to the same wounded stalker). Uses the
+-- minute-resolution started_clock values; game_hours (floored to the hour for AP
+-- records) only guards against 24-hour clock aliasing inside the rolling recap
+-- window. Any missing value fails the check.
+-- @param first_clock       string|nil  "HH:MM" of the earlier event
+-- @param first_game_hours  number|nil  cumulative in-game hours of the earlier event
+-- @param second_clock      string|nil  "HH:MM" of the later event
+-- @param second_game_hours number|nil  cumulative in-game hours of the later event
+-- @return boolean
+function is_same_time(first_clock, first_game_hours, second_clock, second_game_hours)
+    local first_minutes  = clock_to_minutes(first_clock)
+    local second_minutes = clock_to_minutes(second_clock)
+    if not first_minutes or not second_minutes then return false end
+    if not first_game_hours or not second_game_hours then return false end
+    if math.abs(second_game_hours - first_game_hours) > 1 then return false end
+    local minute_difference = math.abs(second_minutes - first_minutes)
+    minute_difference = math.min(minute_difference, 1440 - minute_difference)
+    return minute_difference <= SAME_TIME_THRESHOLD_MINUTES
+end
+
+-- Groups a pre-sorted event list into time-of-day paragraph strings.
+-- Calls period_fn(event) to get the period key for each event, and emit_fn(event,
+-- is_block_lead, period) to get the rendered sentence. Nil/empty sentences are
+-- skipped. Within a period block, sentences are joined by join_char (default " ").
+-- Pass "\n" to put each event on its own line; pass " " to space-join into prose.
+-- Returns an array of paragraph strings (one per period that had events).
+-- @param events     table     pre-sorted array of events (oldest-first)
+-- @param period_fn  function  event -> string  returns period key
+-- @param emit_fn    function  (event, is_block_lead, period) -> string|nil
+-- @param join_char  string    separator between sentences within a period (default " ")
+-- @return table  array of paragraph strings
+function group_into_paragraphs(events, period_fn, emit_fn, join_char)
+    join_char = join_char or " "
+    local paragraphs = {}
+    local current_period    = nil
+    local current_paragraph = nil
+
+    for i = 1, #events do
+        local event        = events[i]
+        local event_period = period_fn(event)
+        local is_block_lead = (event_period ~= current_period)
+        local sentence = emit_fn(event, is_block_lead, event_period)
+        if sentence and sentence ~= "" then
+            if is_block_lead then
+                if current_paragraph then
+                    paragraphs[#paragraphs + 1] = current_paragraph
+                end
+                current_paragraph = sentence
+                current_period    = event_period
+            else
+                current_paragraph = current_paragraph
+                    and (current_paragraph .. join_char .. sentence) or sentence
+            end
+        end
+    end
+    if current_paragraph then paragraphs[#paragraphs + 1] = current_paragraph end
+    return paragraphs
+end

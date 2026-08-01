@@ -1,0 +1,276 @@
+--- wom_chatter.script
+--- Goal announce: when a nearby squad changes its ALifePlus assigned goal, a PDA
+--- message is sent to the player attributed to the in-range trigger NPC (the squad
+--- member the player physically heard), accompanied by a 3D hello bark.
+---
+--- Scans db.OnlineStalkers every POLL_INTERVAL real seconds in two passes:
+---   Pass 1 — groups alive online NPCs by squad_id into a working table.
+---   Pass 2 — for each unique squad, skips squads not in ap_api.get_scripted_squads()
+---             (gulag/smart-terrain-controlled squads can't execute AP goals), then looks
+---             up the squad server object (faction/count/commander), checks whether the
+---             commander is online and in range, then queries the AP assigned record for
+---             a goal change. get_scripted_squads() is fetched once per scan and reused
+---             by _compose_message to resolve the destination smart terrain.
+--- Human factions only; squads of 2+ members only; speaker is always the squad leader.
+--- In dev mode (wom_mcm.dev_mode()), range gate is removed — all online stalkers
+--- are eligible regardless of distance.
+--- _last_goal is in-memory only; squads are silently re-baselined after a session
+--- reload or after leaving range.
+---
+--- Template keys (in st_wom_chatter.xml):
+---   st_wom_goal_{goal}_{faction}       -- most specific
+---   st_wom_goal_{goal}                 -- goal-level fallback
+---   st_wom_goal_{goal_base}_{faction}  -- on-map variant with faction (strips _offmap)
+---   st_wom_goal_{goal_base}            -- on-map variant fallback
+---   st_wom_goal_generic                -- catch-all
+--- Slots: #location# (target smart terrain name, gated — variants that reference it
+---        are filtered out when no location is known).
+---
+--- Depends on: ap_api (soft), xpda (soft), wom_bark, wom_mcm, wom_terminology_helper,
+---             wom_dialogue_helper, db
+
+local POLL_INTERVAL = 5  -- real seconds between scans
+
+local TIMER_ID = "wom_chatter"
+local TIMER_EV = "scan"
+
+-- squad_id -> cons_id we last announced for that squad; in-memory only, not persisted.
+local _last_goal = {}
+
+-- ---- helpers ----------------------------------------------------------------
+
+-- Returns the squad id for the given online NPC id, or nil when not in a squad.
+-- Tries xsquad first, falls back to the server-object group_id field.
+-- @param sim userdata  alife() simulation board
+-- @param id  number    NPC game object id
+-- @return number|nil
+local function _squad_id_of(sim, id)
+    if xsquad and xsquad.get_squad_by_member then
+        local squad = xsquad.get_squad_by_member(id)
+        return squad and squad.id or nil
+    end
+    local server_object = sim and sim:object(id)
+    local squad_id = server_object and server_object.group_id
+    if not squad_id or squad_id == 65535 then return nil end
+    return squad_id
+end
+
+-- ---- message composition ----------------------------------------------------
+
+-- Builds the PDA message text for a goal change.
+-- Resolves the target location from the cached scripted-squad table or the record's smart_id.
+-- Template cascade: goal+faction, goal, base_goal+faction, base_goal, generic.
+-- Off-map variants (e.g. job_explore_offmap) strip the _offmap suffix and fall back to
+-- the on-map pool (job_explore) before hitting generic.
+-- Variants referencing #location# when no location is known are filtered out by
+-- pick_dialogue_variant's gated_tokens.
+-- Returns nil when no template matches.
+-- @param record          table       AP assigned record (has consequence_key, smart_id)
+-- @param squad_id        number      squad server object id
+-- @param faction         string      squad's community key (player_id)
+-- @param scripted_squads table|nil   cached result of ap_api.get_scripted_squads()
+-- @param partner         string      squadmate name (squad of 2) or generic term ("team" for 3+)
+-- @return string|nil
+local function _compose_message(record, squad_id, faction, scripted_squads, partner)
+    local goal = record.consequence_key and record.consequence_key:match("^consequence:(.+)")
+    if not goal then return nil end
+
+    local squad_entry = scripted_squads and scripted_squads[squad_id]
+    local dest_id     = (squad_entry and squad_entry.target_smart_id) or record.smart_id
+
+    local location = dest_id and wom_terminology_helper.get_location_name(dest_id) or ""
+    local slots    = { location = location, partner = partner }
+
+    -- Strip _offmap suffix so off-map variants (job_explore_offmap, supply_trader_offmap,
+    -- social_offmap) fall back to their on-map template pool before hitting the generic catch-all.
+    local goal_base = goal:match("^(.-)_offmap$") or goal
+
+    -- Non-public goals fall back to the generic pool so the squad announces
+    -- movement without revealing why — the goal itself stays secret.
+    local prefixes
+    if wom_mcm.get_goal_visibility(goal) ~= "public" then
+        prefixes = { "st_wom_goal_generic" }
+    else
+        prefixes = {
+            "st_wom_goal_" .. goal        .. "_" .. faction,
+            "st_wom_goal_" .. goal,
+            "st_wom_goal_" .. goal_base   .. "_" .. faction,
+            "st_wom_goal_" .. goal_base,
+            "st_wom_goal_generic",
+        }
+    end
+    for i = 1, #prefixes do
+        local result = wom_dialogue_helper.pick_dialogue_variant(prefixes[i], slots, { "location" })
+        if result ~= "" then return result end
+    end
+    return nil
+end
+
+-- ---- scan loop --------------------------------------------------------------
+
+-- Groups alive online NPCs by their squad id.
+-- Objects are resolved through wom_utils.get_live_online_npc rather than read off
+-- db.storage: that table can hold entries whose client object the engine has
+-- already destroyed, and calling :alive() on one aborts the entire scan.
+-- @param sim     userdata  alife() simulation board
+-- @param online  table     db.OnlineStalkers
+-- @return table  squad_id -> { npc_id -> npc_object }
+local function _group_online_squads(sim, online)
+    local online_squads = {}
+    for i = 1, #online do
+        local id  = online[i]
+        local npc = wom_utils.get_live_online_npc(id)
+        if npc then
+            local squad_id = _squad_id_of(sim, id)
+            if squad_id then
+                if not online_squads[squad_id] then online_squads[squad_id] = {} end
+                online_squads[squad_id][id] = npc
+            end
+        end
+    end
+    return online_squads
+end
+
+-- Returns the first name of the other squad member (squad of 2), or the localised
+-- fallback "partner" (solo pair) / "team" (3+ members).
+-- @param members      table   { npc_id -> npc_object } for this squad
+-- @param commander_id number  the commander's NPC id
+-- @param count        number  squad size
+-- @return string
+local function _resolve_partner(members, commander_id, count)
+    if count ~= 2 then return game.translate_string("st_wom_partner_group") end
+    for member_id, member_npc in pairs(members) do
+        if member_id ~= commander_id then
+            local member_name = member_npc:character_name()
+            if member_name and member_name ~= "" then
+                return wom_dialogue_helper.first_name_from_full_name(member_name)
+            end
+            return game.translate_string("st_wom_partner_solo")
+        end
+    end
+    return game.translate_string("st_wom_partner_solo")
+end
+
+-- Returns true when the squad leader is attached to the same smart terrain as the
+-- goal destination, meaning the goal is internal to where they already live.
+-- A nil destination or an unattached leader both return false (announce).
+-- @param speaker         userdata    commander client game object
+-- @param record          table       AP assigned record
+-- @param squad_id        number      squad server object id
+-- @param scripted_squads table|nil   cached ap_api.get_scripted_squads()
+-- @return boolean
+local function _is_same_terrain_goal(speaker, record, squad_id, scripted_squads)
+    local leader_smart = wom_npc_role.current_smart(speaker)
+    if not leader_smart then return false end
+    local squad_entry = scripted_squads and scripted_squads[squad_id]
+    local dest_id     = (squad_entry and squad_entry.target_smart_id) or record.smart_id
+    return dest_id ~= nil and leader_smart.id == dest_id
+end
+
+-- Sends a PDA goal-change message for speaker.
+-- @param speaker  userdata  commander client game object
+-- @param message  string    composed message text
+local function _send_chatter_message(speaker, message)
+    wom_bark.send_pda(speaker, message, "wom_chatter")
+    local now_sec = xtime and xtime.game_sec and xtime.game_sec() or 0
+    wom_bark.mark_spoke(speaker:id(), now_sec)
+end
+
+-- Checks one squad for a goal change and fires the PDA message if warranted.
+-- Updates _last_goal as a side effect (always, even when suppressed or first-sight).
+-- @param squad_id        number   squad server object id
+-- @param members         table    { npc_id -> npc_object }
+-- @param sim             userdata alife() board
+-- @param actor_pos       vector   actor world position
+-- @param dev             boolean  dev mode flag (removes range gate)
+-- @param r_sqr           number   squared range limit
+-- @param scripted_squads table|nil cached ap_api.get_scripted_squads()
+-- @param seen            table    set of squad_ids in range this pass (mutated)
+local function _process_squad(squad_id, members, sim, actor_pos, dev, r_sqr, scripted_squads, seen)
+    local squad   = sim:object(squad_id)
+    local faction = squad and squad.player_id
+    if not (faction and wom_bark.is_human_faction(faction)) then return end
+    -- Only announce goals when 2+ members in squad; prevents NPCs from talking to themselves 
+    local count = squad.npc_count and squad:npc_count() or 0
+    if count < 2 then return end
+    -- Limit chatter to within a certain range of the player (unless dev mode)
+    local commander_id = squad.commander_id and squad:commander_id()
+    local speaker      = commander_id and members[commander_id]
+    if not speaker then return end
+    if not (dev or actor_pos:distance_to_sqr(speaker:position()) <= r_sqr) then return end
+
+    seen[squad_id] = true
+
+    local record = ap_api.get_record({ squad_id = squad_id, assigned = true })
+    if not (record and record.cons_id) then return end
+
+    local previous = _last_goal[squad_id]
+    if record.cons_id == previous then return end
+
+    _last_goal[squad_id] = record.cons_id
+
+    if previous == nil then return end  -- first sight: baseline only, no announce
+
+    -- Suppress when the leader is attached to the same smart terrain as the goal
+    -- destination (an internal reassignment they wouldn't bother mentioning).
+    if _is_same_terrain_goal(speaker, record, squad_id, scripted_squads) then return end
+
+    local partner = _resolve_partner(members, commander_id, count)
+    local message = _compose_message(record, squad_id, faction, scripted_squads, partner)
+    if message then _send_chatter_message(speaker, message) end
+end
+
+-- Polls all online stalkers for ALifePlus goal changes and fires a proximity
+-- bark for any squad whose assigned goal has changed since the last poll.
+-- Called every POLL_INTERVAL real seconds via CreateTimeEvent (_on_timer).
+-- No parameters; no return value — all side effects are PDA bark messages and
+-- updates to _last_goal / _npc_last_bark.
+local function _poll_goal_changes()
+    if not wom_mcm.chatter_enabled() then return end
+    if not (ap_api and ap_api.get_record) then return end
+    local actor = db.actor
+    if not actor then return end
+    local online = db.OnlineStalkers
+    if not online or #online == 0 then return end
+    local sim = alife()
+    if not sim then return end
+
+    local actor_pos       = actor:position()
+    local dev             = wom_mcm.dev_mode()
+    local r_sqr           = wom_mcm.chatter_range() ^ 2
+    local seen            = {}
+    local scripted_squads = ap_api.get_scripted_squads and ap_api.get_scripted_squads()
+
+    -- Pass 1: group alive online NPCs by squad.
+    local online_squads = _group_online_squads(sim, online)
+
+    -- Pass 2: for each squad, check for a goal change and announce it.
+    -- TODO: restore scripted-squad gate: `if not scripted_squads or scripted_squads[squad_id]`
+    -- Disabled: it was too strict and chatter rarely fired with it on.
+    for squad_id, members in pairs(online_squads) do
+        _process_squad(squad_id, members, sim, actor_pos, dev, r_sqr, scripted_squads, seen)
+    end
+
+    -- Forget squads no longer in range so the table stays bounded and they
+    -- re-baseline silently if they return rather than replaying a stale change.
+    for squad_id in pairs(_last_goal) do
+        if not seen[squad_id] then _last_goal[squad_id] = nil end
+    end
+end
+
+-- ---- timer ------------------------------------------------------------------
+
+local function _on_timer()
+    ResetTimeEvent(TIMER_ID, TIMER_EV, POLL_INTERVAL)
+    local ok, err = pcall(_poll_goal_changes)
+    if not ok and printf then printf("~[wom_chatter] scan error: %s", tostring(err)) end
+    return false
+end
+
+-- ---- lifecycle --------------------------------------------------------------
+
+function on_game_start()
+    if not (ap_api and ap_api.get_record) then return end
+    _last_goal = {}
+    CreateTimeEvent(TIMER_ID, TIMER_EV, POLL_INTERVAL, _on_timer)
+end

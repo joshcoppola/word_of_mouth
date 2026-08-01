@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+    <!-- Real-time event reaction bark templates for wom_reaction.script.
+         Delivered as PDA messages the moment ALifePlus records a high-signal event
+         on the current level, attributed to a nearby non-combat stalker.
+
+         Key format: st_wom_reaction_{consequence_suffix}_{NNN}
+                     st_wom_reaction_{category}_{NNN}     (category-level fallback)
+                     st_wom_reaction_generic_{NNN}         (catch-all)
+         One is picked at random; variants referencing a slot whose value is empty
+         are filtered out by pick_dialogue_variant's gated_tokens before selection,
+         so every pool must include at least one location-free line as a fallback.
+
+         Tone: present-tense, radio-chatter style — the speaker just heard this
+         through their earpiece or PDA feed, a moment ago.
+
+         Available slots (same as area-recap event templates):
+           #location#           — smart terrain display name (gated when absent)
+           #some_members_subject#  — e.g. "some Loners", "a Duty patrol"
+           #a_squad_subject#       — e.g. "a Loner crew", "a Duty unit"
+           #a_member_subject#      — e.g. "a Loner", "a Duty soldier"
+           #plural_subject#        — e.g. "Loners", "Duty soldiers"
+           #some_members_other#    — same forms for the other party
+           #a_squad_other#
+           #a_member_other#
+           #plural_other#
+           #kills#              — word form of kill count (e.g. "three", "a")
+           #count_other#        — e.g. "four Bandits", "some Mercs" -->
+
+    <!-- ===== MASSACRE (cause:massacre — investigation consequence) ===== -->
+    <!-- <string id="st_wom_reaction_massacre_investigate_001"><text>Just got word of a crew got wiped near #location#. #some_members_subject# are heading out to look into it.</text></string>
+    <string id="st_wom_reaction_massacre_investigate_002"><text>Something bad happened at #location#, #some_members_subject# are moving in to check it out.</text></string>
+    <string id="st_wom_reaction_massacre_investigate_003"><text>Heard #some_members_other# hit someone near #location#, #some_members_subject# just got sent to investigate.</text></string>
+    <string id="st_wom_reaction_massacre_investigate_004"><text>Sounds like a crew went dark near #location#.</text></string>
+    <string id="st_wom_reaction_massacre_investigate_005"><text>Word just came in of some unresponsive PDAs pinging near #location#. #some_members_subject# are on the way.</text></string>
+
+    <string id="st_wom_reaction_massacre_loot_001"><text>Heard a crew got wiped near #location#. Now #some_members_subject# are moving in to scavenge whatever's left.</text></string>
+    <string id="st_wom_reaction_massacre_loot_002"><text>Someone got hit hard near #location#. #some_members_subject# are already heading there to pick through the remains.</text></string>
+    <string id="st_wom_reaction_massacre_loot_003"><text>Massacre near #location#, and now #some_members_subject# are swooping in to loot the bodies.</text></string>
+    <string id="st_wom_reaction_massacre_loot_004"><text>Another crew wiped out. #some_members_subject# are moving to #location# to collect.</text></string>
+
+    <string id="st_wom_reaction_massacre_scavenge_001"><text>Another slaughter near #location#. #some_members_subject# are heading there to scavenge.</text></string>
+    <string id="st_wom_reaction_massacre_scavenge_002"><text>Bodies near #location# — #some_members_subject# are already on the move.</text></string> -->
+
+    <!-- category-level massacre fallback (no consequence suffix assumed) -->
+    <string id="st_wom_reaction_massacre_001"><text>Word just came in of some unresponsive PDAs near #location#. #some_members_other# hit #some_members_subject# hard.</text></string>
+    <string id="st_wom_reaction_massacre_002"><text>Word just came in from #location#, sounds like #some_members_other# wiped out #a_squad_subject# there.</text></string>
+    <string id="st_wom_reaction_massacre_003"><text>Something went down near #location#. Whole squad gone, by the sound of it.</text></string>
+    <string id="st_wom_reaction_massacre_004"><text>No response from #a_squad_subject# near #location#.</text></string>
+    <string id="st_wom_reaction_massacre_005"><text>Sounds like contact has been lost with #a_squad_other# near #location#.</text></string>
+    <!-- <string id="st_wom_reaction_massacre_006"><text>Something very bad just happened out there. Another crew gone.</text></string> -->
+
+    <!-- ===== SQUADKILL (cause:squadkill — retaliation for a squad being wiped) ===== -->
+    <string id="st_wom_reaction_squadkill_001"><text>#a_squad_other# just wiped out a crew near #location#, and #some_members_subject# aren't letting that slide.</text></string>
+    <string id="st_wom_reaction_squadkill_002"><text>Word just came in, #some_members_other# dropped a whole squad near #location#, and #some_members_subject# are moving out to retaliate.</text></string>
+    <string id="st_wom_reaction_squadkill_003"><text>Heard #some_members_other# wiped a crew near #location# and #some_members_subject# are going after them.</text></string>
+    <string id="st_wom_reaction_squadkill_004"><text>#a_squad_other# just eliminated a whole squad and #some_members_subject# are already on the move.</text></string>
+    <string id="st_wom_reaction_squadkill_005"><text>A squad just got wiped. Retaliation's already in motion.</text></string>
+
+    <!-- ===== BASEKILL (cause:basekill — base attack consequence) ===== -->
+    <!-- <string id="st_wom_reaction_basekill_support_001"><text>You hear that? #some_members_other# just attacked #location#. #some_members_subject# are moving to help.</text></string>
+    <string id="st_wom_reaction_basekill_support_002"><text>Sounds like #location# is under attack. Reinforcements are on the way.</text></string>
+    <string id="st_wom_reaction_basekill_support_003"><text>Word just came in — #some_members_other# hit #location#. #some_members_subject# are heading to support.</text></string>
+
+    <string id="st_wom_reaction_basekill_flee_001"><text>Sounds like #location# got hit. #some_members_subject# are pulling back.</text></string>
+    <string id="st_wom_reaction_basekill_flee_002"><text>They got pushed off #location#. #some_members_subject# are regrouping.</text></string>
+    <string id="st_wom_reaction_basekill_flee_003"><text>#some_members_subject# just took a hit near #location#. Falling back now.</text></string> -->
+
+    <!-- category-level basekill fallback -->
+    <string id="st_wom_reaction_basekill_001"><text>You hear that? #some_members_other# just wiped out a crew over near #location#.</text></string>
+    <string id="st_wom_reaction_basekill_002"><text>Just got word #location# fell to #some_members_other#.</text></string>
+    <string id="st_wom_reaction_basekill_003"><text>Sounds like there was just a pretty intense firefight at #location#.</text></string>
+
+    <!-- ===== AREA_CONQUER (cause:area_conquer) ===== -->
+    <string id="st_wom_reaction_conquer_001"><text>Word just came in, #some_members_subject# pushed into #location# and claimed it.</text></string>
+    <string id="st_wom_reaction_conquer_002"><text>Just heard #some_members_subject# moved into #location# and posted up.</text></string>
+    <string id="st_wom_reaction_conquer_003"><text>Apparently #some_members_subject# just took #location#.</text></string>
+    <string id="st_wom_reaction_conquer_004"><text>Looks like #some_members_subject# just moved in and claimed #location#.</text></string>
+    <string id="st_wom_reaction_conquer_005"><text>Sounds like the situation at #location# just changed. #some_members_subject# are holding it now.</text></string>
+    <string id="st_wom_reaction_conquer_006"><text>#a_squad_subject# just claimed #location#.</text></string>
+
+    <!-- ===== STASH_LOOT (cause:stash_loot) ===== -->
+    <!-- <string id="st_wom_reaction_stash_loot_001"><text>Someone just hit a cache near #location#. By the sound of it, professionals.</text></string>
+    <string id="st_wom_reaction_stash_loot_002"><text>Word is #some_members_subject# just raided a stash near #location#. Cleaned it out.</text></string>
+    <string id="st_wom_reaction_stash_loot_003"><text>Just heard a stash near #location# got hit. #some_members_subject# took the lot.</text></string>
+    <string id="st_wom_reaction_stash_loot_004"><text>Stash near #location# just got looted. Someone knew exactly where to look.</text></string>
+    <string id="st_wom_reaction_stash_loot_005"><text>Picked up intel cache near #location# just got cleared out.</text></string>
+    <string id="st_wom_reaction_stash_loot_006"><text>A stash just changed hands. Someone's a lot richer right now.</text></string> -->
+
+    <!-- ===== ALPHA (cause:alpha — mutant spawns) ===== -->
+    <string id="st_wom_reaction_alpha_001"><text>They say there's #a_member_subject# that's racked up quite a few kills near #location#.</text></string>
+    <string id="st_wom_reaction_alpha_002"><text>Word is #a_member_subject# has become the apex predator near #location#. Watch yourself out there.</text></string>
+    <string id="st_wom_reaction_alpha_003"><text>Readings just picked up an unusually large creature near #location#, supposedly #a_member_subject#.</text></string>
+
+    <!-- ===== ALPHAKILL (cause:alphakill — apex creature killed) ===== -->
+    <string id="st_wom_reaction_alphakill_001"><text>Just heard #some_members_subject# put down #a_member_other# near #location#. Not easy.</text></string>
+    <string id="st_wom_reaction_alphakill_002"><text>Word is #some_members_subject# took out a big one near #location#. Clean hunt.</text></string>
+    <string id="st_wom_reaction_alphakill_003"><text>Something very dangerous just got put down near #location#. #some_members_subject# did it.</text></string>
+    <string id="st_wom_reaction_alphakill_004"><text>Just came across the wire apex kill near #location#. #some_members_subject# got it.</text></string>
+    <string id="st_wom_reaction_alphakill_005"><text>#a_member_other# neutralized near #location#. Someone's having a good day.</text></string>
+    <string id="st_wom_reaction_alphakill_006"><text>Apex creature just got dropped. Zone keeps turning.</text></string>
+
+    <!-- ===== GENERIC catch-all ===== -->
+    <string id="st_wom_reaction_generic_001"><text>Just picked up something, word is things are moving near #location#.</text></string>
+    <string id="st_wom_reaction_generic_002"><text>Something just happened near #location#. Not sure what yet.</text></string>
+    <string id="st_wom_reaction_generic_003"><text>Heard something over the wire. Situation's changing near #location#.</text></string>
+    <string id="st_wom_reaction_generic_004"><text>Word just came in. Something's going on out there.</text></string>
+    <string id="st_wom_reaction_generic_005"><text>Just caught something on the feed. Zone's active today.</text></string>
+
+</string_table>

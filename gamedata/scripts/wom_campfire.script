@@ -1,0 +1,217 @@
+--- wom_campfire.script
+--- Ambient social chat: nearby stalkers in a relaxed settled state occasionally gossip
+--- about Zone events or their own day, delivered as PDA messages attributed to the
+--- speaker, as if the player overheard them talking aloud. Covers campfires and any
+--- indoor social area (100 Rads Bar, Skadovsk, etc.) — both campfire_point and
+--- animpoint scheme NPCs are eligible.
+---
+--- Every CAMPFIRE_POLL_INTERVAL real seconds the scan picks one eligible NPC from
+--- db.OnlineStalkers (alive, human faction, campfire_point or animpoint scheme,
+--- within radius, not on per-NPC cooldown), then 50/50 tries:
+---   "area"    -> one random event from collect_eligible_news, rendered as a sentence
+---   "personal" -> one interesting event from the NPC's own day via pick_day_event_line
+--- Whichever path is tried first falls back to the other when it returns nothing.
+---
+--- Per-NPC cooldown is shared with wom_reaction via wom_bark so the same NPC cannot
+--- deliver two barks from different systems within the same cooldown window.
+---
+--- Depends on: ap_api (soft), xpda (soft), xtime (soft),
+---             wom_recap_smart_terrain, wom_recap_npc, wom_dialogue_helper,
+---             wom_terminology_helper, wom_npc_role, wom_bark, wom_mcm, wom_utils, db
+
+local CAMPFIRE_POLL_INTERVAL         = 30    -- real seconds between scan ticks
+local CAMPFIRE_RADIUS                = 15    -- metres; unlimited in dev mode
+local CAMPFIRE_NPC_COOLDOWN_GAME_SEC = 1800  -- 30 in-game minutes per NPC between barks
+
+local TIMER_ID = "wom_campfire"
+local TIMER_EV = "tick"
+
+-- (PDA delivery delegated to wom_bark.send_pda)
+
+-- ---- content paths ----------------------------------------------------------
+
+-- Prepends a time-of-day stamp to a rendered sentence using the shared
+-- st_wom_event_stamp_* and st_wom_ask_recap_tod_* templates, producing output
+-- like "This morning around 9:15, bandits attacked...". Falls back to the plain
+-- sentence when no stamp can be built.
+-- @param sentence     string      rendered event sentence (will be decapitalized after comma)
+-- @param started_clock string|nil "HH:MM" from the AP record
+-- @param game_hours   number|nil  cumulative in-game hour the event was recorded
+-- @return string
+local function _apply_stamp(sentence, started_clock, game_hours)
+    local now_gh, now_hod = wom_terminology_helper.get_now_context()
+    local hour   = wom_terminology_helper.get_event_hour(started_clock, game_hours, now_gh, now_hod)
+    local period = wom_terminology_helper.get_period_key(hour)
+    local stamp  = wom_dialogue_helper.make_time_stamp(period, started_clock, game_hours, now_gh)
+    if stamp == "" then return sentence end
+    return stamp .. ", " .. wom_dialogue_helper.decapitalize_clause(sentence)
+end
+
+-- Picks a single event from collect_eligible_news and renders it as one sentence.
+-- Returns (sentence, started_clock, game_hours), or nil when no events exist.
+-- @param npc_faction   string|nil  speaker community key for first-person phrasing
+-- @param npc_squad_id  number|nil  speaker's squad id for squad self-reference
+-- @return string|nil, string|nil, number|nil
+local function _pick_area_event(npc_faction, npc_squad_id)
+    local report = wom_recap_smart_terrain.collect_eligible_news()
+    if not report or #report.events == 0 then return nil end
+    local event = wom_utils.pick_random_item(report.events)
+    local sentence = wom_dialogue_helper.render_solo_event(event, report.location_name, npc_faction, npc_squad_id)
+    if sentence == "" then return nil end
+    -- Don't add a timestamp when gossiping about an area
+    -- return sentence, event.started_clock, event.game_hours
+    return sentence
+end
+
+-- Picks one interesting event from the NPC's squad day history and renders it.
+-- Returns (sentence, started_clock, game_hours) from pick_day_event_line, or nil.
+-- @param npc userdata  NPC client game object
+-- @return string|nil, string|nil, number|nil
+local function _pick_day_event(npc)
+    return wom_recap_npc.pick_day_event_line(npc)
+end
+
+-- Picks one extreme-need bark for the NPC (heavy overdue or very satisfied).
+-- Returns a standalone sentence with no timestamp values — needs are current
+-- state, not time-stamped events, so stamping is intentionally skipped.
+-- @param npc userdata  NPC client game object
+-- @return string|nil
+local function _pick_needs_event(npc)
+    return wom_npc_status.pick_campfire_needs_line(npc)
+end
+
+-- ---- scan -------------------------------------------------------------------
+
+-- Returns true when npc is an alive human-faction NPC that is chilling:
+-- which we define as running a campfire or animpoint scheme.
+-- @param npc userdata|nil
+-- @return boolean
+local function _is_chilling_npc(npc)
+    if not (npc and npc:alive()) then return false end
+    if not wom_bark.is_human_faction(npc:character_community()) then return false end
+    local _, scheme = wom_npc_role.scheme_role(npc)
+    return scheme == "campfire_point" or scheme == "animpoint"
+end
+
+-- Shuffles OnlineStalkers and returns the first NPC that is eligible (alive,
+-- human faction, campfire/animpoint scheme), in range, and off the shared cooldown.
+-- Returns nil when no such NPC exists. Avoids iterating the full list when a
+-- candidate is found early.
+-- @param actor   userdata  db.actor
+-- @param now_sec number    xtime.game_sec()
+-- @return userdata|nil
+local function _pick_candidate(actor, now_sec)
+    local online    = db.OnlineStalkers
+    local actor_pos = actor:position()
+    local dev       = wom_mcm.dev_mode()
+    local r_sqr     = wom_mcm.campfire_range() ^ 2
+    local indices   = {}
+    for i = 1, #online do indices[i] = i end
+    for i = #indices, 2, -1 do
+        local j = math.random(i)
+        indices[i], indices[j] = indices[j], indices[i]
+    end
+    for _, i in ipairs(indices) do
+        local id  = online[i]
+        local npc = wom_utils.get_live_online_npc(id)
+        if npc and _is_chilling_npc(npc) then
+            local in_range = dev or (actor_pos:distance_to_sqr(npc:position()) <= r_sqr)
+            if in_range and wom_bark.can_speak(id, now_sec, CAMPFIRE_NPC_COOLDOWN_GAME_SEC) then
+                return npc
+            end
+        end
+    end
+end
+
+-- Returns the npc's squad group_id, or nil when ungrouped (sentinel 65535).
+-- @param npc userdata
+-- @return number|nil
+local function _resolve_squad_id(npc)
+    local sim        = alife and alife()
+    local server_npc = sim and sim:object(npc:id())
+    local squad_id   = server_npc and server_npc.group_id
+    return (squad_id ~= 65535) and squad_id or nil
+end
+
+-- Picker order tables: each row lists picker indices (1=area, 2=day, 3=needs)
+-- in the order they should be tried. One row is chosen randomly each tick.
+local PICK_ORDERS = {
+    {1, 2, 3},
+    {2, 3, 1},
+    {3, 1, 2},
+    {3, 2, 1}, -- Extra chance of talking about needs
+}
+
+-- Calls one of the three content pickers by index.
+-- @param index        number   1=area, 2=day, 3=needs
+-- @param npc          userdata
+-- @param npc_faction  string
+-- @param npc_squad_id number|nil
+-- @return string|nil, string|nil, number|nil
+local function _try_pick(index, npc, npc_faction, npc_squad_id)
+    if index == 1 then return _pick_area_event(npc_faction, npc_squad_id) end
+    if index == 2 then return _pick_day_event(npc) end
+    return _pick_needs_event(npc)
+end
+
+-- Picks a content sentence by trying the three sources in a random order,
+-- falling through to the next when the current returns nothing.
+-- @param npc          userdata
+-- @param npc_faction  string
+-- @param npc_squad_id number|nil
+-- @return string|nil, string|nil, number|nil
+local function _pick_content(npc, npc_faction, npc_squad_id)
+    for _, index in ipairs(PICK_ORDERS[math.random(#PICK_ORDERS)]) do
+        local sentence, started_clock, game_hours = _try_pick(index, npc, npc_faction, npc_squad_id)
+        if sentence then return sentence, started_clock, game_hours end
+    end
+end
+
+-- (cooldown prune delegated to wom_bark.prune_cooldowns)
+
+local function _poll_social_chatter()
+    if not wom_mcm.campfire_enabled() then return end
+    if not (ap_api and ap_api.get_records) then return end
+    local actor = db.actor
+    if not actor then return end
+    local online = db.OnlineStalkers
+    if not online or #online == 0 then return end
+
+    local now_sec      = xtime and xtime.game_sec and xtime.game_sec() or 0
+    local npc          = _pick_candidate(actor, now_sec)
+    if not npc then return end
+
+    local npc_faction  = npc:character_community()
+    local npc_squad_id = _resolve_squad_id(npc)
+
+    local sentence, started_clock, game_hours = _pick_content(npc, npc_faction, npc_squad_id)
+    local message = sentence and (
+        (started_clock or game_hours)
+        and _apply_stamp(sentence, started_clock, game_hours)
+        or sentence
+    )
+
+    if message and message ~= "" then
+        wom_bark.send_pda(npc, message, "wom_campfire")
+        wom_bark.mark_spoke(npc:id(), now_sec)
+    end
+
+    wom_bark.prune_cooldowns(now_sec, CAMPFIRE_NPC_COOLDOWN_GAME_SEC)
+end
+
+-- ---- timer ------------------------------------------------------------------
+
+local function _on_timer()
+    ResetTimeEvent(TIMER_ID, TIMER_EV, wom_mcm.campfire_interval())
+    local ok, err = pcall(_poll_social_chatter)
+    if not ok and printf then printf("~[wom_campfire] scan error: %s", tostring(err)) end
+    return false
+end
+
+-- ---- lifecycle --------------------------------------------------------------
+
+function on_game_start()
+    if not (ap_api and ap_api.get_records) then return end
+    wom_bark.reset_cooldowns()
+    CreateTimeEvent(TIMER_ID, TIMER_EV, CAMPFIRE_POLL_INTERVAL, _on_timer)
+end

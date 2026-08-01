@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <!-- Distress-call chain templates for wom_distress.script (Russian locale).
+         See eng/st_wom_distress.xml for slot documentation.
+         Caller lines use first-person singular; help lines use first-person
+         plural (squad speaking), per TRANSLATION.md pronoun guidance. -->
+
+    <!-- ===== WOUNDED: distress call (spoken by the wounded stalker) ===== -->
+<string id="st_wom_distress_wounded_call_001"><text>Кто-нибудь есть на волне... я ранен, сука. Нахожусь в районе точки #location#. Помощь бы писец как не помешала!</text></string>
+    <string id="st_wom_distress_wounded_call_002"><text>Это #name#. Зацепило меня на объекте #location#. Перевязываюсь кое-как, но от подмоги не откажусь.</text></string>
+    <string id="st_wom_distress_wounded_call_003"><text>Я ранен, аптечки в нулях, застрял в районе точки #location#. Если кто рядом — самое время впрячься!</text></string>
+    <string id="st_wom_distress_wounded_call_004"><text>Подстрелили меня в локации #location#. Пока дышу, но кровь хлыщет. Кто-нибудь слышит?</text></string>
+    <string id="st_wom_distress_wounded_call_005"><text>На связи #name#, я 300-й. Пока не понял, насколько всё паршиво. Есть кто живой на канале?</text></string>
+    <string id="st_wom_distress_wounded_call_006"><text>Зацепило знатно... пытаюсь бинт натянуть. Если кто бродит в этом районе — будьте на связи, пацаны.</text></string>
+
+    <!-- ===== WOUNDED_HUNT follow-up (spoken by the same wounded stalker) ===== -->
+    <string id="st_wom_distress_wounded_hunt_001"><text>Тихо... кажется, я что-то слышу. Что-то в кустах шуршит, сука...</text></string>
+    <string id="st_wom_distress_wounded_hunt_002"><text>Стойте. Вокруг меня какое-то движение. И, судя по рыку, их тут не одна тварь.</text></string>
+    <string id="st_wom_distress_wounded_hunt_003"><text>Какая-то из местных тварей учуяла кровушку... Слышу, как кружит рядом. Поторопитесь, мужики!</text></string>
+    <string id="st_wom_distress_wounded_hunt_004"><text>Я тут больше не один, сука. Что бы это ни было — оно срисовало меня и подходит.</text></string>
+    <string id="st_wom_distress_wounded_hunt_005"><text>Слышите, там, в эфире? Что-то прет прямо на меня. Ствол держу, но из меня сейчас вояка никакой...</text></string>
+
+    <!-- ===== WOUNDED_HELP follow-up (spoken by the responding squad's commander) ===== -->
+    <string id="st_wom_distress_wounded_help_001"><text>Держись, #name#! Услышали тебя. Уже рвём когти на выручку.</text></string>
+    <string id="st_wom_distress_wounded_help_002"><text>Принято! Выдвигаемся в район точки #location#. Заляг, не отсвечивай и держись!</text></string>
+    <string id="st_wom_distress_wounded_help_003"><text>Держись, брат. Помощь на подходе — чешем к объекту #location#.</text></string>
+    <string id="st_wom_distress_wounded_help_004"><text>Мы рядом, #name#. Зажми рану и не делай глупостей, пока мы не подвалим.</text></string>
+    <string id="st_wom_distress_wounded_help_005"><text>Приняли твой SOS. Уже в пути. Если совсем прижмёт — дай ракету или выстрел в воздух!</text></string>
+
+</string_table>

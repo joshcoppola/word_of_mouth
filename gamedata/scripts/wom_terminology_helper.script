@@ -1,0 +1,974 @@
+--- wom_terminology_helper.script
+--- Translates raw engine community/species strings into human-readable display names
+--- and grammatically-varied natural language phrases for use in dialogue templates.
+--- Input keys come from npc:character_community() for human factions and
+--- xcreature.get_mutant_species() for mutant types.
+--- Depends on: wom_utils.script
+--- Display strings are sourced from st_wom_terminology.xml via game.translate_string().
+--- Structural/grammatical logic (article choice, phrase construction) remains in Lua.
+
+-- ============================================================
+-- Constants and local helpers
+-- ============================================================
+
+-- Engine sentinel for "NPC has no squad". Used by get_object_faction.
+local INVALID_GROUP_ID = 65535
+
+-- Species that are inherently solitary: AP dispatches their events for a single
+-- creature, so party-name functions return singular rather than plural phrasing.
+local SOLITARY_SPECIES = {
+    chimera     = true,
+    gigant      = true,   -- Pseudogiant
+    controller  = true,
+    bloodsucker = true,
+    burer       = true,
+    psysucker   = true,
+    poltergeist = true,
+    pyrogeist   = true,
+    pseudogeist = true,
+}
+
+-- Looks up a display string from st_wom_terminology.xml.
+-- Returns "" when the key is absent (STALKER returns the key itself on a miss).
+-- @param key string  XML string id to look up
+-- @return string     translated text, or "" if the key has no entry
+local function translate_term(key)
+    local result = game.translate_string(key)
+    return result ~= key and result or ""
+end
+
+-- Substitutes a single #token# placeholder in a translated template.
+-- Returns fallback when the key resolves to "".
+-- @param key      string  XML string id
+-- @param token    string  placeholder e.g. "#plural#"
+-- @param value    string  replacement value
+-- @param fallback string  returned when key is absent
+-- @return string
+local function fill_term(key, token, value, fallback)
+    local template = translate_term(key)
+    if template == "" then return fallback end
+    return (string.gsub(template, token, value))
+end
+
+-- Scans numbered squad-term entries (_001, _002, …) from XML and returns a randomly
+-- chosen (singular, plural) pair. The plural falls back to singular.."s" when the
+-- _plural_ key is absent. Returns ("", "") when no entries exist for the community.
+-- @param community_string string  raw engine key e.g. "dolg", "dog"
+-- @return string  singular collective noun e.g. "fireteam", or "" if unknown
+-- @return string  plural collective noun e.g. "fireteams", or "" if unknown
+local function pick_squad_term_pair(community_string)
+    local list = {}
+    local i = 1
+    while true do
+        local singular = translate_term(string.format("st_wom_term_squad_%s_%03d", community_string, i))
+        if singular == "" then break end
+        local plural = translate_term(string.format("st_wom_term_squad_plural_%s_%03d", community_string, i))
+        if plural == "" then plural = singular .. "s" end
+        list[#list + 1] = { singular, plural }
+        i = i + 1
+    end
+    if #list == 0 then return "", "" end
+    local chosen = wom_utils.pick_random_item(list)
+    return chosen[1], chosen[2]
+end
+
+-- Scans numbered pool entries (prefix_001, prefix_002, …) from XML and returns a
+-- randomly chosen string. Returns "" when no entries exist for the prefix.
+-- @param prefix string  XML key prefix e.g. "st_wom_term_ours_one"
+-- @return string  randomly chosen variant, or "" if no entries exist
+local function pick_term_from_pool(prefix)
+    local list = {}
+    local i = 1
+    while true do
+        local term_value = translate_term(string.format("%s_%03d", prefix, i))
+        if term_value == "" then break end
+        list[#list + 1] = term_value
+        i = i + 1
+    end
+    if #list == 0 then return "" end
+    return wom_utils.pick_random_item(list)
+end
+
+-- Returns true when the active locale uses indefinite articles.
+-- Reads st_wom_term_articles_enabled, which every locale must define ("1" or "0").
+-- Merely omitting the article keys in an article-less locale is NOT enough:
+-- the modded-exes string table falls back to the English entry for ids missing
+-- from the active locale, so an absent st_wom_term_article_default still
+-- resolves to "a" in Russian. An explicit per-locale toggle key sidesteps that.
+-- @return boolean
+local function articles_enabled()
+    return translate_term("st_wom_term_articles_enabled") ~= "0"
+end
+
+-- Returns the indefinite article for a community or species string.
+-- Returns "" when the active locale disables articles (see articles_enabled).
+-- Otherwise looks up st_wom_term_article_<community> first, then falls back
+-- to st_wom_term_article_default.
+-- @param community_string string  raw engine key e.g. "dolg", "ecolog"
+-- @return string  e.g. "a", "an", or ""
+local function get_article(community_string)
+    if not articles_enabled() then return "" end
+    local article = translate_term("st_wom_term_article_" .. community_string)
+    if article ~= "" then return article end
+    return translate_term("st_wom_term_article_default")
+end
+
+-- ============================================================
+-- Public functions
+-- ============================================================
+
+-- Returns true when the community string names a naturally solitary mutant species.
+-- @param community_string string  raw engine key e.g. "bloodsucker", "chimera"
+-- @return boolean
+function is_solitary_species(community_string)
+    return SOLITARY_SPECIES[community_string] == true
+end
+
+-- Returns the singular display name for a community or species string.
+-- @param community_string string  raw engine key e.g. "dolg", "bloodsucker"
+-- @return string  singular display name, or "" if unknown
+function get_faction_member_singular(community_string)
+    return translate_term("st_wom_term_singular_" .. community_string)
+end
+
+-- Returns the attributive/adjective form for squad-phrase construction.
+-- @param community_string string  raw engine key e.g. "dolg", "army"
+-- @return string  adjective form e.g. "Duty", "Military", or "" if unknown
+function get_faction_adjective(community_string)
+    return translate_term("st_wom_term_adjective_" .. community_string)
+end
+
+-- Returns the adjective form prefixed with its indefinite article, for slots
+-- like #a_member_other# ("a Bandit attack"). Locales without articles (e.g.
+-- Russian) omit the article keys, so this returns the bare adjective there.
+-- @param community_string string  raw engine key e.g. "dolg", "bandit"
+-- @return string  e.g. "a Duty", "an Ecologist", "бандитов", or "" if unknown
+function get_a_faction_adjective(community_string)
+    local adjective = get_faction_adjective(community_string)
+    if adjective == "" then return "" end
+    local article = get_article(community_string)
+    return (article ~= "" and article .. " " or "") .. adjective
+end
+
+-- Returns the localized preposition for a #<prep>_location# slot token.
+-- Looks up st_wom_term_prep_<prep_token>; falls back to the token itself,
+-- which is the correct English preposition ("at", "near", ...).
+-- @param prep_token string  slot token name e.g. "at", "to", "near"
+-- @return string  localized preposition e.g. "at", "в районе"
+function get_where_preposition(prep_token)
+    local localized = translate_term("st_wom_term_prep_" .. prep_token)
+    if localized ~= "" then return localized end
+    return prep_token
+end
+
+-- Returns the plural display name for a community or species string.
+-- Falls through to the singular form when no plural is defined in XML.
+-- @param community_string string  raw engine key e.g. "stalker", "zombie"
+-- @return string  plural display name, or "" if unknown
+function get_faction_members_plural(community_string)
+    local result = translate_term("st_wom_term_plural_" .. community_string)
+    if result ~= "" then return result end
+    return get_faction_member_singular(community_string)
+end
+
+-- Returns the faction's identity name — the faction as a named concept.
+-- For human factions this is the proper group name used as a subject or object:
+-- "Duty wiped them out", "Freedom came out ahead", "Mercs hit hard".
+-- For mutant species this is the plural species name: "blind dogs came out ahead".
+-- Falls back to get_faction_adjective when no identity entry exists in XML.
+-- @param community_string string  raw engine key e.g. "dolg", "stalker", "dog"
+-- @return string  e.g. "Duty", "Freedom", "Loners", "blind dogs", or "" if unknown
+function get_faction_identity(community_string)
+    local result = translate_term("st_wom_term_identity_" .. community_string)
+    if result ~= "" then return result end
+    return get_faction_adjective(community_string)
+end
+
+-- Returns the generic fallback for a singular unknown party, e.g. "someone".
+-- Used when faction/species community key is nil or unrecognised.
+-- @return string
+function get_unknown_member()
+    return translate_term("st_wom_term_unknown_member")
+end
+
+-- Returns the generic fallback for an indefinite unknown party, e.g. "some people".
+-- @return string
+function get_unknown_some()
+    return translate_term("st_wom_term_unknown_some")
+end
+
+-- Returns the generic fallback for an unknown squad, e.g. "a crew".
+-- @return string
+function get_unknown_squad()
+    return translate_term("st_wom_term_unknown_squad")
+end
+
+-- Returns the bare (article-less) fallback for an unknown squad, e.g. "group".
+-- Used by #squad_subject#/#squad_other#, which sit after a template-supplied determiner.
+-- @return string
+function get_unknown_squad_bare()
+    return translate_term("st_wom_term_unknown_squad_bare")
+end
+
+-- Returns the bare (article-less) fallback for an unknown singular party, e.g. "individual".
+-- Used by #member_subject#/#member_other#, which sit after a template-supplied determiner.
+-- @return string
+function get_unknown_member_bare()
+    return translate_term("st_wom_term_unknown_member_bare")
+end
+
+-- Returns the generic fallback for a bare plural unknown party, e.g. "people".
+-- @return string
+function get_unknown_plural()
+    return translate_term("st_wom_term_unknown_plural")
+end
+
+-- Returns "some [plural]" for a community or species string.
+-- When speaker_community matches community_string, returns a first-person variant instead.
+-- @param community_string  string      raw engine key
+-- @param speaker_community string|nil  the NPC speaker's community key (nil = third-person)
+-- @return string  e.g. "some Loners", "some of our guys"
+function get_some_faction(community_string, speaker_community)
+    if speaker_community and community_string == speaker_community then
+        return pick_term_from_pool("st_wom_term_ours_some")
+    end
+    if SOLITARY_SPECIES[community_string] then
+        return get_a_faction(community_string, speaker_community)
+    end
+    local plural = get_faction_members_plural(community_string)
+    if plural == "" then return "" end
+    return fill_term("st_wom_term_count_some", "#plural#", plural, "")
+end
+
+-- Returns "a [singular]" or "an [singular]" for a community or species string.
+-- The article is sourced from st_wom_term_article_<community>; defaults to "a" when absent.
+-- When speaker_community matches community_string, returns a first-person variant instead.
+-- @param community_string  string      raw engine key
+-- @param speaker_community string|nil  the NPC speaker's community key (nil = third-person)
+-- @return string  e.g. "a Loner", "an Ecologist", "one of our guys"
+function get_a_faction(community_string, speaker_community)
+    if speaker_community and community_string == speaker_community then
+        return pick_term_from_pool("st_wom_term_ours_one")
+    end
+    local singular = get_faction_member_singular(community_string)
+    if singular == "" then return "" end
+    local article = get_article(community_string)
+    return (article ~= "" and article .. " " or "") .. singular
+end
+
+-- Returns a randomly selected collective noun pair (singular, plural) for a community.
+-- Reads from st_wom_term_squad_<community>_NNN and st_wom_term_squad_plural_<community>_NNN.
+-- @param community_string string  raw engine key
+-- @return string  singular collective noun e.g. "fireteam", or "" if unknown
+-- @return string  plural collective noun e.g. "fireteams", or "" if unknown
+function get_faction_squad_term(community_string)
+    return pick_squad_term_pair(community_string)
+end
+
+-- Returns a full indefinite squad phrase, randomly choosing between two patterns:
+--   Pattern A: "a/an [adjective] [squad_term]"  e.g. "a Duty fireteam"
+-- When speaker_community matches community_string, uses first-person possessive patterns:
+--   Pattern A: "one of our [squad_term_plural]"  e.g. "one of our fireteams"
+--   Pattern B: "a [squad_term] of ours"          e.g. "a fireteam of ours"
+-- Returns empty string if the community string is unknown.
+-- @param community_string  string      raw engine key
+-- @param speaker_community string|nil  the NPC speaker's community key (nil = third-person)
+-- @return string  e.g. "a Duty fireteam", "one of our fireteams"
+function get_a_faction_squad(community_string, speaker_community)
+    if SOLITARY_SPECIES[community_string] then
+        return get_a_faction(community_string, speaker_community)
+    end
+    local squad_term, plural_term = pick_squad_term_pair(community_string)
+    if speaker_community and community_string == speaker_community then
+        if squad_term == "" then return pick_term_from_pool("st_wom_term_ours_one") end
+        local pattern_a = fill_term("st_wom_term_squad_ours_one_tpl", "#plural#", plural_term, "")
+        local pattern_b = fill_term("st_wom_term_squad_ours_a_tpl",   "#squad#",  squad_term,  "")
+        return wom_utils.pick_random_item({ pattern_a, pattern_b })
+    end
+    local adjective = get_faction_adjective(community_string)
+    if adjective == "" then return "" end
+    if squad_term == "" then return "" end
+    local article = get_article(community_string)
+    return (article ~= "" and article .. " " or "") .. adjective .. " " .. squad_term
+end
+
+-- Returns a bare squad phrase without the indefinite article, for slots that
+-- supply their own determiner in the template (e.g. "the #squad_subject#").
+-- Always third-person — no first-person "one of our fireteams" substitution —
+-- so the phrase composes safely after a template-supplied article.
+-- Solitary mutant species fall back to the bare singular species name.
+-- @param community_string string  raw engine key e.g. "dolg", "stalker"
+-- @return string  e.g. "Duty fireteam", "Loner crew", "Chimera", or "" if unknown
+function get_faction_squad_bare(community_string)
+    if SOLITARY_SPECIES[community_string] then
+        return get_faction_member_singular(community_string)
+    end
+    local squad_term = pick_squad_term_pair(community_string)
+    if squad_term == "" then return "" end
+    local adjective = get_faction_adjective(community_string)
+    if adjective == "" then return "" end
+    return adjective .. " " .. squad_term
+end
+
+-- Returns a squad-level self-reference for "some members", "a squad", or plural slots.
+-- Builds "our <squad_term>" from the faction's collective noun (e.g. "our fireteam",
+-- "our unit"). Falls back to "our squad" when the community has no squad term.
+-- Used when the NPC's own squad was the subject or other party of an event.
+-- @param community_string string  raw engine key e.g. "dolg", "stalker"
+-- @return string  e.g. "our fireteam", "our squad"
+function get_squad_self_squad_phrase(community_string)
+    local squad_term = get_faction_squad_term(community_string)
+    if squad_term ~= "" then
+        return fill_term("st_wom_term_squad_self_tpl", "#squad#", squad_term, "")
+    end
+    return fill_term("st_wom_term_squad_self_tpl", "#squad#", "squad", "")
+end
+
+-- Returns a squad-level self-reference for "a member" slots.
+-- Reuses the existing first-person singular pool.
+-- @return string  e.g. "one of our guys"
+function get_squad_self_a_member()
+    return pick_term_from_pool("st_wom_term_ours_one")
+end
+
+-- Proper nouns that must stay capitalised inside a spoken location phrase.
+-- Keys are lower-cased and stripped of trailing "'s"/comma before lookup.
+-- Creature names (dog, burer, snork, etc.) are intentionally absent — "the dog's lair"
+-- reads fine fully lowercased.
+local PROTECTED_PROPER_NOUNS = {
+    -- GAMMA levels / settlement names
+    pripyat     = true, jupiter     = true, zaton       = true,
+    rostok      = true, yanov       = true, skadovsk    = true,
+    agroprom    = true, garbage     = true, cordon      = true,
+    darkscape   = true, limansk     = true, yantar      = true,
+    radar       = true, kopachy     = true, volkhov     = true,
+    shevchenko  = true, generators  = true, duga        = true,
+    -- Named persons
+    hermann     = true, sakharov    = true, lenin       = true,
+    -- Branded landmarks
+    brain       = true, scorcher    = true, sarcophagus = true,
+    monolith    = true, damnation   = true,  -- "Damnation Alley"
+}
+
+-- Converts a Title-Case smart-terrain location string into a natural spoken phrase.
+-- Lowercases common-noun words; keeps capitalisation for words whose normalised key is
+-- in PROTECTED_PROPER_NOUNS, words containing a digit, and all-caps acronyms (len > 1).
+-- Prepends "the " unless the phrase begins with a proper-noun possessive ("Sakharov's …").
+-- @param title_case_name string  bare location string, e.g. "Bus Stop", "Pripyat Hotel"
+-- @return string  spoken form, e.g. "the bus stop", "the Pripyat Hotel", "Sakharov's bunker"
+local function to_spoken_location(title_case_name)
+    if not title_case_name or title_case_name == "" then return "" end
+    local words = {}
+    for word in string.gmatch(title_case_name, "%S+") do
+        words[#words + 1] = word
+    end
+    if #words == 0 then return "" end
+
+    local function normalise_key(word)
+        local key = string.lower(word)
+        key = string.gsub(key, "'s$",  "")  -- strip possessive
+        key = string.gsub(key, "\xe2\x80\x99s$", "")  -- UTF-8 right-apostrophe
+        key = string.gsub(key, ",$",   "")  -- strip trailing comma
+        return key
+    end
+
+    local function is_protected(word)
+        -- Digit anywhere in word → preserve as-is.
+        if string.find(word, "%d") then return true end
+        -- All-caps acronym of two or more letters → preserve.
+        if string.len(word) > 1 and string.upper(word) == word
+            and string.find(word, "^%u+$") then return true end
+        return PROTECTED_PROPER_NOUNS[normalise_key(word)]
+    end
+
+    local processed = {}
+    for i = 1, #words do
+        if is_protected(words[i]) then
+            processed[i] = words[i]
+        else
+            processed[i] = string.lower(words[i])
+        end
+    end
+
+    local phrase = table.concat(processed, " ")
+
+    -- Omit "the" when phrase starts with a proper-noun possessive (e.g. "Sakharov's …").
+    local first_key = normalise_key(words[1])
+    local first_is_possessive = (string.find(words[1], "'s$") or string.find(words[1], "\xe2\x80\x99s$"))
+    if PROTECTED_PROPER_NOUNS[first_key] and first_is_possessive then
+        return phrase
+    end
+
+    return "the " .. phrase
+end
+
+-- Strips the level prefix from a raw smart-terrain display name using six strategies
+-- tried in order, stopping at the first match. Returns the bare location part and the
+-- (possibly updated) level_display. level_display may be shortened to its singular form
+-- when the plural→singular strategy fires.
+-- @param name          string      raw smart terrain display name from xlevel
+-- @param level_display string      human-readable level name (may be empty)
+-- @param terrain_level number|nil  numeric level id; needed for the alife-name fallback
+-- @return string, string  location_part (raw name if no strategy matches), level_display
+local function _strip_level_prefix(name, level_display, terrain_level)
+    -- Strategy 1: period-space  "Garbage. Bus Stop" → "Bus Stop"
+    -- Strategy 2: comma-space   "Garbage, Bus Stop" → "Bus Stop"
+    local location_part = string.match(name, "^.-%. (.+)$")
+                       or string.match(name, "^.-, (.+)$")
+
+    -- Strategy 3: case-sensitive space "Garbage Bus Stop" → "Bus Stop"
+    if not location_part and level_display ~= "" then
+        local escaped = string.gsub(level_display, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
+        location_part = string.match(name, "^" .. escaped .. " (.+)$")
+    end
+
+    -- Strategy 4: case-insensitive space (GAMMA lowercase internal names vs Title Case smarts)
+    if not location_part and level_display ~= "" then
+        local name_lower    = string.lower(name)
+        local display_lower = string.lower(level_display)
+        local escaped       = string.gsub(display_lower, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
+        if string.match(name_lower, "^" .. escaped .. " ") then
+            location_part = name:sub(#level_display + 2)
+        end
+    end
+
+    -- Strategy 5: plural→singular ("Great Swamps" display vs "Great Swamp Eerie Bonfire" smart)
+    if not location_part and level_display ~= "" and string.sub(level_display, -1) == "s" then
+        local display_singular = string.sub(level_display, 1, -2)
+        if #display_singular >= 2 then
+            local name_lower     = string.lower(name)
+            local singular_lower = string.lower(display_singular)
+            local escaped        = string.gsub(singular_lower, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
+            if string.match(name_lower, "^" .. escaped .. " ") then
+                location_part = name:sub(#display_singular + 2)
+                level_display = display_singular
+            end
+        end
+    end
+
+    -- Strategy 6: alife level name / translation lookup (internal name differs from display)
+    if not location_part and terrain_level then
+        local sim = alife and alife()
+        if sim then
+            local raw_level = sim:level_name(terrain_level)
+            if raw_level and raw_level ~= "" and raw_level ~= level_display then
+                local escaped = string.gsub(raw_level, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
+                location_part = string.match(name, "^" .. escaped .. " (.+)$")
+            end
+            if not location_part and raw_level then
+                local tr = game.translate_string(raw_level)
+                if tr and tr ~= raw_level and tr ~= level_display then
+                    local escaped = string.gsub(tr, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
+                    location_part = string.match(name, "^" .. escaped .. " (.+)$")
+                end
+            end
+        end
+    end
+
+    return location_part or name, level_display
+end
+
+-- Returns a natural spoken location phrase for a smart terrain, resolved from its
+-- server-object id.  The location part is converted to lowercase with a leading "the",
+-- preserving capitalisation for proper nouns (regions, persons, branded landmarks).
+-- On-map (same level as current_level_id): returns only the spoken location, e.g.
+--   "the bus stop", "the Pripyat Hotel", "Sakharov's bunker".
+-- Off-map (different level): appends the level name, e.g. "the bus stop in Garbage".
+-- Handles three prefix-separator formats in the raw smart name:
+--   "Garbage. Bus Stop"   (period-space, vanilla Anomaly)
+--   "Garbage, Bus Stop"   (comma-space)
+--   "Garbage Bus Stop"    (space-only, GAMMA — stripped via level display name)
+-- current_level_id defaults to xlevel.get_actor_level_id() when nil.
+-- @param smart_id         number      ALifePlus record smart_id
+-- @param current_level_id number|nil  level to compare against; defaults to actor's level
+-- @return string  spoken location phrase, or "" if unresolvable
+function get_location_name(smart_id, current_level_id)
+    if not smart_id then return "" end
+    if not (xobject and xobject.se) then return "" end
+    local smart = xobject.se(smart_id)
+    if not smart then return "" end
+    if not (xlevel and xlevel.get_smart_display_name) then return "" end
+    local name = xlevel.get_smart_display_name(smart) or ""
+    if name == "" then return "" end
+
+    -- Non-English locales: return the engine-translated name as-is.
+    -- The English-specific algorithm below (article, case folding, level-prefix
+    -- stripping) produces nonsense in inflected languages like Russian.
+    local lang = ini_sys and ini_sys:r_string_ex("string_table", "language") or "eng"
+    if lang ~= "eng" then return name end
+
+    -- Resolve the terrain's level and the actor's current level for comparison.
+    local terrain_level = nil
+    if xlevel and xlevel.get_level_id then
+        local ok, level_id = pcall(xlevel.get_level_id, smart)
+        if ok then terrain_level = level_id end
+    end
+
+    local compare_level = current_level_id
+    if not compare_level and xlevel and xlevel.get_actor_level_id then
+        compare_level = xlevel.get_actor_level_id()
+    end
+
+    -- Resolve the level display name once (get_level_name already translates internally).
+    local level_display = ""
+    if terrain_level and xlevel and xlevel.get_level_name then
+        level_display = xlevel.get_level_name(terrain_level) or ""
+    end
+
+    local location_part
+    location_part, level_display = _strip_level_prefix(name, level_display, terrain_level)
+
+    local spoken = to_spoken_location(location_part)
+    if spoken == "" then return "" end
+
+    -- On-map: return the spoken form without a region suffix.
+    if terrain_level and compare_level and terrain_level == compare_level then
+        return spoken
+    end
+
+    -- Off-map: append the level name so the listener knows it is elsewhere.
+    -- Skip the suffix when the location part already begins with the level name
+    -- (e.g. "Great Swamp Clear Sky Base" already implies the region), which would
+    -- otherwise produce "the great swamp clear sky base in Great Swamp".
+    if level_display ~= "" then
+        local level_lower   = string.lower(level_display)
+        local part_lower    = string.lower(location_part)
+        local level_escaped = string.gsub(level_lower, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
+        if string.match(part_lower, "^" .. level_escaped) then
+            return spoken
+        end
+        -- OK to hardcode "in" here since only English loc will reach this point
+        return spoken .. " in " .. level_display
+    end
+    return spoken
+end
+
+-- Returns an approximate time-of-day phrase for use in dialogue templates.
+-- Prefers started_clock ("HH:MM") and falls back to game_hours (absolute hour).
+-- NOTE: this fills the (currently unused) #time# slot. Its hour buckets differ from
+-- get_period_key's (which drives the period time-stamps). Before wiring #time# into a
+-- template that also carries a period stamp, reconcile the two so a single sentence
+-- can't say e.g. "in the afternoon" and "This evening" at once.
+-- @param started_clock string|nil  "HH:MM" string from an AP record
+-- @param game_hours    number|nil  absolute game hour from an AP record
+-- @return string  e.g. "in the morning", "during the night", or "" if no time available
+function get_time_of_day_phrase(started_clock, game_hours)
+    local hour = nil
+    if started_clock then
+        hour = tonumber(string.match(started_clock, "^(%d+):"))
+    end
+    if not hour and game_hours then
+        hour = game_hours % 24
+    end
+    if not hour then return "" end
+    if hour >= 5 and hour < 6 then
+        return translate_term("st_wom_term_time_dawn")
+    elseif hour >= 6 and hour < 11 then
+        return translate_term("st_wom_term_time_morning")
+    elseif hour >= 11 and hour < 13 then
+        return translate_term("st_wom_term_time_midday")
+    elseif hour >= 13 and hour < 17 then
+        return translate_term("st_wom_term_time_afternoon")
+    elseif hour >= 17 and hour < 21 then
+        return translate_term("st_wom_term_time_evening")
+    else
+        return translate_term("st_wom_term_time_night")
+    end
+end
+
+-- Extracts the raw lookup key from an AP record's faction or species field.
+-- Species keys carry a "st_ap_macros_species_" prefix that is stripped so the
+-- result can be passed directly to the faction display-name functions.
+-- Faction keys are already raw community strings (e.g. "dolg").
+-- @param faction_key string|nil  e.g. "dolg"
+-- @param species_key string|nil  e.g. "st_ap_macros_species_dog"
+-- @return string|nil  raw community/species key, or nil if both inputs are nil
+function extract_community_key(faction_key, species_key)
+    if species_key then
+        local species = string.match(species_key, "^st_ap_macros_species_(.+)$")
+        if species then return species end
+    end
+    return faction_key
+end
+
+-- Returns a plural display name for the party described by an AP record's faction
+-- or species key. Species key takes precedence when both are present.
+-- @param faction_key string|nil  e.g. "dolg" (from record subject_faction_key)
+-- @param species_key string|nil  e.g. "st_ap_macros_species_dog" (from record subject_species_key)
+-- @return string  plural party name, or "" if both keys are nil or unrecognised
+function get_party_name(faction_key, species_key)
+    local community = extract_community_key(faction_key, species_key)
+    if not community then return "" end
+    if SOLITARY_SPECIES[community] then
+        return get_faction_member_singular(community)
+    end
+    return get_faction_members_plural(community)
+end
+
+-- Returns (faction_key, is_mutant) for any live NPC or monster game object.
+-- Complements extract_community_key (which works from AP record fields); this
+-- resolves a faction from a live server or client object using four fallback tiers:
+--   1. xcreature mutant species (pcall-guarded; works on client objects)
+--   2. squad_hint.player_id   (fast path when caller already has the squad)
+--   3. group_id on server object → squad → player_id
+--   4. character_community on client objects
+-- Returns ("", false) when no faction can be determined.
+-- @param sim        userdata|nil  alife() simulator
+-- @param obj        userdata      server or client NPC/monster object
+-- @param squad_hint userdata|nil  squad server object owned by the NPC
+-- @return string|nil  raw community/species key e.g. "dolg", "dog", "bloodsucker"
+-- @return boolean     true when the key is a mutant species
+function get_object_faction(sim, obj, squad_hint)
+    if not obj then return nil, false end
+
+    -- 1. Mutant species (pcall-guarded; succeeds on client objects, fails harmlessly
+    --    on server objects where the function signature does not match).
+    if xcreature and xcreature.get_mutant_species then
+        local ok, species = pcall(xcreature.get_mutant_species, obj)
+        if ok and species and species ~= "" then return species, true end
+    end
+
+    -- 2. Squad hint — fast path when caller already has the squad object.
+    if squad_hint and squad_hint.player_id then
+        local faction = string.match(squad_hint.player_id, "^actor_(.+)$") or squad_hint.player_id
+        if faction ~= "" then return faction, false end
+    end
+
+    -- 3. group_id on server object → squad → player_id.
+    local group_id = type(obj.group_id) == "number" and obj.group_id or nil
+    if group_id and group_id ~= INVALID_GROUP_ID then
+        local squad = sim and sim:object(group_id)
+        if squad and squad.player_id then
+            local faction = string.match(squad.player_id, "^actor_(.+)$") or squad.player_id
+            if faction ~= "" then return faction, false end
+        end
+    end
+
+    -- 4. character_community on client objects (pcall-guarded against server objects).
+    if type(obj.character_community) == "function" then
+        local ok, community = pcall(function() return obj:character_community() end)
+        if ok and community and community ~= "" then
+            local faction = string.match(community, "^actor_(.+)$") or community
+            return faction, false
+        end
+    end
+
+    return nil, false
+end
+
+-- ============================================================
+-- Time helpers
+-- ============================================================
+
+-- Returns the current time context used to bucket and stamp events.
+-- Both values are guarded against missing soft-dependency APIs.
+-- @return number  now_gh   current cumulative in-game hour (0 when xtime is absent)
+-- @return number  now_hod  current hour-of-day, 0-23 (12 when the level clock is absent)
+function get_now_context()
+    local now_game_sec = (xtime and xtime.game_sec and xtime.game_sec()) or 0
+    local now_gh       = math.floor(now_game_sec / 3600)
+    local now_hod      = (level and level.get_time_hours and level.get_time_hours()) or 12
+    return now_gh, now_hod, now_game_sec
+end
+
+-- Maps a game hour (0-23) to a time-of-day period key matching the
+-- st_wom_ask_recap_tod_<key> localisation pools.
+-- @param hour         number   integer hour of day, 0-23
+-- @param is_yesterday boolean  optional; true when the event occurred the previous calendar day
+-- @return string  e.g. "morning" | "yesterday_morning"
+function get_period_key(hour, is_yesterday)
+    local base
+    if     hour < 5  then base = "early"
+    elseif hour < 12 then base = "morning"
+    elseif hour < 18 then base = "afternoon"
+    elseif hour < 21 then base = "evening"
+    else                   base = "nightfall"
+    end
+    if is_yesterday then return "yesterday_" .. base end
+    return base
+end
+
+-- Returns the effective period key for an event, checking for super-recent events
+-- before falling through to get_period_key's time-of-day buckets. Timeless events
+-- (infest/swarm/alpha) skip the recency check — their timestamp is unreliable.
+-- @param event           table   event record with .game_hours (integer) and optional .is_timeless
+-- @param now_game_sec    number  current raw game seconds (from xtime.game_sec())
+-- @param now_gh          number  current cumulative in-game hours (integer)
+-- @param now_hod         number  current hour-of-day, 0-23
+-- @return string  "just_now" | "recent" | period key from get_period_key
+function get_stamped_period_key(event, now_game_sec, now_gh, now_hod)
+    if not event.is_timeless then
+        local event_gh   = event.game_hours or now_gh
+        local delta_sec  = now_game_sec - event_gh * 3600
+        if delta_sec < 900 then
+            return "just_now"
+        elseif delta_sec < 3600 then
+            return "recent"
+        end
+    end
+    local event_day    = event.game_hours and math.floor(event.game_hours / 24)
+    local is_yesterday = event_day ~= nil and (math.floor(now_gh / 24) - event_day == 1)
+    local hour = get_event_hour(event.started_clock, event.game_hours, now_gh, now_hod)
+    return get_period_key(hour, is_yesterday)
+end
+
+-- Converts a non-negative integer count to a natural-language number word for
+-- use in combat dialogue slots (#kills#, #losses#). Returns "" for 0 or nil so that
+-- templates using the slot degrade gracefully via clean_output.
+-- Numbers 1-12 have explicit XML entries; anything beyond returns "many".
+-- @param n number|nil
+-- @return string  "one" … "twelve", "many", or ""
+function number_word(n)
+    if not n or n <= 0 then return "" end
+    local result = translate_term("st_wom_term_number_" .. tostring(n))
+    if result ~= "" then return result end
+    return translate_term("st_wom_term_number_many")
+end
+
+-- Formats a "HH:MM" clock string as a 12-hour display string rounded to the
+-- nearest 15-minute mark. No AM/PM suffix — the caller's #period# token supplies
+-- the daypart. Returns "" when the input is nil or unparseable.
+-- @param started_clock string|nil  "HH:MM" string from an AP record
+-- @return string  e.g. "3:45", or ""
+function format_clock(started_clock)
+    if not started_clock then return "" end
+    local hour_str, min_str = string.match(tostring(started_clock), "^(%d+):(%d+)")
+    if not hour_str then return "" end
+    local hour   = tonumber(hour_str)
+    local minute = tonumber(min_str) or 0
+    if not hour then return "" end
+    -- Round minute to nearest 15; carry into the next hour when it reaches 60.
+    local rounded = math.floor((minute + 7) / 15) * 15
+    if rounded >= 60 then
+        rounded = 0
+        hour = hour + 1
+    end
+    -- Convert to 12-hour (1-12 range, no AM/PM).
+    local hour12 = hour % 12
+    if hour12 == 0 then hour12 = 12 end
+    return string.format("%d:%02d", hour12, rounded)
+end
+
+-- Returns a natural-language phrase describing how long ago an in-game event occurred.
+-- Returns "" when game_hours is nil.
+-- @param game_hours      number|nil  cumulative in-game hour the event was recorded
+-- @param now_game_hours  number      current cumulative in-game hour
+-- @return string  e.g. "About 3 hours ago", "About an hour ago", "Just now", or ""
+function get_ago_phrase(game_hours, now_game_hours)
+    if not game_hours then return "" end
+    local delta = now_game_hours - game_hours
+    if delta <= 0 then
+        return translate_term("st_wom_term_ago_now")
+    elseif delta < 2 then
+        return translate_term("st_wom_term_ago_one_hour")
+    else
+        local template = translate_term("st_wom_term_ago_hours")
+        if template == "" then return "" end
+        return string.gsub(template, "#count#", tostring(math.floor(delta)))
+    end
+end
+
+-- Returns the hour-of-day (0-23) when an event occurred.
+-- Prefers the explicit started_clock field; falls back to deriving the hour from
+-- the event's cumulative game_hours relative to the current wall clock.
+-- @param started_clock   string|nil  "HH:MM" string from an AP record
+-- @param game_hours      number|nil  cumulative in-game hour the event was recorded
+-- @param now_game_hours  number      current cumulative in-game hour
+-- @param now_hod         number      current hour-of-day, 0-23
+-- @return number  hour of day, 0-23
+function get_event_hour(started_clock, game_hours, now_game_hours, now_hod)
+    if started_clock then
+        local hour = tonumber(string.match(tostring(started_clock), "^(%d+):"))
+        if hour then return hour % 24 end
+    end
+    if game_hours then
+        local elapsed = now_game_hours - game_hours
+        return math.floor(now_hod - elapsed) % 24
+    end
+    return math.floor(now_hod) % 24
+end
+
+-- Returns the community key of the dominant enemy faction in a wom_combat engagement,
+-- defined as the non-own faction with the highest combined activity (kills + losses).
+-- Returns nil when no enemy faction is found (e.g. single-faction engagement).
+-- @param engagement  table       wom_combat engagement record
+-- @param own_faction string|nil  community key to exclude from the search
+-- @return string|nil
+function get_dominant_enemy_faction(engagement, own_faction)
+    local best_key, best_score = nil, -1
+    for key, stats in pairs(engagement.factions) do
+        if key ~= own_faction then
+            local score = (stats.kills or 0) + (stats.losses or 0)
+            if score > best_score then best_score = score; best_key = key end
+        end
+    end
+    return best_key
+end
+
+-- Returns a table mapping faction_key to the number of distinct squads from that faction
+-- present in the engagement, derived from engagement.squad_factions. Factions recorded
+-- in engagement.factions but absent from squad_factions default to one squad.
+-- @param engagement table  wom_combat engagement record
+-- @return table  { [faction_key] = squad_count }
+function count_squads_per_faction(engagement)
+    local result = {}
+    for squad_id, faction_key in pairs(engagement.squad_factions) do
+        result[faction_key] = (result[faction_key] or 0) + 1
+    end
+    for faction_key, _ in pairs(engagement.factions) do
+        if not result[faction_key] then result[faction_key] = 1 end
+    end
+    return result
+end
+
+-- Returns a count phrase for the number of squads from a faction present at an engagement.
+-- Used to build participant lists like "two Duty units, a Clear Sky fireteam, and a Psy-Dog pack".
+-- Always third-person — the participant list is never first-person; the sentence opener
+-- ("We took part in...") supplies the first-person voice.
+-- squad_count=1: "a Duty fireteam" / "a Psy-dog pack" / "a Chimera" (solitary species)
+-- squad_count>1: "two Duty units" / "three Psy-dog packs" / "two Chimeras" (solitary species)
+-- Returns "" when the community string is unrecognised.
+-- @param community   string  raw engine community/species key
+-- @param squad_count number  number of distinct squads from this faction in the engagement
+-- @return string  e.g. "two Duty units", "a Clear Sky fireteam", "a Psy-Dog pack", or ""
+function get_count_faction_squads(community, squad_count)
+    if SOLITARY_SPECIES[community] then
+        if squad_count == 1 then
+            return get_a_faction(community, nil)
+        end
+        local plural = get_faction_members_plural(community)
+        if plural == "" then return "" end
+        local count_phrase = number_word(squad_count)
+        if count_phrase == "" then return plural end
+        return count_phrase .. " " .. plural
+    end
+
+    local squad_term, plural_squad_term = pick_squad_term_pair(community)
+    if squad_term == "" then
+        return get_count_faction(community, squad_count, nil)
+    end
+
+    local adjective = get_faction_adjective(community)
+    if adjective == "" then return "" end
+
+    if squad_count == 1 then
+        local article = get_article(community)
+        return (article ~= "" and article .. " " or "") .. adjective .. " " .. squad_term
+    end
+
+    local count_phrase = number_word(squad_count)
+    if count_phrase == "" then return adjective .. " " .. plural_squad_term end
+    return count_phrase .. " " .. adjective .. " " .. plural_squad_term
+end
+
+-- Builds natural-language participant lists for a multi-faction combat engagement.
+-- lead_faction is sorted first; remaining factions sort by total activity descending.
+-- Returns all three outputs; callers may discard what they don't need.
+-- @param engagement   table       wom_combat engagement record
+-- @param lead_faction string|nil  faction key to list first
+-- @return string  participant_list      e.g. "a Duty unit, a Loner squad, and a Psy-Dog pack"
+-- @return string  top_faction_identity  identity name of lead_faction, or ""
+-- @return string  enemy_list            participant_list excluding lead_faction entries
+function build_faction_participant_list(engagement, lead_faction)
+    local squads_per_faction = count_squads_per_faction(engagement)
+    local faction_entries = {}
+    for faction_key, squad_count in pairs(squads_per_faction) do
+        local stats    = engagement.factions[faction_key]
+        local activity = stats and ((stats.kills or 0) + (stats.losses or 0)) or 0
+        faction_entries[#faction_entries + 1] = { key = faction_key, count = squad_count, activity = activity }
+    end
+    table.sort(faction_entries, function(a, b)
+        if a.key == lead_faction then return true  end
+        if b.key == lead_faction then return false end
+        return a.activity > b.activity
+    end)
+    local all_parts   = {}
+    local enemy_parts = {}
+    for i = 1, #faction_entries do
+        local entry = faction_entries[i]
+        local text  = get_count_faction_squads(entry.key, entry.count)
+        if text ~= "" then
+            all_parts[#all_parts + 1] = text
+            if entry.key ~= lead_faction then
+                enemy_parts[#enemy_parts + 1] = text
+            end
+        end
+    end
+    local top_identity = lead_faction and get_faction_identity(lead_faction) or ""
+    return wom_utils.join_list(all_parts), top_identity, wom_utils.join_list(enemy_parts)
+end
+
+-- First-person count phrase for counts >= 2 (count == 1 handled by get_count_faction).
+-- @param count             number      integer >= 2
+-- @param community_string  string      raw engine key
+-- @param speaker_community string|nil  NPC speaker's community key
+-- @param plural            string      plural display name for the faction
+-- @return string
+local function _ours_phrase(count, community_string, speaker_community, plural)
+    if count == 2 then
+        return translate_term("st_wom_term_count_couple_ours")
+    elseif count == 3 then
+        return wom_utils.pick_random_item({
+            translate_term("st_wom_term_count_few_ours"),
+            get_a_faction_squad(community_string, speaker_community),
+        })
+    elseif count >= 4 and count <= 6 then
+        local count_word = number_word(count)
+        if count_word == "" then return get_a_faction_squad(community_string, speaker_community) end
+        local template    = translate_term("st_wom_term_count_N_ours")
+        local ours_phrase = template ~= "" and string.gsub(template, "#count#", count_word) or (count_word .. " of our guys")
+        return wom_utils.pick_random_item({ ours_phrase, get_a_faction_squad(community_string, speaker_community) })
+    else
+        return wom_utils.pick_random_item({
+            translate_term("st_wom_term_count_bunch_ours"),
+            get_a_faction_squad(community_string, speaker_community),
+        })
+    end
+end
+
+-- Third-person count phrase for counts >= 2 (count == 1 handled by get_count_faction).
+-- @param count             number      integer >= 2
+-- @param community_string  string      raw engine key
+-- @param speaker_community string|nil  NPC speaker's community key
+-- @param plural            string      plural display name for the faction
+-- @return string
+local function _third_phrase(count, community_string, speaker_community, plural)
+    if count == 2 then
+        return wom_utils.pick_random_item({
+            fill_term("st_wom_term_count_couple", "#plural#", plural, "a couple of " .. plural),
+            number_word(2) .. " " .. plural,
+        })
+    elseif count == 3 then
+        return wom_utils.pick_random_item({
+            fill_term("st_wom_term_count_few", "#plural#", plural, "a few " .. plural),
+            get_a_faction_squad(community_string, speaker_community),
+        })
+    elseif count >= 4 and count <= 6 then
+        local count_word = number_word(count)
+        if count_word == "" then return get_a_faction_squad(community_string, speaker_community) end
+        return wom_utils.pick_random_item({
+            count_word .. " " .. plural,
+            get_a_faction_squad(community_string, speaker_community),
+        })
+    else
+        return wom_utils.pick_random_item({
+            fill_term("st_wom_term_count_bunch", "#plural#", plural, "a bunch of " .. plural),
+            get_a_faction_squad(community_string, speaker_community),
+        })
+    end
+end
+
+-- Returns a natural-language count phrase for a number of faction members.
+-- When speaker_community matches community_string, uses first-person phrasing.
+-- @param community_string  string      raw engine key
+-- @param count             number      integer >= 1
+-- @param speaker_community string|nil  NPC speaker's community key (nil = third-person)
+-- @return string  e.g. "a Loner", "a couple of Loners", "a bunch of Bloodsuckers"
+function get_count_faction(community_string, count, speaker_community)
+    local is_ours = speaker_community and community_string == speaker_community
+    local plural  = get_faction_members_plural(community_string)
+    if plural == "" then return "" end
+    if count == 1 then return get_a_faction(community_string, speaker_community) end
+    if is_ours then return _ours_phrase(count, community_string, speaker_community, plural) end
+    return _third_phrase(count, community_string, speaker_community, plural)
+end

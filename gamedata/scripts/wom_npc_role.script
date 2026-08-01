@@ -1,0 +1,139 @@
+
+--- wom_npc_role.script
+--- NPC role and scheme detection: which smart terrain an NPC is slotted into,
+--- what logic scheme they are running, and whether they are standing a watch post.
+---
+--- Depends on: xsmart (soft), xsquad (soft), xlevel (soft), db.storage
+
+-- Maps an active logic scheme -> a coarse behaviour role. The "working / holding
+-- a position" schemes count as "posted"; sitting/sleeping are "settled"/"sleeping";
+-- anything else (combat, danger, meet, companion, ...) is nil. Single shared
+-- definition (referenced module-qualified, so it is never an empty copy).
+SCHEME_ROLE = {
+    walker     = "posted",       -- walking a route within a job
+    patrol     = "posted",       -- patrolling
+    camper     = "posted",       -- holding a position / guard
+    smartcover = "posted",       -- occupying a cover post
+    sleeper        = "sleeping",  -- sleeping
+    animpoint      = "settled",   -- sitting at an animation point
+    campfire_point = "settled",   -- gathered at a campfire
+}
+
+-- [UNUSED] Guard/sniper/camper job_type_id values — only used by is_posted (below).
+-- Kept for future use alongside the posted-NPC dialog topic.
+-- local POSTED_JOBS = { [9] = true, [11] = true, [12] = true }
+
+-- [UNUSED] Returns the job_type_id the NPC is slotted into at the given smart terrain, or nil.
+-- Only called by is_posted (below). Kept for future use.
+-- @param npc   userdata  NPC client game object
+-- @param smart userdata  smart terrain server object
+-- @return number|nil
+-- local function job_type_id(npc, smart)
+--     local info = smart and smart.npc_info and smart.npc_info[npc:id()]
+--     local job = info and info.job
+--     return job and job.job_type_id
+-- end
+
+-- Returns the smart terrain server object currently running this NPC's gulag logic,
+-- or nil when the NPC is travelling and not yet slotted into any smart.
+-- Engine-authoritative: an NPC slotted into a smart job appears in that smart's
+-- npc_info roster.
+-- @param npc userdata  NPC client game object
+-- @return userdata|nil  smart terrain server object
+function current_smart(npc)
+    if not npc then return nil end
+    local npc_id = npc:id()
+    if xsmart and xsmart.smart_iter then
+        for smart in xsmart.smart_iter() do
+            if smart.npc_info and smart.npc_info[npc_id] then return smart end
+        end
+    end
+    return nil
+end
+
+-- Returns the NPC's coarse behaviour role derived from their active logic scheme,
+-- plus the raw scheme name. "beh" is Anomaly's catch-all gulag scheme; it counts as
+-- "posted" except when the NPC is in the idle beh_wait state without the guard
+-- animation (i.e. just loitering). Both return values may be nil.
+-- @param npc userdata  NPC client game object
+-- @return string|nil  role: "posted", "sleeping", "settled", or nil
+-- @return string|nil  scheme: active scheme name, e.g. "walker", "beh", or nil
+function scheme_role(npc)
+    local storage = npc and db.storage[npc:id()]
+    local scheme = storage and storage.active_scheme
+    local role = (scheme and SCHEME_ROLE[scheme]) or nil
+    if scheme == "beh" then
+        local beh = storage.beh
+        if beh and beh.behavior == "beh_wait" and beh.wait_animation ~= "guard" then
+            role = nil
+        else
+            role = "posted"
+        end
+    end
+    return role, scheme
+end
+
+-- [UNUSED] Returns true when the NPC is actively standing a watch post (guard, sniper,
+-- or camper position). Not called by any active dialog; kept for future use alongside
+-- the posted-NPC dialog topic (can_ask_posted in modxml_wom_dialog.script).
+-- Uses three tiers: guard-stance animation > gulag job type > scheme name.
+-- @param npc userdata  NPC client game object
+-- @return boolean
+-- function is_posted(npc)
+--     if not npc then return false end
+--     local storage = db.storage[npc:id()]
+--     local beh = storage and storage.beh
+--     if beh and beh.behavior == "beh_wait" and beh.wait_animation == "guard" then
+--         return true
+--     end
+--     local smart = current_smart(npc)
+--     local jtid = smart and job_type_id(npc, smart)
+--     if jtid and POSTED_JOBS[jtid] then return true end
+--     local _, scheme = scheme_role(npc)
+--     return scheme == "camper" or scheme == "smartcover"
+-- end
+
+-- Returns the id of the smart terrain the squad is currently assigned to, or nil.
+-- Squad-level complement of current_smart(): takes a squad server object rather than
+-- an NPC client object. Useful when only the squad is available (e.g. death callbacks).
+-- @param squad userdata|nil  squad server object
+-- @return number|nil
+function smart_id_of_squad(squad)
+    if not (squad and xsquad and xsquad.get_squad_smart) then return nil end
+    local smart = xsquad.get_squad_smart(squad)
+    return smart and smart.id or nil
+end
+
+-- Returns the id of the nearest smart terrain within `radius` metres of a world
+-- position, or nil when SIMBOARD is unavailable or nothing is close enough.
+-- Used for lone online mutants that belong to no squad and have no gulag assignment.
+--
+-- The search is confined to a single level. Positions are per-level coordinate
+-- frames, so an unfiltered nearest-smart scan can match a smart on another map
+-- whose local coordinates happen to fall inside the radius. `level_id` defaults
+-- to the actor's level, which is correct for every current caller (all of them
+-- pass a position read from an online object, and online objects are on the
+-- actor's level by definition).
+-- @param pos      vector      world-space position; resolve it with
+--                             wom_utils.get_object_position, never by reading
+--                             obj.position (a client object hands back the method)
+-- @param radius   number|nil  search radius in metres; defaults to 300
+-- @param level_id number|nil  level to confine the search to; defaults to the actor's
+-- @return number|nil
+function nearest_smart_id(pos, radius, level_id)
+    if not pos then return nil end
+    -- A non-vector that is nonetheless truthy (the classic case: a client object's
+    -- `position` member function, passed in unresolved) reaches xsmart.find_smart
+    -- and crashes there on pos.x. Refuse it here instead — losing the smart terrain
+    -- on one kill is a far better outcome than a CTD inside a death callback.
+    if type(pos) ~= "userdata" and type(pos) ~= "table" then return nil end
+    if not (xsmart and xsmart.find_smart) then return nil end
+    if not level_id and xlevel and xlevel.get_actor_level_id then
+        level_id = xlevel.get_actor_level_id()
+    end
+    local smart = xsmart.find_smart(pos, {
+        max_distance = radius or 300,
+        level_id     = level_id,
+    })
+    return smart and smart.id or nil
+end

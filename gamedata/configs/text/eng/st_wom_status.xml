@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+  <!-- ========================================================================= -->
+  <!-- Word of Mouth / "How are you holding up?" answer pools                    -->
+  <!--                                                                           -->
+  <!-- HEALTH TIERS (based on npc:health 0.0-1.0):                              -->
+  <!--   fine     >= 0.75                                                        -->
+  <!--   worn     >= 0.40                                                        -->
+  <!--   bad      >= 0.20                                                        -->
+  <!--   critical  < 0.20                                                        -->
+  <!--                                                                           -->
+  <!-- NEED POOLS: _light when 1.0x-1.8x overdue, _heavy when 1.8x+.           -->
+  <!-- Each sentence stands alone; they are space-joined in the response.        -->
+  <!-- All lines must end with punctuation.                                      -->
+  <!-- ========================================================================= -->
+
+  <!-- Actor question -->
+  <string id="st_wom_ask_status"><text>How are you holding up?</text></string>
+
+  <!-- ========================================================================= -->
+  <!-- RANK LEAD: always prepended as the first sentence of the status response.  -->
+  <!-- Should be a self-contained 1-2 sentence description of the NPC's           -->
+  <!-- experience level / relationship with the Zone. Health and need lines       -->
+  <!-- follow after, so end on a natural pause — not a segue.                    -->
+  <!-- ========================================================================= -->
+
+  <string id="st_wom_status_rank_novice_001"><text>Still a rookie, to be honest. Still jump at every sound out here.</text></string>
+  <string id="st_wom_status_rank_novice_002"><text>Haven't been in the Zone long. Still figuring most of it out.</text></string>
+  <string id="st_wom_status_rank_novice_003"><text>I'm new to all this. Zone keeps me on edge more than I'd like to admit.</text></string>
+  <string id="st_wom_status_rank_novice_004"><text>Rookie through and through. Every day out here's still a lesson.</text></string>
+
+  <string id="st_wom_status_rank_experienced_001"><text>I've been around long enough to know what to watch for.</text></string>
+  <string id="st_wom_status_rank_experienced_002"><text>I think I'm getting the hang of this place, slowly but surely.</text></string>
+  <string id="st_wom_status_rank_experienced_003"><text>I'm not new to this anymore, but the Zone still has surprises.</text></string>
+  <string id="st_wom_status_rank_experienced_004"><text>I've managed to stay alive so far.</text></string>
+
+  <string id="st_wom_status_rank_veteran_001"><text>Been out here long enough that not much surprises me anymore.</text></string>
+  <string id="st_wom_status_rank_veteran_002"><text>Zone doesn't rattle me the way it used to.</text></string>
+  <string id="st_wom_status_rank_veteran_003"><text>Done this long enough to know how it works.</text></string>
+
+  <string id="st_wom_status_rank_master_001"><text>Been out here for so long it's hard to shake me up.</text></string>
+  <string id="st_wom_status_rank_master_002"><text>Seen just about everything the Zone can throw at you.</text></string>
+  <string id="st_wom_status_rank_master_003"><text>Years in this place. Doesn't get easier, but you get better.</text></string>
+  <string id="st_wom_status_rank_master_004"><text>Nothing out here catches me off guard anymore. Or so I keep telling myself.</text></string>
+
+  <!-- ========================================================================= -->
+  <!-- RADIATION: inserted after health line when npc:radiation() >= threshold.  -->
+  <!-- No slots. Stand-alone sentences.                                           -->
+  <!-- ========================================================================= -->
+
+  <string id="st_wom_status_radiation_light_001"><text>Caught some rads too.</text></string>
+  <string id="st_wom_status_radiation_light_002"><text>Picked up a bit of radiation as well.</text></string>
+  <string id="st_wom_status_radiation_light_003"><text>Got some contamination I need to flush out.</text></string>
+
+  <string id="st_wom_status_radiation_heavy_001"><text>Taking serious rads.</text></string>
+  <string id="st_wom_status_radiation_heavy_002"><text>Really need an antirad.</text></string>
+  <string id="st_wom_status_radiation_heavy_003"><text>Rads are really getting to me.</text></string>
+
+  <!-- ========================================================================= -->
+  <!-- COMBAT LOSSES: inserted after radiation when recent squad losses exist.    -->
+  <!-- Slots: #losses_word# (e.g. "one", "two"), #a_member_other# (e.g. "a Bandit",    -->
+  <!-- "a Psy-dog") — gated, so variants using #a_member_other# are excluded when the  -->
+  <!-- enemy faction is unknown. Each pool needs at least one ungated fallback.  -->
+  <!-- ========================================================================= -->
+
+  <!-- light: 1 losses -->
+  <string id="st_wom_status_losses_light_001"><text>Lost one of my crew during #a_member_other# attack.</text></string>
+  <string id="st_wom_status_losses_light_002"><text>Lost a stalker during #a_member_other# attack.</text></string>
+  <string id="st_wom_status_losses_light_003"><text>Lost one of my crew recently.</text></string>
+
+  <!-- heavy: 2+ losses -->
+  <string id="st_wom_status_losses_heavy_001"><text>Lost #losses_word# of our crew to #a_member_other# attack.</text></string>
+  <string id="st_wom_status_losses_heavy_002"><text>Took some losses to #a_member_other# out there.</text></string>
+  <string id="st_wom_status_losses_heavy_003"><text>Lost #losses_word# people recently.</text></string>
+
+
+  <!-- ===== NO DATA fallback ===== -->
+  <!-- Appended to the health line when ap_ext_tracker has no DTO for this squad. -->
+  <!-- Must work naturally after any health tier line. -->
+  <string id="st_wom_status_no_data_001"><text>Just another day in the Zone.</text></string>
+  <string id="st_wom_status_no_data_002"><text>Zone keeps you on your toes.</text></string>
+  <string id="st_wom_status_no_data_003"><text>Taking it one day at a time.</text></string>
+  <string id="st_wom_status_no_data_004"><text>Getting through it.</text></string>
+  <string id="st_wom_status_no_data_005"><text>Same as always out here.</text></string>
+  <string id="st_wom_status_no_data_006"><text>What can you do.</text></string>
+  <string id="st_wom_status_no_data_007"><text>The Zone doesn't care either way.</text></string>
+
+  <!-- Actor acknowledgement (leaf phrase, shared with other topics) -->
+
+  <!-- ===== HEALTH: fine ===== -->
+  <string id="st_wom_status_health_fine_001"><text>No injuries at all.</text></string>
+  <string id="st_wom_status_health_fine_002"><text>Not injured, at least.</text></string>
+  <string id="st_wom_status_health_fine_003"><text>Don't even have any scratches or scrapes.</text></string>
+  <string id="st_wom_status_health_fine_004"><text>Feeling healthy.</text></string>
+  <string id="st_wom_status_health_fine_005"><text>Don't have any aches or scrapes.</text></string>
+
+  <!-- ===== HEALTH: worn ===== -->
+  <string id="st_wom_status_health_worn_001"><text>Honestly I'm a bit worse for wear.</text></string>
+  <string id="st_wom_status_health_worn_002"><text>I'm in a little bit of pain, to be honest.</text></string>
+  <string id="st_wom_status_health_worn_003"><text>Got some minor injuries.</text></string>
+  <string id="st_wom_status_health_worn_004"><text>Mostly healthy, could be better.</text></string>
+  <string id="st_wom_status_health_worn_005"><text>Somewhat injured, but it's not too bad.</text></string>
+  <string id="st_wom_status_health_worn_006"><text>Seen better days, but I'm managing.</text></string>
+
+  <!-- ===== HEALTH: bad ===== -->
+  <string id="st_wom_status_health_bad_001"><text>Not doing great, if I'm honest.</text></string>
+  <string id="st_wom_status_health_bad_002"><text>I'm in bad shape.</text></string>
+  <string id="st_wom_status_health_bad_003"><text>I'm in pretty rough shape.</text></string>
+  <string id="st_wom_status_health_bad_004"><text>Could really use a medkit right now.</text></string>
+  <string id="st_wom_status_health_bad_005"><text>Took some real damage to be honest.</text></string>
+  <string id="st_wom_status_health_bad_006"><text>In a lot of pain.</text></string>
+
+  <!-- ===== HEALTH: critical ===== -->
+  <string id="st_wom_status_health_critical_001"><text>On my last legs.</text></string>
+  <string id="st_wom_status_health_critical_002"><text>I'm in a real bad way.</text></string>
+  <string id="st_wom_status_health_critical_003"><text>I'm gonna be honest, got a pretty nasty injury.</text></string>
+  <string id="st_wom_status_health_critical_004"><text>Don't think I've ever been in worse pain.</text></string>
+  <string id="st_wom_status_health_critical_005"><text>I'm honestly not sure how much longer I can make it.</text></string>
+
+
+
+  <!-- ===== NEED: hunger (light) ===== -->
+  <string id="st_wom_status_need_hunger_light_001"><text>Starting to get pretty hungry.</text></string>
+  <string id="st_wom_status_need_hunger_light_002"><text>Haven't eaten in a while.</text></string>
+  <string id="st_wom_status_need_hunger_light_003"><text>Could use something to eat.</text></string>
+
+  <!-- ===== NEED: hunger (heavy) ===== -->
+  <string id="st_wom_status_need_hunger_heavy_001"><text>I'm starving, honestly.</text></string>
+  <string id="st_wom_status_need_hunger_heavy_002"><text>Can't remember the last time I had a proper meal.</text></string>
+  <string id="st_wom_status_need_hunger_heavy_003"><text>My stomach's been empty for too long.</text></string>
+
+
+
+  <!-- ===== NEED: social (light) ===== -->
+  <string id="st_wom_status_need_social_light_001"><text>Could use some company, if I'm honest.</text></string>
+  <string id="st_wom_status_need_social_light_002"><text>Been a bit lonely out here.</text></string>
+  <string id="st_wom_status_need_social_light_003"><text>Feels like I haven't talked to anyone in ages.</text></string>
+
+  <!-- ===== NEED: social (heavy) ===== -->
+  <string id="st_wom_status_need_social_heavy_001"><text>Going a little stir-crazy out here, honestly.</text></string>
+  <string id="st_wom_status_need_social_heavy_002"><text>Can't remember being any more lonely.</text></string>
+  <string id="st_wom_status_need_social_heavy_003"><text>Started talking to myself, not a good sign.</text></string>
+
+
+
+  <!-- ===== NEED: sleep (light) ===== -->
+  <string id="st_wom_status_need_sleep_light_001"><text>Could really use some shut-eye.</text></string>
+  <string id="st_wom_status_need_sleep_light_002"><text>Haven't slept properly in a while.</text></string>
+  <string id="st_wom_status_need_sleep_light_003"><text>Haven't managed more than a few hours' sleep.</text></string>
+
+  <!-- ===== NEED: sleep (heavy) ===== -->
+  <string id="st_wom_status_need_sleep_heavy_001"><text>Exhausted, haven't had a real sleep in too long.</text></string>
+  <string id="st_wom_status_need_sleep_heavy_002"><text>Can barely keep my eyes open.</text></string>
+  <string id="st_wom_status_need_sleep_heavy_003"><text>Totally drained.</text></string>
+
+
+
+  <!-- ===== NEED: rest (light) ===== -->
+  <string id="st_wom_status_need_rest_light_001"><text>Body could use a breather.</text></string>
+  <string id="st_wom_status_need_rest_light_002"><text>Could do with a break.</text></string>
+  <string id="st_wom_status_need_rest_light_003"><text>Been pushing hard lately.</text></string>
+
+  <!-- ===== NEED: rest (heavy) ===== -->
+  <string id="st_wom_status_need_rest_heavy_001"><text>Can barely lift my arms at this point.</text></string>
+  <string id="st_wom_status_need_rest_heavy_002"><text>Every muscle aches.</text></string>
+  <string id="st_wom_status_need_rest_heavy_003"><text>Body's screaming for a rest.</text></string>
+
+
+
+  <!-- ===== NEED: supply (light) ===== -->
+  <string id="st_wom_status_need_supply_light_001"><text>Running a bit low on supplies.</text></string>
+  <string id="st_wom_status_need_supply_light_002"><text>Could do with a resupply.</text></string>
+  <string id="st_wom_status_need_supply_light_003"><text>Starting to run short on ammo.</text></string>
+
+  <!-- ===== NEED: supply (heavy) ===== -->
+  <string id="st_wom_status_need_supply_heavy_001"><text>Nearly out of everything.</text></string>
+  <string id="st_wom_status_need_supply_heavy_002"><text>Down to my last few rounds.</text></string>
+  <string id="st_wom_status_need_supply_heavy_003"><text>Desperate for a resupply.</text></string>
+
+
+
+  <!-- ===== NEED: money (light) ===== -->
+  <string id="st_wom_status_need_money_light_001"><text>Cash is running low.</text></string>
+  <string id="st_wom_status_need_money_light_002"><text>Could use a payday.</text></string>
+  <string id="st_wom_status_need_money_light_003"><text>Money's getting tight.</text></string>
+
+  <!-- ===== NEED: money (heavy) ===== -->
+  <string id="st_wom_status_need_money_heavy_001"><text>Flat broke, basically.</text></string>
+  <string id="st_wom_status_need_money_heavy_002"><text>Haven't had a decent payday in too long.</text></string>
+  <string id="st_wom_status_need_money_heavy_003"><text>Running on scraps at this point.</text></string>
+
+
+
+
+
+  <!-- ========================================================================= -->
+  <!-- POSITIVE NEEDS: reported when a need was recently satisfied (elapsed <     -->
+  <!-- SATISFIED_RATIO of threshold). Negatives appear first, then these.         -->
+  <!-- Each line should read naturally as a standalone observation.               -->
+  <!-- ========================================================================= -->
+
+  <!-- ===== NEED: hunger (good) ===== -->
+  <string id="st_wom_status_need_hunger_good_001"><text>Stomach's full, no complaints there.</text></string>
+  <string id="st_wom_status_need_hunger_good_002"><text>Eating well enough out here.</text></string>
+  <string id="st_wom_status_need_hunger_good_003"><text>Haven't gone hungry lately, at least.</text></string>
+
+  <!-- ===== NEED: social (good) ===== -->
+  <string id="st_wom_status_need_social_good_001"><text>I've been in good company lately.</text></string>
+  <string id="st_wom_status_need_social_good_002"><text>At least I haven't been lonely lately.</text></string>
+  <string id="st_wom_status_need_social_good_003"><text>Been keeping good company for once.</text></string>
+
+  <!-- ===== NEED: sleep (good) ===== -->
+  <string id="st_wom_status_need_sleep_good_001"><text>Getting decent sleep, at least.</text></string>
+  <string id="st_wom_status_need_sleep_good_002"><text>Had a proper rest recently.</text></string>
+  <string id="st_wom_status_need_sleep_good_003"><text>Finally got some good sleep recently.</text></string>
+
+  <!-- ===== NEED: rest (good) ===== -->
+  <string id="st_wom_status_need_rest_good_001"><text>Don't think I'll need a breather anytime soon.</text></string>
+  <string id="st_wom_status_need_rest_good_002"><text>Feeling well-rested.</text></string>
+  <string id="st_wom_status_need_rest_good_003"><text>Had a decent break recently.</text></string>
+
+  <!-- ===== NEED: supply (good) ===== -->
+  <string id="st_wom_status_need_supply_good_001"><text>Got plenty of ammo.</text></string>
+  <string id="st_wom_status_need_supply_good_002"><text>Well-stocked for now.</text></string>
+  <string id="st_wom_status_need_supply_good_003"><text>Not wanting for supplies.</text></string>
+
+  <!-- ===== NEED: money (good) ===== -->
+  <string id="st_wom_status_need_money_good_001"><text>Got plenty of cash.</text></string>
+  <string id="st_wom_status_need_money_good_002"><text>Rubles aren't an issue right now.</text></string>
+  <string id="st_wom_status_need_money_good_003"><text>Paid up for now.</text></string>
+
+</string_table>

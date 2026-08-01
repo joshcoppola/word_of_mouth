@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+
+  <!-- ===================================================== -->
+  <!-- FACTION MEMBER (SINGULAR) NAMES                           -->
+  <!-- Used by get_faction_member_singular(). One entry per      -->
+  <!-- community/species key.                                    -->
+  <!-- Used when refering to an individual member of the faction -->
+  <!-- "I saw a Loner" "I saw a Duty soldier"                    -->
+  <!-- ===================================================== -->
+  <!-- Human factions -->
+  <string id="st_wom_term_singular_stalker"><text>Loner</text></string>
+  <string id="st_wom_term_singular_dolg"><text>Duty soldier</text></string>
+  <string id="st_wom_term_singular_freedom"><text>Freedom soldier</text></string>
+  <string id="st_wom_term_singular_army"><text>Military soldier</text></string>
+  <string id="st_wom_term_singular_ecolog"><text>Ecologist</text></string>
+  <string id="st_wom_term_singular_csky"><text>Clear Sky stalker</text></string>
+  <string id="st_wom_term_singular_killer"><text>Merc</text></string>
+  <string id="st_wom_term_singular_bandit"><text>Bandit</text></string>
+  <string id="st_wom_term_singular_monolith"><text>Monolith fanatic</text></string>
+  <string id="st_wom_term_singular_renegade"><text>Renegade</text></string>
+  <string id="st_wom_term_singular_zombied"><text>zombified stalker</text></string>
+  <string id="st_wom_term_singular_greh"><text>Sin stalker</text></string>
+  <string id="st_wom_term_singular_isg"><text>UNISIG soldier</text></string>
+  <!-- Mutant species -->
+  <string id="st_wom_term_singular_dog"><text>blind dog</text></string>
+  <string id="st_wom_term_singular_pseudodog"><text>pseudodog</text></string>
+  <string id="st_wom_term_singular_psy_dog"><text>psy-dog</text></string>
+  <string id="st_wom_term_singular_tushkano"><text>tushkano</text></string>
+  <string id="st_wom_term_singular_rat"><text>rat</text></string>
+  <string id="st_wom_term_singular_cat"><text>cat</text></string>
+  <string id="st_wom_term_singular_boar"><text>boar</text></string>
+  <string id="st_wom_term_singular_flesh"><text>flesh</text></string>
+  <string id="st_wom_term_singular_lurker"><text>lurker</text></string>
+  <string id="st_wom_term_singular_chimera"><text>chimera</text></string>
+  <string id="st_wom_term_singular_gigant"><text>pseudogiant</text></string>
+  <string id="st_wom_term_singular_zombie"><text>zombie</text></string>
+  <string id="st_wom_term_singular_snork"><text>snork</text></string>
+  <string id="st_wom_term_singular_fracture"><text>fracture</text></string>
+  <string id="st_wom_term_singular_burer"><text>burer</text></string>
+  <string id="st_wom_term_singular_karlik"><text>karlik</text></string>
+  <string id="st_wom_term_singular_controller"><text>controller</text></string>
+  <string id="st_wom_term_singular_psysucker"><text>psysucker</text></string>
+  <string id="st_wom_term_singular_bloodsucker"><text>bloodsucker</text></string>
+  <string id="st_wom_term_singular_poltergeist"><text>poltergeist</text></string>
+  <string id="st_wom_term_singular_pyrogeist"><text>pyrogeist</text></string>
+  <string id="st_wom_term_singular_pseudogeist"><text>pseudogeist</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FACTION PLURAL NAMES                                   -->
+  <!-- Used by get_faction_members_plural(). Falls through to -->
+  <!-- singular when the plural key is absent.                -->
+  <!-- Used when refering to an multiple members of the faction -->
+  <!-- "I saw some Loners" "I saw some Duty soldiers"             -->
+  <!-- ===================================================== -->
+  <!-- Human factions -->
+  <string id="st_wom_term_plural_stalker"><text>Loners</text></string>
+  <string id="st_wom_term_plural_dolg"><text>Duty soldiers</text></string>
+  <string id="st_wom_term_plural_freedom"><text>Freedom soldiers</text></string>
+  <string id="st_wom_term_plural_army"><text>Military soldiers</text></string>
+  <string id="st_wom_term_plural_ecolog"><text>Ecologists</text></string>
+  <string id="st_wom_term_plural_csky"><text>Clear Sky stalkers</text></string>
+  <string id="st_wom_term_plural_killer"><text>Mercs</text></string>
+  <string id="st_wom_term_plural_bandit"><text>Bandits</text></string>
+  <string id="st_wom_term_plural_monolith"><text>Monolith fanatics</text></string>
+  <string id="st_wom_term_plural_renegade"><text>Renegades</text></string>
+  <string id="st_wom_term_plural_zombied"><text>zombified stalkers</text></string>
+  <string id="st_wom_term_plural_greh"><text>Sin stalkers</text></string>
+  <string id="st_wom_term_plural_isg"><text>UNISIG soldiers</text></string>
+  <!-- Mutant species -->
+  <string id="st_wom_term_plural_dog"><text>blind dogs</text></string>
+  <string id="st_wom_term_plural_pseudodog"><text>pseudodogs</text></string>
+  <string id="st_wom_term_plural_psy_dog"><text>psy-dogs</text></string>
+  <string id="st_wom_term_plural_tushkano"><text>tushkanos</text></string>
+  <string id="st_wom_term_plural_rat"><text>rats</text></string>
+  <string id="st_wom_term_plural_cat"><text>cats</text></string>
+  <string id="st_wom_term_plural_boar"><text>boars</text></string>
+  <string id="st_wom_term_plural_flesh"><text>fleshes</text></string>
+  <string id="st_wom_term_plural_lurker"><text>lurkers</text></string>
+  <string id="st_wom_term_plural_chimera"><text>chimeras</text></string>
+  <string id="st_wom_term_plural_gigant"><text>pseudogiants</text></string>
+  <string id="st_wom_term_plural_zombie"><text>zombies</text></string>
+  <string id="st_wom_term_plural_snork"><text>snorks</text></string>
+  <string id="st_wom_term_plural_fracture"><text>fractures</text></string>
+  <string id="st_wom_term_plural_burer"><text>burers</text></string>
+  <string id="st_wom_term_plural_karlik"><text>karliks</text></string>
+  <string id="st_wom_term_plural_controller"><text>controllers</text></string>
+  <string id="st_wom_term_plural_psysucker"><text>psysuckers</text></string>
+  <string id="st_wom_term_plural_bloodsucker"><text>bloodsuckers</text></string>
+  <string id="st_wom_term_plural_poltergeist"><text>poltergeists</text></string>
+  <string id="st_wom_term_plural_pyrogeist"><text>pyrogeists</text></string>
+  <string id="st_wom_term_plural_pseudogeist"><text>pseudogeists</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FACTION ADJECTIVES                                    -->
+  <!-- Attributive form used before a noun:                  -->
+  <!-- "a Duty fireteam", "a Military attack".               -->
+  <!-- "a blind dog pack", "a lurker attack".                -->
+  <!-- ===================================================== -->
+  <!-- Human factions -->
+  <string id="st_wom_term_adjective_stalker"><text>Loner</text></string>
+  <string id="st_wom_term_adjective_dolg"><text>Duty</text></string>
+  <string id="st_wom_term_adjective_freedom"><text>Freedom</text></string>
+  <string id="st_wom_term_adjective_army"><text>Military</text></string>
+  <string id="st_wom_term_adjective_ecolog"><text>Ecologist</text></string>
+  <string id="st_wom_term_adjective_csky"><text>Clear Sky</text></string>
+  <string id="st_wom_term_adjective_killer"><text>Merc</text></string>
+  <string id="st_wom_term_adjective_bandit"><text>Bandit</text></string>
+  <string id="st_wom_term_adjective_monolith"><text>Monolith</text></string>
+  <string id="st_wom_term_adjective_renegade"><text>Renegade</text></string>
+  <string id="st_wom_term_adjective_zombied"><text>zombified stalker</text></string>
+  <string id="st_wom_term_adjective_greh"><text>Sin</text></string>
+  <string id="st_wom_term_adjective_isg"><text>UNISIG</text></string>
+  <!-- Mutant species -->
+  <string id="st_wom_term_adjective_dog"><text>blind dog</text></string>
+  <string id="st_wom_term_adjective_pseudodog"><text>pseudodog</text></string>
+  <string id="st_wom_term_adjective_psy_dog"><text>Psy-dog</text></string>
+  <string id="st_wom_term_adjective_tushkano"><text>tushkano</text></string>
+  <string id="st_wom_term_adjective_rat"><text>rat</text></string>
+  <string id="st_wom_term_adjective_cat"><text>cat</text></string>
+  <string id="st_wom_term_adjective_boar"><text>boar</text></string>
+  <string id="st_wom_term_adjective_flesh"><text>flesh</text></string>
+  <string id="st_wom_term_adjective_lurker"><text>lurker</text></string>
+  <string id="st_wom_term_adjective_chimera"><text>chimera</text></string>
+  <string id="st_wom_term_adjective_gigant"><text>pseudogiant</text></string>
+  <string id="st_wom_term_adjective_zombie"><text>zombie</text></string>
+  <string id="st_wom_term_adjective_snork"><text>snork</text></string>
+  <string id="st_wom_term_adjective_fracture"><text>fracture</text></string>
+  <string id="st_wom_term_adjective_burer"><text>burer</text></string>
+  <string id="st_wom_term_adjective_karlik"><text>karlik</text></string>
+  <string id="st_wom_term_adjective_controller"><text>controller</text></string>
+  <string id="st_wom_term_adjective_psysucker"><text>psysucker</text></string>
+  <string id="st_wom_term_adjective_bloodsucker"><text>bloodsucker</text></string>
+  <string id="st_wom_term_adjective_poltergeist"><text>poltergeist</text></string>
+  <string id="st_wom_term_adjective_pyrogeist"><text>pyrogeist</text></string>
+  <string id="st_wom_term_adjective_pseudogeist"><text>pseudogeist</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FACTION IDENTITY NAMES                                 -->
+  <!-- The faction as a named concept: "Duty came out ahead"  -->
+  <!-- For mutants, this is the plural species name.          -->
+  <!-- Falls back to adjective form when key is absent.       -->
+  <!-- ===================================================== -->
+  <!-- Human factions -->
+  <string id="st_wom_term_identity_stalker"><text>Loners</text></string>
+  <string id="st_wom_term_identity_dolg"><text>Duty</text></string>
+  <string id="st_wom_term_identity_freedom"><text>Freedom</text></string>
+  <string id="st_wom_term_identity_army"><text>Military</text></string>
+  <string id="st_wom_term_identity_ecolog"><text>Ecologists</text></string>
+  <string id="st_wom_term_identity_csky"><text>Clear Sky</text></string>
+  <string id="st_wom_term_identity_killer"><text>Mercs</text></string>
+  <string id="st_wom_term_identity_bandit"><text>Bandits</text></string>
+  <string id="st_wom_term_identity_monolith"><text>Monolith</text></string>
+  <string id="st_wom_term_identity_renegade"><text>Renegades</text></string>
+  <string id="st_wom_term_identity_zombied"><text>zombified stalkers</text></string>
+  <string id="st_wom_term_identity_greh"><text>Sin</text></string>
+  <string id="st_wom_term_identity_isg"><text>UNISIG</text></string>
+  <!-- Mutant species -->
+  <string id="st_wom_term_identity_dog"><text>blind dogs</text></string>
+  <string id="st_wom_term_identity_pseudodog"><text>pseudodogs</text></string>
+  <string id="st_wom_term_identity_psy_dog"><text>psy-dogs</text></string>
+  <string id="st_wom_term_identity_tushkano"><text>tushkanos</text></string>
+  <string id="st_wom_term_identity_rat"><text>rats</text></string>
+  <string id="st_wom_term_identity_cat"><text>cats</text></string>
+  <string id="st_wom_term_identity_boar"><text>boars</text></string>
+  <string id="st_wom_term_identity_flesh"><text>fleshes</text></string>
+  <string id="st_wom_term_identity_lurker"><text>lurkers</text></string>
+  <string id="st_wom_term_identity_chimera"><text>chimeras</text></string>
+  <string id="st_wom_term_identity_gigant"><text>pseudogiants</text></string>
+  <string id="st_wom_term_identity_zombie"><text>zombies</text></string>
+  <string id="st_wom_term_identity_snork"><text>snorks</text></string>
+  <string id="st_wom_term_identity_fracture"><text>fractures</text></string>
+  <string id="st_wom_term_identity_burer"><text>burers</text></string>
+  <string id="st_wom_term_identity_karlik"><text>karliks</text></string>
+  <string id="st_wom_term_identity_controller"><text>controllers</text></string>
+  <string id="st_wom_term_identity_psysucker"><text>psysuckers</text></string>
+  <string id="st_wom_term_identity_bloodsucker"><text>bloodsuckers</text></string>
+  <string id="st_wom_term_identity_poltergeist"><text>poltergeists</text></string>
+  <string id="st_wom_term_identity_pyrogeist"><text>pyrogeists</text></string>
+  <string id="st_wom_term_identity_pseudogeist"><text>pseudogeists</text></string>
+
+  <!-- ===================================================== -->
+  <!-- INDEFINITE ARTICLES                                    -->
+  <!-- "a" or "an" preceding the singular name.              -->
+  <!-- st_wom_term_articles_enabled MUST be defined in every  -->
+  <!-- locale: "1" where articles exist, "0" where they don't -->
+  <!-- (e.g. Russian). Omitting the article keys is not       -->
+  <!-- enough — the engine falls back to the English entry    -->
+  <!-- for ids missing from the active locale.                -->
+  <!-- st_wom_term_article_default is the fallback when no    -->
+  <!-- community-specific entry exists.                       -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_articles_enabled"><text>1</text></string>
+  <string id="st_wom_term_article_default"><text>a</text></string>
+  <string id="st_wom_term_article_ecolog"><text>an</text></string>
+
+  <!-- ===================================================== -->
+  <!-- LIST CONJUNCTIONS (wom_utils.join_list)                -->
+  <!-- st_wom_term_list_two joins exactly two items.          -->
+  <!-- st_wom_term_list_final appends the last item to the    -->
+  <!-- comma-joined rest of a 3+ item list.                   -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_list_two"><text>#a# and #b#</text></string>
+  <string id="st_wom_term_list_final"><text>#list#, and #last#</text></string>
+
+  <!-- ===================================================== -->
+  <!-- SQUAD COLLECTIVE NOUNS                                 -->
+  <!-- Singular and plural must be updated together (same     -->
+  <!-- index). The script picks one index at random and uses  -->
+  <!-- both forms. Plural falls back to singular+"s" when     -->
+  <!-- the _plural_ key is absent.                            -->
+  <!-- ===================================================== -->
+
+  <!-- ecolog -->
+  <string id="st_wom_term_squad_ecolog_001"><text>team</text></string>
+  <string id="st_wom_term_squad_plural_ecolog_001"><text>teams</text></string>
+  <string id="st_wom_term_squad_ecolog_002"><text>survey team</text></string>
+  <string id="st_wom_term_squad_plural_ecolog_002"><text>survey teams</text></string>
+  <string id="st_wom_term_squad_ecolog_003"><text>research team</text></string>
+  <string id="st_wom_term_squad_plural_ecolog_003"><text>research teams</text></string>
+  <string id="st_wom_term_squad_ecolog_004"><text>field team</text></string>
+  <string id="st_wom_term_squad_plural_ecolog_004"><text>field teams</text></string>
+  <string id="st_wom_term_squad_ecolog_005"><text>detachment</text></string>
+  <string id="st_wom_term_squad_plural_ecolog_005"><text>detachments</text></string>
+
+  <!-- csky -->
+  <string id="st_wom_term_squad_csky_001"><text>squad</text></string>
+  <string id="st_wom_term_squad_plural_csky_001"><text>squads</text></string>
+  <string id="st_wom_term_squad_csky_002"><text>patrol</text></string>
+  <string id="st_wom_term_squad_plural_csky_002"><text>patrols</text></string>
+  <string id="st_wom_term_squad_csky_003"><text>crew</text></string>
+  <string id="st_wom_term_squad_plural_csky_003"><text>crews</text></string>
+  <string id="st_wom_term_squad_csky_004"><text>detachment</text></string>
+  <string id="st_wom_term_squad_plural_csky_004"><text>detachments</text></string>
+
+  <!-- freedom -->
+  <string id="st_wom_term_squad_freedom_001"><text>squad</text></string>
+  <string id="st_wom_term_squad_plural_freedom_001"><text>squads</text></string>
+  <string id="st_wom_term_squad_freedom_002"><text>band</text></string>
+  <string id="st_wom_term_squad_plural_freedom_002"><text>bands</text></string>
+  <string id="st_wom_term_squad_freedom_003"><text>unit</text></string>
+  <string id="st_wom_term_squad_plural_freedom_003"><text>units</text></string>
+
+  <!-- renegade -->
+  <string id="st_wom_term_squad_renegade_001"><text>gang</text></string>
+  <string id="st_wom_term_squad_plural_renegade_001"><text>gangs</text></string>
+  <string id="st_wom_term_squad_renegade_002"><text>band</text></string>
+  <string id="st_wom_term_squad_plural_renegade_002"><text>bands</text></string>
+  <string id="st_wom_term_squad_renegade_003"><text>crew</text></string>
+  <string id="st_wom_term_squad_plural_renegade_003"><text>crews</text></string>
+
+  <!-- dolg -->
+  <string id="st_wom_term_squad_dolg_001"><text>squad</text></string>
+  <string id="st_wom_term_squad_plural_dolg_001"><text>squads</text></string>
+  <string id="st_wom_term_squad_dolg_002"><text>unit</text></string>
+  <string id="st_wom_term_squad_plural_dolg_002"><text>units</text></string>
+  <string id="st_wom_term_squad_dolg_003"><text>detachment</text></string>
+  <string id="st_wom_term_squad_plural_dolg_003"><text>detachments</text></string>
+  <string id="st_wom_term_squad_dolg_004"><text>fireteam</text></string>
+  <string id="st_wom_term_squad_plural_dolg_004"><text>fireteams</text></string>
+
+  <!-- stalker -->
+  <string id="st_wom_term_squad_stalker_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_stalker_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_stalker_002"><text>crew</text></string>
+  <string id="st_wom_term_squad_plural_stalker_002"><text>crews</text></string>
+  <string id="st_wom_term_squad_stalker_003"><text>band</text></string>
+  <string id="st_wom_term_squad_plural_stalker_003"><text>bands</text></string>
+
+  <!-- killer -->
+  <string id="st_wom_term_squad_killer_001"><text>squad</text></string>
+  <string id="st_wom_term_squad_plural_killer_001"><text>squads</text></string>
+  <string id="st_wom_term_squad_killer_002"><text>team</text></string>
+  <string id="st_wom_term_squad_plural_killer_002"><text>teams</text></string>
+  <string id="st_wom_term_squad_killer_003"><text>unit</text></string>
+  <string id="st_wom_term_squad_plural_killer_003"><text>units</text></string>
+  <string id="st_wom_term_squad_killer_004"><text>fireteam</text></string>
+  <string id="st_wom_term_squad_plural_killer_004"><text>fireteams</text></string>
+  <string id="st_wom_term_squad_killer_005"><text>detail</text></string>
+  <string id="st_wom_term_squad_plural_killer_005"><text>details</text></string>
+
+  <!-- isg -->
+  <string id="st_wom_term_squad_isg_001"><text>team</text></string>
+  <string id="st_wom_term_squad_plural_isg_001"><text>teams</text></string>
+  <string id="st_wom_term_squad_isg_002"><text>unit</text></string>
+  <string id="st_wom_term_squad_plural_isg_002"><text>units</text></string>
+  <string id="st_wom_term_squad_isg_003"><text>detachment</text></string>
+  <string id="st_wom_term_squad_plural_isg_003"><text>detachments</text></string>
+  <string id="st_wom_term_squad_isg_004"><text>squad</text></string>
+  <string id="st_wom_term_squad_plural_isg_004"><text>squads</text></string>
+
+  <!-- monolith -->
+  <string id="st_wom_term_squad_monolith_001"><text>squad</text></string>
+  <string id="st_wom_term_squad_plural_monolith_001"><text>squads</text></string>
+  <string id="st_wom_term_squad_monolith_002"><text>unit</text></string>
+  <string id="st_wom_term_squad_plural_monolith_002"><text>units</text></string>
+  <string id="st_wom_term_squad_monolith_003"><text>detachment</text></string>
+  <string id="st_wom_term_squad_plural_monolith_003"><text>detachments</text></string>
+
+  <!-- army -->
+  <string id="st_wom_term_squad_army_001"><text>squad</text></string>
+  <string id="st_wom_term_squad_plural_army_001"><text>squads</text></string>
+  <string id="st_wom_term_squad_army_002"><text>fireteam</text></string>
+  <string id="st_wom_term_squad_plural_army_002"><text>fireteams</text></string>
+  <string id="st_wom_term_squad_army_003"><text>unit</text></string>
+  <string id="st_wom_term_squad_plural_army_003"><text>units</text></string>
+  <string id="st_wom_term_squad_army_004"><text>detachment</text></string>
+  <string id="st_wom_term_squad_plural_army_004"><text>detachments</text></string>
+
+  <!-- bandit -->
+  <string id="st_wom_term_squad_bandit_001"><text>crew</text></string>
+  <string id="st_wom_term_squad_plural_bandit_001"><text>crews</text></string>
+  <string id="st_wom_term_squad_bandit_002"><text>gang</text></string>
+  <string id="st_wom_term_squad_plural_bandit_002"><text>gangs</text></string>
+  <string id="st_wom_term_squad_bandit_003"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_bandit_003"><text>groups</text></string>
+
+  <!-- greh -->
+  <string id="st_wom_term_squad_greh_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_greh_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_greh_002"><text>band</text></string>
+  <string id="st_wom_term_squad_plural_greh_002"><text>bands</text></string>
+  <string id="st_wom_term_squad_greh_003"><text>crew</text></string>
+  <string id="st_wom_term_squad_plural_greh_003"><text>crews</text></string>
+
+  <!-- dog / pseudodog / psy_dog -->
+  <string id="st_wom_term_squad_dog_001"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_dog_001"><text>packs</text></string>
+  <string id="st_wom_term_squad_pseudodog_001"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_pseudodog_001"><text>packs</text></string>
+  <string id="st_wom_term_squad_psy_dog_001"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_psy_dog_001"><text>packs</text></string>
+
+  <!-- tushkano -->
+  <string id="st_wom_term_squad_tushkano_001"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_tushkano_001"><text>packs</text></string>
+  <string id="st_wom_term_squad_tushkano_002"><text>swarm</text></string>
+  <string id="st_wom_term_squad_plural_tushkano_002"><text>swarms</text></string>
+
+  <!-- cat -->
+  <string id="st_wom_term_squad_cat_001"><text>pride</text></string>
+  <string id="st_wom_term_squad_plural_cat_001"><text>prides</text></string>
+  <string id="st_wom_term_squad_cat_002"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_cat_002"><text>packs</text></string>
+
+  <!-- rat -->
+  <string id="st_wom_term_squad_rat_001"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_rat_001"><text>packs</text></string>
+  <string id="st_wom_term_squad_rat_002"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_rat_002"><text>groups</text></string>
+
+  <!-- boar -->
+  <string id="st_wom_term_squad_boar_001"><text>herd</text></string>
+  <string id="st_wom_term_squad_plural_boar_001"><text>herds</text></string>
+  <string id="st_wom_term_squad_boar_002"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_boar_002"><text>packs</text></string>
+
+  <!-- flesh -->
+  <string id="st_wom_term_squad_flesh_001"><text>herd</text></string>
+  <string id="st_wom_term_squad_plural_flesh_001"><text>herds</text></string>
+  <string id="st_wom_term_squad_flesh_002"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_flesh_002"><text>groups</text></string>
+
+  <!-- lurker / chimera / gigant / snork -->
+  <string id="st_wom_term_squad_lurker_001"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_lurker_001"><text>packs</text></string>
+  <string id="st_wom_term_squad_chimera_001"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_chimera_001"><text>packs</text></string>
+  <string id="st_wom_term_squad_gigant_001"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_gigant_001"><text>packs</text></string>
+  <string id="st_wom_term_squad_snork_001"><text>pack</text></string>
+  <string id="st_wom_term_squad_plural_snork_001"><text>packs</text></string>
+
+  <!-- zombie / zombied -->
+  <string id="st_wom_term_squad_zombie_001"><text>horde</text></string>
+  <string id="st_wom_term_squad_plural_zombie_001"><text>hordes</text></string>
+  <string id="st_wom_term_squad_zombie_002"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_zombie_002"><text>groups</text></string>
+  <string id="st_wom_term_squad_zombied_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_zombied_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_zombied_002"><text>horde</text></string>
+  <string id="st_wom_term_squad_plural_zombied_002"><text>hordes</text></string>
+
+  <!-- single-term mutants -->
+  <string id="st_wom_term_squad_fracture_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_fracture_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_burer_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_burer_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_karlik_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_karlik_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_controller_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_controller_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_psysucker_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_psysucker_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_bloodsucker_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_bloodsucker_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_poltergeist_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_poltergeist_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_pyrogeist_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_pyrogeist_001"><text>groups</text></string>
+  <string id="st_wom_term_squad_pseudogeist_001"><text>group</text></string>
+  <string id="st_wom_term_squad_plural_pseudogeist_001"><text>groups</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FIRST-PERSON SAME-FACTION PHRASES                      -->
+  <!-- Numbered pools — add more variants as _002, _003, etc. -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_ours_one_001"><text>one of our guys</text></string>
+  <string id="st_wom_term_ours_some_001"><text>some of our guys</text></string>
+
+  <!-- Count phrases (first-person) -->
+  <string id="st_wom_term_count_couple_ours"><text>a couple of our guys</text></string>
+  <string id="st_wom_term_count_few_ours"><text>a few of our guys</text></string>
+  <string id="st_wom_term_count_bunch_ours"><text>a bunch of our guys</text></string>
+  <!-- #count# is replaced with the number word (e.g. "four of our guys") -->
+  <string id="st_wom_term_count_N_ours"><text>#count# of our guys</text></string>
+
+  <!-- ===================================================== -->
+  <!-- TIME-OF-DAY PHRASES (get_time_of_day_phrase)           -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_time_dawn"><text>at dawn</text></string>
+  <string id="st_wom_term_time_morning"><text>in the morning</text></string>
+  <string id="st_wom_term_time_midday"><text>around midday</text></string>
+  <string id="st_wom_term_time_afternoon"><text>in the afternoon</text></string>
+  <string id="st_wom_term_time_evening"><text>in the evening</text></string>
+  <string id="st_wom_term_time_night"><text>during the night</text></string>
+
+  <!-- ===================================================== -->
+  <!-- "AGO" PHRASES (get_ago_phrase)                         -->
+  <!-- #count# in st_wom_term_ago_hours is replaced with the  -->
+  <!-- integer hour delta.                                     -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_ago_now"><text>Just now</text></string>
+  <string id="st_wom_term_ago_one_hour"><text>About an hour ago</text></string>
+  <string id="st_wom_term_ago_hours"><text>About #count# hours ago</text></string>
+
+  <!-- ===================================================== -->
+  <!-- RECENT-EVENT PARAGRAPH OPENERS (get_stamped_period_key) -->
+  <!-- Used when an event occurred within the last game hour.  -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_just_now_para"><text>Just now</text></string>
+  <string id="st_wom_term_recent_para"><text>Less than an hour ago</text></string>
+
+  <!-- ===================================================== -->
+  <!-- NUMBER WORDS (number_word)                             -->
+  <!-- Keys 1-12 are exact; anything beyond 12 returns "many" -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_number_1"><text>one</text></string>
+  <string id="st_wom_term_number_2"><text>two</text></string>
+  <string id="st_wom_term_number_3"><text>three</text></string>
+  <string id="st_wom_term_number_4"><text>four</text></string>
+  <string id="st_wom_term_number_5"><text>five</text></string>
+  <string id="st_wom_term_number_6"><text>six</text></string>
+  <string id="st_wom_term_number_7"><text>seven</text></string>
+  <string id="st_wom_term_number_8"><text>eight</text></string>
+  <string id="st_wom_term_number_9"><text>nine</text></string>
+  <string id="st_wom_term_number_10"><text>ten</text></string>
+  <string id="st_wom_term_number_11"><text>eleven</text></string>
+  <string id="st_wom_term_number_12"><text>twelve</text></string>
+  <string id="st_wom_term_number_many"><text>many</text></string>
+
+  <!-- ================================================================= -->
+  <!-- GENERIC FALLBACK TERMS                                             -->
+  <!-- Used when a faction/species community key is nil or unrecognised. -->
+  <!-- Shared by subject and other slots in build_event_slots.           -->
+  <!-- ================================================================= -->
+
+  <string id="st_wom_term_unknown_member"><text>someone</text></string>
+  <string id="st_wom_term_unknown_some"><text>some people</text></string>
+  <string id="st_wom_term_unknown_squad"><text>a crew</text></string>
+  <string id="st_wom_term_unknown_plural"><text>people</text></string>
+  <!-- Bare (article-less) fallbacks for #squad_*#/#member_*# slots, which sit
+       after a template-supplied determiner ("the #squad_subject#"). -->
+  <string id="st_wom_term_unknown_squad_bare"><text>group</text></string>
+  <string id="st_wom_term_unknown_member_bare"><text>individual</text></string>
+
+  <!-- Slot value fallbacks: used directly by wom_recap_npc when data is absent -->
+  <string id="st_wom_term_nearby"><text>nearby</text></string>
+  <string id="st_wom_term_count_fallback"><text>some</text></string>
+  <string id="st_wom_term_action_fallback"><text>something</text></string>
+  <string id="st_wom_term_location_fallback"><text>a location</text></string>
+
+  <!-- Location prepositions for the #<prep>_location# slot tokens          -->
+  <!-- (get_where_preposition in wom_terminology_helper). The rendered slot -->
+  <!-- is "<preposition> <location name>".                                  -->
+  <string id="st_wom_term_prep_at"><text>at</text></string>
+  <string id="st_wom_term_prep_to"><text>to</text></string>
+  <string id="st_wom_term_prep_near"><text>near</text></string>
+  <string id="st_wom_term_prep_in"><text>in</text></string>
+  <string id="st_wom_term_prep_from"><text>from</text></string>
+  <string id="st_wom_term_prep_by"><text>by</text></string>
+  <string id="st_wom_term_prep_around"><text>around</text></string>
+  <string id="st_wom_term_prep_toward"><text>toward</text></string>
+
+  <!-- ===================================================== -->
+  <!-- COUNT PHRASE TEMPLATES (third-person)                  -->
+  <!-- #plural# is replaced with the faction's plural name.   -->
+  <!-- Used by get_some_faction and get_count_faction.        -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_count_some"><text>some #plural#</text></string>
+  <string id="st_wom_term_count_couple"><text>a couple of #plural#</text></string>
+  <string id="st_wom_term_count_few"><text>a few #plural#</text></string>
+  <string id="st_wom_term_count_bunch"><text>a bunch of #plural#</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FIRST-PERSON SQUAD PHRASE TEMPLATES                    -->
+  <!-- #plural# = plural collective noun; #squad# = singular.  -->
+  <!-- Used by get_a_faction_squad for same-faction speaker.  -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_squad_ours_one_tpl"><text>one of our #plural#</text></string>
+  <string id="st_wom_term_squad_ours_a_tpl"><text>a #squad# of ours</text></string>
+  <string id="st_wom_term_squad_self_tpl"><text>our #squad#</text></string>
+
+  <!-- ===================================================== -->
+  <!-- FIRST-PERSON PRONOUN TOKENS (make_pronoun_slots)       -->
+  <!-- sg = solo NPC speaker; pl = squad of 2+ present.      -->
+  <!-- ===================================================== -->
+  <string id="st_wom_term_pronoun_sg_im_were"><text>I'm</text></string>
+  <string id="st_wom_term_pronoun_sg_ive_weve"><text>I've</text></string>
+  <string id="st_wom_term_pronoun_sg_i_we"><text>I</text></string>
+  <string id="st_wom_term_pronoun_sg_my_our"><text>my</text></string>
+  <string id="st_wom_term_pronoun_sg_me_us"><text>me</text></string>
+  <string id="st_wom_term_pronoun_sg_iwas_wewere"><text>I was</text></string>
+
+  <string id="st_wom_term_pronoun_pl_im_were"><text>we're</text></string>
+  <string id="st_wom_term_pronoun_pl_ive_weve"><text>we've</text></string>
+  <string id="st_wom_term_pronoun_pl_i_we"><text>we</text></string>
+  <string id="st_wom_term_pronoun_pl_my_our"><text>our</text></string>
+  <string id="st_wom_term_pronoun_pl_me_us"><text>us</text></string>
+  <string id="st_wom_term_pronoun_pl_iwas_wewere"><text>we were</text></string>
+
+</string_table>

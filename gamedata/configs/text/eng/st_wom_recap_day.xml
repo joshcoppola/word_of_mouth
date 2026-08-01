@@ -1,0 +1,590 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+  <!-- ========================================================================= -->
+  <!-- Word of Mouth / Daily recap answer pool                                -->
+  <!--                                                                            -->
+  <!-- PRONOUN TOKENS (resolved by squad size: lone stalker vs 2+ squad):         -->
+  <!--   #Im_Were_u#  -> I'm / We're      #Ive_Weve_u# -> I've / We've     #I_We_u# -> I / We       -->
+  <!--   #I_we_l#   -> I / we           #my_our_l#  -> my / our          #me_us_l# -> me / us      -->
+  <!-- DATA TOKENS: #location# (destination), #level#. A variant using a data     -->
+  <!-- token is skipped when that data is missing, so keep a token-free line in   -->
+  <!-- each generic pool. Author one line; it reads correctly singular OR plural. -->
+  <!-- ========================================================================= -->
+
+
+  <!-- Actor question for the "What have you been up to?" dialog topic -->
+  <string id="st_wom_ask_recap"><text>What have you been up to?</text></string>
+
+  <!-- ========================================================================= -->
+  <!-- SQUAD STATUS (first line — render_squad_status)                            -->
+  <!-- No trailing period; Lua adds "." or ", <absent clause>."                  -->
+  <!-- ========================================================================= -->
+
+  <!-- Alone (npc_count <= 1) -->
+  <string id="st_wom_recap_status_alone_001"><text>I'm on my own at the moment</text></string>
+  <string id="st_wom_recap_status_alone_002"><text>Flying solo right now</text></string>
+  <string id="st_wom_recap_status_alone_003"><text>Just me out here today</text></string>
+
+  <!-- Leader, 2-member squad: #partner_name# = other member's first name -->
+  <string id="st_wom_recap_status_leader_pair_001"><text>Currently partnered up with #partner_name#</text></string>
+  <string id="st_wom_recap_status_leader_pair_002"><text>Running with #partner_name# right now, I'm calling the shots</text></string>
+
+  <!-- Leader, 3+ squad: #squad_term# = faction collective noun, #squad_count# = number word -->
+  <string id="st_wom_recap_status_leader_squad_001"><text>Currently leading a #squad_term# of #squad_count#</text></string>
+  <string id="st_wom_recap_status_leader_squad_002"><text>Running a #squad_term# of #squad_count# right now</text></string>
+
+  <!-- Follower, 2-member squad: #leader_name# = commander's first name -->
+  <string id="st_wom_recap_status_follower_pair_001"><text>Currently paired up, #leader_name# is taking point</text></string>
+  <string id="st_wom_recap_status_follower_pair_002"><text>Working under #leader_name# right now, just the two of us</text></string>
+
+  <!-- Follower, 3+ squad: #leader_name#, #squad_term#, #squad_count# -->
+  <string id="st_wom_recap_status_follower_squad_001"><text>Following #leader_name#, #squad_count# in our #squad_term#</text></string>
+  <string id="st_wom_recap_status_follower_squad_002"><text>Running with #leader_name#'s #squad_term#, #squad_count# of us in total</text></string>
+
+  <!-- Follower, 2-member, no commander resolved: no leader name available -->
+  <string id="st_wom_recap_status_member_pair_001"><text>Running with one other right now</text></string>
+  <string id="st_wom_recap_status_member_pair_002"><text>Just two of us out here</text></string>
+
+  <!-- Follower, 3+ squad, no commander resolved: #squad_term#, #squad_count# -->
+  <string id="st_wom_recap_status_member_squad_001"><text>Part of a #squad_term# of #squad_count# right now</text></string>
+  <string id="st_wom_recap_status_member_squad_002"><text>Running with a #squad_term# of #squad_count#</text></string>
+
+  <!-- Absent-member appended clause (Lua lowercases first letter via decapitalize_clause) -->
+  <!-- Singular: #absent_name# -->
+  <string id="st_wom_recap_status_absent_one_001"><text>although I don't know what #absent_name# is up to</text></string>
+  <string id="st_wom_recap_status_absent_one_002"><text>although I'm not sure where #absent_name# is at the moment</text></string>
+  <!-- Plural: #absent_names# = joined list of first names -->
+  <string id="st_wom_recap_status_absent_many_001"><text>although I don't know what #absent_names# are up to</text></string>
+  <string id="st_wom_recap_status_absent_many_002"><text>although I'm not sure where #absent_names# are at</text></string>
+
+  <!-- ========================================================================= -->
+  <!-- RANK-FLAVORED OPENERS                                                      -->
+  <!-- Tried before the generic pools (st_wom_ask_recap_quiet, _intro_some,      -->
+  <!-- _intro). Omit a rank entirely to fall back to the generic pool.           -->
+  <!-- novice: nervous, still adjusting to the Zone                               -->
+  <!-- experienced: (uses generic pools — no rank-specific needed)                -->
+  <!-- veteran: dry, economical, unfazed                                          -->
+  <!-- master: laconic, faintly philosophical                                     -->
+  <!-- ========================================================================= -->
+
+  <!-- quiet day -->
+  <string id="st_wom_ask_recap_quiet_novice_001"><text>Honestly? Just trying to keep my head on my shoulders. Quiet day, which I'll take.</text></string>
+  <string id="st_wom_ask_recap_quiet_novice_002"><text>Didn't get into any trouble, if that's what you're asking. Out here that still feels like an accomplishment.</text></string>
+  <string id="st_wom_ask_recap_quiet_novice_003"><text>Nothing too crazy. Still getting used to days like this.</text></string>
+
+  <string id="st_wom_ask_recap_quiet_veteran_001"><text>Quiet. I'll take it.</text></string>
+  <string id="st_wom_ask_recap_quiet_veteran_002"><text>Slow one today. No complaints.</text></string>
+  <string id="st_wom_ask_recap_quiet_veteran_003"><text>Not much. Which is fine by me.</text></string>
+
+  <string id="st_wom_ask_recap_quiet_master_001"><text>Nothing today. In the Zone, that's as good as it gets.</text></string>
+  <string id="st_wom_ask_recap_quiet_master_002"><text>Quiet. You learn to appreciate those.</text></string>
+  <string id="st_wom_ask_recap_quiet_master_003"><text>Not much to tell. The Zone let me breathe today.</text></string>
+
+  <!-- 1-2 interesting events -->
+  <string id="st_wom_ask_recap_intro_some_novice_001"><text>A couple things happened. Still not sure what to make of it all.</text></string>
+  <string id="st_wom_ask_recap_intro_some_novice_002"><text>Had a bit of a day, honestly.</text></string>
+
+  <string id="st_wom_ask_recap_intro_some_veteran_001"><text>A few things. Nothing too out of the ordinary.</text></string>
+  <string id="st_wom_ask_recap_intro_some_veteran_002"><text>Had some action. Not much.</text></string>
+
+  <string id="st_wom_ask_recap_intro_some_master_001"><text>One or two things worth mentioning.</text></string>
+  <string id="st_wom_ask_recap_intro_some_master_002"><text>Mildly eventful.</text></string>
+
+  <!-- 3+ interesting events -->
+  <string id="st_wom_ask_recap_intro_novice_001"><text>A lot happened today... I'm still piecing it together, if I'm honest.</text></string>
+  <string id="st_wom_ask_recap_intro_novice_002"><text>Busy day. More than I was expecting.</text></string>
+
+  <string id="st_wom_ask_recap_intro_veteran_001"><text>Busy one. Let me run through it.</text></string>
+  <string id="st_wom_ask_recap_intro_veteran_002"><text>Had a full day. Here's the short version.</text></string>
+
+  <string id="st_wom_ask_recap_intro_master_001"><text>Long day. You want the rundown?</text></string>
+  <string id="st_wom_ask_recap_intro_master_002"><text>Plenty going on. I'll keep it brief.</text></string>
+
+  <!-- ========================================================================= -->
+  <!-- SECRETIVE answers - one shared pool, used when the player's PERCEIVED        -->
+  <!-- faction is NOT the same as the NPC's and the goal is in SECRET_GOALS         -->
+  <!-- (see wom_npc_recap.script). The NPC deflects regardless of which secret     -->
+  <!-- goal it is. Add more variants freely.                                        -->
+  <!-- ========================================================================= -->
+  <string id="st_wom_ask_generic_secretive_001"><text>Nothing that concerns you.</text></string>
+  <string id="st_wom_ask_generic_secretive_002"><text>Just minding #my_our_l# own business. Best you do the same.</text></string>
+  <string id="st_wom_ask_generic_secretive_003"><text>That's on a need-to-know basis.</text></string>
+  <string id="st_wom_ask_generic_secretive_004"><text>Can't share that with you.</text></string>
+  <string id="st_wom_ask_generic_secretive_005"><text>None of your business.</text></string>
+  <string id="st_wom_ask_generic_secretive_006"><text>Afraid I can't disclose that.</text></string>
+
+
+
+  <!-- ========================================================================= -->
+  <!-- RECAP ("What have you been up to today?") - the squad's AlifePlus event     -->
+  <!-- history. Each past event is one line: st_wom_ask_recap_<goal> -> generic.        -->
+  <!-- Tokens: (e.g. "About 3 hours ago"), #I_we_l# (I/we), #Iwas# (I was/we      -->
+  <!-- were), #to_location# ("here" / "near <place>" / "" when unknown), #action#        -->
+  <!-- (AlifePlus's own label, generic fallbacks only).                            -->
+  <!-- ========================================================================= -->
+
+  <!-- OPENER, chosen by interesting-event count (mundane events don't count): -->
+  <!--   3+ interesting -> st_wom_ask_recap_intro   ("busy day") -->
+  <!--   1-2 interesting -> st_wom_ask_recap_intro_some -->
+  <!--   0 interesting   -> st_wom_ask_recap_quiet  (empty day, or only mundane stuff) -->
+
+  <!-- opener for a quiet day (0 interesting events: empty, or only mundane stuff) -->
+  <string id="st_wom_ask_recap_quiet_001"><text>Haven't been up to much today. Just taking it easy.</text></string>
+  <string id="st_wom_ask_recap_quiet_002"><text>Quiet enough so far today. Just existing out here.</text></string>
+  <string id="st_wom_ask_recap_quiet_003"><text>Not much interesting going on. Enjoying life in the Zone.</text></string>
+  <string id="st_wom_ask_recap_quiet_004"><text>Been a slow one. Mostly just passing time.</text></string>
+  <string id="st_wom_ask_recap_quiet_005"><text>Nothing much to report. Mostly just shooting the breeze.</text></string>
+  <string id="st_wom_ask_recap_quiet_006"><text>Nothing special. Just getting by, same as always.</text></string>
+  <string id="st_wom_ask_recap_quiet_007"><text>Quiet day. Patched up some gear, stretched my legs, the usual.</text></string>
+  <string id="st_wom_ask_recap_quiet_008"><text>Can't say much has happened. Just watching the hours go by.</text></string>
+  <string id="st_wom_ask_recap_quiet_009"><text>Haven't done much. Keeping out of trouble, mostly.</text></string>
+  <string id="st_wom_ask_recap_quiet_010"><text>Slow day. Waiting for the next job.</text></string>
+
+  <!-- 1-2 interesting events -->
+  <string id="st_wom_ask_recap_intro_some_001"><text>Hmm...</text></string>
+  <string id="st_wom_ask_recap_intro_some_002"><text>Had a little bit going on.</text></string>
+  <string id="st_wom_ask_recap_intro_some_003"><text>Let's see...</text></string>
+  <string id="st_wom_ask_recap_intro_some_004"><text>Not completely boring.</text></string>
+
+  <!-- 3+ interesting events -->
+  <string id="st_wom_ask_recap_intro_001"><text>It's been a busy day.</text></string>
+  <string id="st_wom_ask_recap_intro_002"><text>Plenty going on today. Let me think...</text></string>
+  <string id="st_wom_ask_recap_intro_003"><text>Where to begin?</text></string>
+  <string id="st_wom_ask_recap_intro_004"><text>There's been a lot going on.</text></string>
+
+  <!-- fallback (no events at all) -->
+  <string id="st_wom_ask_recap_none_001"><text>Just keeping my head down. Nothing worth telling.</text></string>
+  <string id="st_wom_ask_recap_none_002"><text>Quiet day, all told. Nothing to report.</text></string>
+  <string id="st_wom_ask_recap_none_003"><text>Really haven't been up to much.</text></string>
+  <string id="st_wom_ask_recap_none_004"><text>Nothing too crazy.</text></string>
+
+
+  <!-- generic past fallback: reuse AlifePlus's own action label via #action# -->
+  <string id="st_wom_ask_recap_generic_001"><text>#Iwas# #action# #to_location#.</text></string>
+  <string id="st_wom_ask_recap_generic_002"><text>#I_we_blank_l# had some business to take care of #at_location#.</text></string>
+
+  <!-- lead-in for the closing line. What follows is the live "What are you up to?" -->
+  <!-- answer reused verbatim (the st_wom_ask_<goal> / nogoal / secretive pools), so a -->
+  <!-- secret current task to an outsider still deflects there, not here. -->
+  <string id="st_wom_ask_recap_now_lead_001"><text>And now?</text></string>
+  <string id="st_wom_ask_recap_now_lead_002"><text>Right now?</text></string>
+  <string id="st_wom_ask_recap_now_lead_003"><text>As for the present?</text></string>
+  <string id="st_wom_ask_recap_now_lead_004"><text>And at the moment?</text></string>
+  <string id="st_wom_ask_recap_now_lead_005"><text>And here I am now.</text></string>
+
+  <!-- busy-day (5+ events) summary of the mundane activities. #list# is the -->
+  <!-- comma-joined activity words below, ordered by first occurrence. -->
+  <!-- _lowsummary follows interesting events; _lowsummary_alone is used when -->
+  <!-- every event was mundane (nothing to say "other than that" about). -->
+  <string id="st_wom_ask_recap_lowsummary_001"><text>Other than that, spent some time #list#.</text></string>
+  <string id="st_wom_ask_recap_lowsummary_002"><text>Also did some #list#.</text></string>
+  <string id="st_wom_ask_recap_lowsummary_alone_001"><text>Nothing too exciting. Mostly just spent the day #list#.</text></string>
+  <string id="st_wom_ask_recap_low_chatting_001"><text>chatting</text></string>
+  <string id="st_wom_ask_recap_low_eating_001"><text>eating</text></string>
+  <string id="st_wom_ask_recap_low_sleeping_001"><text>sleeping</text></string>
+  <string id="st_wom_ask_recap_low_resting_001"><text>resting</text></string>
+  <string id="st_wom_ask_recap_low_sheltering_001"><text>sheltering</text></string>
+  <string id="st_wom_ask_recap_low_healing_001"><text>patching up</text></string>
+
+
+  <!-- per-goal recap lines. Write each as a MID-SENTENCE clause: the time-of-day -->
+  <!-- lead ("This morning") or transition ("Then") is added by the script, so a -->
+  <!-- line becomes e.g. "This morning, #I_we_blank_l# cracked open a stash #at_location#." -->
+  <!-- Start the clause with #I_we_blank_l# (resolves to "I"/"we" on the first event of a -->
+  <!-- block, "" on later events); the script lower-cases the first word for you -->
+  <!-- (the pronoun "I" is preserved). Do NOT include a time word in the line. -->
+  <!-- LOCATION: choose the preposition with the token. #at_location# -> "at the -->
+  <!-- Bar", #to_location# -> "to the Bar", #near_location# -> "near the Bar"; -->
+  <!-- also #in_location# #from_location# #by_location# #around_location# -->
+  <!-- #toward_location#. Each becomes "here" when the event is where the NPC is -->
+  <!-- now, and "" (drops out) when the location is unknown - so do NOT type a -->
+  <!-- preposition before the token (write "#I_we_blank_l# rested #at_location#"). -->
+  <!-- OCCURRENCE-INDEXED: _001x = first time that goal appears today, _002x =    -->
+  <!-- second time, etc.; the last authored occurrence is reused for any further  -->
+  <!-- repeats. Each occurrence is a random sub-pool of LETTERED variants: author -->
+  <!-- _001a (required to mark the slot), then optionally _001b, _001c, ... and   -->
+  <!-- one is chosen at random; _002a/_002b for the second occurrence, and so on. -->
+  <string id="st_wom_ask_recap_massacre_investigate_001a"><text>#I_we_blank_l# hadn't heard back from a squad #at_location#. #I_We_u# went to investigate.</text></string>
+  <string id="st_wom_ask_recap_massacre_investigate_001b"><text>#I_we_l# got word of a missing squad #at_location#. #I_We_u# went over to check it out.</text></string>
+  <string id="st_wom_ask_recap_massacre_investigate_002a"><text>lost contact with another squad #at_location#, #I_we_blank_l# set out to investigate the scene, expecting the worst.</text></string>
+  <string id="st_wom_ask_recap_massacre_investigate_003a"><text>#I_we_blank_l# checked in on yet another missing squad #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_massacre_loot_001a"><text>got word earlier of a big fight #at_location#. #I_we_blank_l# made #my_our_l# way over to pick over any loot.</text></string>
+  <string id="st_wom_ask_recap_massacre_loot_002a"><text>#I_we_blank_l# went to investigate the scene of another skirmish #at_location#.</text></string>
+  <string id="st_wom_ask_recap_massacre_loot_003a"><text>eventful day in the Zone it seems. Heard about another fight #at_location#. #I_We_u# went over to pick it clean.</text></string>
+  
+  <string id="st_wom_ask_recap_massacre_scavenge_001a"><text>#I_we_blank_l# heard about a big skirmish #at_location#. #I_We_u# went over and scavenged what #I_we_l# could.</text></string>
+  <string id="st_wom_ask_recap_massacre_scavenge_002a"><text>#I_we_blank_l# heard about another slaughter. #I_We_u# headed out #to_location# to pick through.</text></string>
+  
+  <string id="st_wom_ask_recap_stash_loot_001a"><text>#I_we_blank_l# went to crack a stash #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_loot_001b"><text>#I_we_blank_l# wandered over #to_location# to pop a stash.</text></string>
+  <string id="st_wom_ask_recap_stash_loot_002a"><text>#I_we_blank_l# went out again to open a stash #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_loot_003a"><text>#I_we_blank_l# decided again to find a stash #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_stash_fill_001a"><text>#I_we_blank_l# set out to stow some gear in a cache #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_fill_001b"><text>#I_we_blank_l# went to stash some gear #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_fill_001c"><text>went to stash some gear in a hidden spot #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_fill_002a"><text>#I_we_blank_l# headed out again to stow more gear in another cache #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_fill_003a"><text>#I_we_blank_l# went to drop some more things off in yet another stash #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_fill_004a"><text>#I_we_blank_l# somehow went on yet another stash run #to_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_stash_ambush_001a"><text>#I_we_blank_l# set up an ambush on a stash #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_ambush_001b"><text>#I_we_blank_l# went out to spring an ambush on some stalkers checking out a stash #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_ambush_002a"><text>#I_we_blank_l# pulled another ambush on stalkers looting a stash #at_location#.</text></string>
+  <string id="st_wom_ask_recap_stash_ambush_003a"><text>again #I_we_l# ambushed some stalkers looting a stash #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_basekill_support_001a"><text>#I_we_blank_l# supported a defense #at_location#.</text></string>
+  <string id="st_wom_ask_recap_basekill_support_001b"><text>#I_we_blank_l# helped defend #at_location#.</text></string>
+  <string id="st_wom_ask_recap_basekill_support_002a"><text>#I_we_blank_l# helped bolster another defense #at_location#.</text></string>
+  <string id="st_wom_ask_recap_basekill_support_003a"><text>#Iwas# called in to defend another location #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_basekill_flee_001a"><text>unfortunately #I_we_blank_l# had to fall back #to_location# after taking fire.</text></string>
+  <string id="st_wom_ask_recap_basekill_flee_001b"><text>#I_We_u# got hit hard and had to pull back #to_location#.</text></string>
+  <string id="st_wom_ask_recap_basekill_flee_002a"><text>again #I_we_l# had to retreat and regroup #at_location#.</text></string>
+  <string id="st_wom_ask_recap_basekill_flee_003a"><text>#I_we_blank_l# once again needed to retreat, hoping to find safety #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_squadkill_revenge_001a"><text>grim business. #I_We_u# got word that a crew killed some of ours #at_location#. #I_We_u# set out to track them down.</text></string>
+  <string id="st_wom_ask_recap_squadkill_revenge_001b"><text>heard about one of our crews getting stomped. #I_We_u# set out to intercept their killers #at_location#.</text></string>
+  <string id="st_wom_ask_recap_squadkill_revenge_002a"><text>then, more payback. #I_We_u# went out for revenge against another crew #at_location#.</text></string>
+  <string id="st_wom_ask_recap_squadkill_revenge_003a"><text>more word came in about another squad that mistreated one of ours. #I_we_l# went out to track them #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_area_conquer_001a"><text>#I_we_blank_l# took ground #at_location#.</text></string>
+  <string id="st_wom_ask_recap_area_conquer_001b"><text>#I_we_blank_l# staked out #at_location#.</text></string>
+  <string id="st_wom_ask_recap_area_conquer_001c"><text>#I_we_blank_l# captured ground #at_location#.</text></string>
+  <string id="st_wom_ask_recap_area_conquer_002a"><text>spent more time securing territory #at_location#.</text></string>
+  <string id="st_wom_ask_recap_area_conquer_003a"><text>#I_we_blank_l# staked out more ground #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_job_explore_001a"><text>#I_we_blank_l# went on a scouting mission #to_location#.</text></string>
+  <string id="st_wom_ask_recap_job_explore_001b"><text>#I_we_l# went scouting #at_location#.</text></string>
+  <string id="st_wom_ask_recap_job_explore_002a"><text>#I_we_blank_l# did more exploration #at_location#.</text></string>
+  <string id="st_wom_ask_recap_job_explore_003a"><text>#I_we_blank_l# did even more exploring, this time #at_location#.</text></string>
+  <string id="st_wom_ask_recap_job_explore_004a"><text>#I_we_blank_l# did even more exploring #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_job_outpost_001a"><text>#I_we_blank_l# stood watch at an outpost #at_location#.</text></string>
+  <string id="st_wom_ask_recap_job_outpost_001b"><text>#I_we_blank_l# took a watch #at_location#.</text></string>
+  <string id="st_wom_ask_recap_job_outpost_002a"><text>#I_we_blank_l# posted up again #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_job_research_001a"><text>#I_we_blank_l# ran a survey #at_location#.</text></string>
+  <string id="st_wom_ask_recap_job_research_001b"><text>#I_we_blank_l# took some readings #at_location#.</text></string>
+  <string id="st_wom_ask_recap_job_research_002a"><text>#I_we_blank_l# took more readings #at_location#.</text></string>
+  <string id="st_wom_ask_recap_job_research_003a"><text>#I_we_blank_l# did another survey, this time #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_social_base_001a"><text>#I_we_blank_l# spent some time #at_location# chatting with some stalkers.</text></string>
+  <string id="st_wom_ask_recap_social_base_001b"><text>chatted for a bit #at_location#.</text></string>
+  <string id="st_wom_ask_recap_social_base_002a"><text>#I_we_blank_l# spent more time chatting #at_location#.</text></string>
+  <string id="st_wom_ask_recap_social_base_003a"><text>#Iwas# #at_location# shooting the breeze yet again.</text></string>
+  
+  <string id="st_wom_ask_recap_social_campfire_001a"><text>#I_we_blank_l# swapped stories #at_location#.</text></string>
+  <string id="st_wom_ask_recap_social_campfire_001b"><text>spent some time catching up with events #at_location#.</text></string>
+  <string id="st_wom_ask_recap_social_campfire_002a"><text>#I_we_blank_l# spent more time chatting #at_location#.</text></string>
+  <string id="st_wom_ask_recap_social_campfire_003a"><text>#I_we_blank_l# hung around #at_location# to do more chatting.</text></string>
+  
+  <string id="st_wom_ask_recap_rest_campfire_001a"><text>#I_we_blank_l# took a breather #at_location#.</text></string>
+  <string id="st_wom_ask_recap_rest_campfire_001b"><text>#I_we_blank_l# rested for a bit #at_location#.</text></string>
+  <string id="st_wom_ask_recap_rest_campfire_002a"><text>#I_we_blank_l# took another breather #at_location#.</text></string>
+  <string id="st_wom_ask_recap_rest_campfire_003a"><text>#I_we_blank_l# rested up again #at_location#.</text></string>
+  <string id="st_wom_ask_recap_rest_campfire_004a"><text>#I_we_blank_l# spent even more time resting #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_sleep_campfire_001a"><text>#I_we_blank_l# caught some sleep #at_location#.</text></string>
+  <string id="st_wom_ask_recap_sleep_campfire_002a"><text>#I_we_blank_l# slept again for a bit #at_location#.</text></string>
+  <string id="st_wom_ask_recap_sleep_campfire_003a"><text>#I_we_blank_l# tried for a third time to get some shut-eye #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_hunger_campfire_001a"><text>#I_we_blank_l# grabbed a bite to eat #at_location#.</text></string>
+  <string id="st_wom_ask_recap_hunger_campfire_001b"><text>#I_we_blank_l# got some chow #at_location#.</text></string>
+  <string id="st_wom_ask_recap_hunger_campfire_001c"><text>had a meal #at_location#.</text></string>
+  <string id="st_wom_ask_recap_hunger_campfire_002a"><text>#I_we_blank_l# grabbed some more food #at_location#.</text></string>
+  <string id="st_wom_ask_recap_hunger_campfire_003a"><text>#I_we_blank_l# stopped again to eat #at_location#.</text></string>
+  <string id="st_wom_ask_recap_hunger_campfire_004a"><text>well, just been so hungry lately. So #I_we_l# stopped for a snack #at_location#.</text></string>
+
+  <string id="st_wom_ask_recap_heal_shelter_001a"><text>#I_we_blank_l# took some time #at_location# to patch up.</text></string>
+  <string id="st_wom_ask_recap_heal_shelter_001b"><text>#I_we_blank_l# had to take a few minutes to patch up #at_location#.</text></string>
+  <string id="st_wom_ask_recap_heal_shelter_002a"><text>#I_we_blank_l# needed more time to heal #at_location#.</text></string>
+  <string id="st_wom_ask_recap_heal_shelter_002b"><text>#I_we_blank_l# had to spend more time healing #at_location#.</text></string>
+  <string id="st_wom_ask_recap_heal_shelter_003a"><text>somehow #I_we_blank_l# needed even more time to heal #at_location#.</text></string>
+  <string id="st_wom_ask_recap_heal_shelter_003b"><text>somehow #I_we_blank_l# needed even more recovery time #at_location#.</text></string>
+  <string id="st_wom_ask_recap_heal_shelter_004a"><text>it sounds ridiculous, but #I_we_blank_l# needed yet another breather to heal up #at_location#.</text></string>
+  <string id="st_wom_ask_recap_heal_shelter_005a"><text>#I_we_blank_l# unfortunately had to patch up again #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_shelter_indoor_001a"><text>#I_we_blank_l# holed up #at_location# for a bit.</text></string>
+  <string id="st_wom_ask_recap_shelter_indoor_002a"><text>#I_we_blank_l# spent some more time sheltering #at_location#.</text></string>
+  <string id="st_wom_ask_recap_shelter_indoor_003a"><text>#I_we_blank_l# took even more time to shelter #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_shelter_outdoor_001a"><text>#I_we_blank_l# holed up #at_location#.</text></string>
+  <string id="st_wom_ask_recap_shelter_outdoor_002a"><text>#I_we_blank_l# spent some more time outdoors #at_location#.</text></string>
+  <string id="st_wom_ask_recap_shelter_outdoor_003a"><text>#I_we_blank_l# sheltered again #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_money_harvest_001a"><text>#I_we_blank_l# hunted for artifacts #at_location#.</text></string>
+  <string id="st_wom_ask_recap_money_harvest_001b"><text>#I_we_blank_l# went on an artifact hunting expedition #at_location#.</text></string>
+  <string id="st_wom_ask_recap_money_harvest_002a"><text>#I_we_blank_l# spent more time artifact hunting #at_location#.</text></string>
+  <string id="st_wom_ask_recap_money_harvest_003a"><text>#I_we_blank_l# went on another artifact hunt #at_location#.</text></string>
+  <string id="st_wom_ask_recap_money_harvest_004a"><text>#I_we_blank_l# continued #my_our_l# adventures hunting artifacts #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_money_hunt_001a"><text>#I_we_blank_l# went out to hunt mutants #at_location#.</text></string>
+  <string id="st_wom_ask_recap_money_hunt_001b"><text>#I_we_blank_l# went mutant hunting #at_location#.</text></string>
+  <string id="st_wom_ask_recap_money_hunt_002a"><text>#I_we_blank_l# went on another mutant hunt #at_location#.</text></string>
+  <string id="st_wom_ask_recap_money_hunt_003a"><text>#I_we_blank_l# went on #my_our_l# third hunt of the day #at_location#.</text></string>
+  <string id="st_wom_ask_recap_money_hunt_004a"><text>#I_we_blank_l# went on another foray looking for mutants #at_location#.</text></string>
+  
+  <string id="st_wom_ask_recap_harvest_rob_001a"><text>#I_we_blank_l# shook down an artifact crew #at_location#.</text></string>
+  <string id="st_wom_ask_recap_harvest_rob_001b"><text>#I_we_blank_l# tracked down some artifact hunters #at_location#.</text></string>
+  <string id="st_wom_ask_recap_harvest_rob_002a"><text>#I_we_blank_l# caught wind of more artifact hunters #at_location#. #I_We_u# tracked them down and had a nice chat.</text></string>
+  <string id="st_wom_ask_recap_harvest_rob_003a"><text>#I_we_blank_l# had the great luck to come across more artifact hunters #at_location#.</text></string>
+
+  <!-- wounded_help: subject = helpers   other = wounded faction (may be nil)              -->
+  <!-- populated: pronoun tokens, location tokens                                          -->
+  <!-- #a_member_other# may be empty; write lines that work without it                    -->
+  <string id="st_wom_ask_recap_wounded_help_001a"><text>#I_we_blank_l# got word someone was hurt #near_location# and went to help.</text></string>
+  <string id="st_wom_ask_recap_wounded_help_001b"><text>#I_we_blank_l# went to pull some wounded stalkers out #near_location#.</text></string>
+  <string id="st_wom_ask_recap_wounded_help_002a"><text>again #I_we_blank_l# set out to help some wounded #near_location#.</text></string>
+  <string id="st_wom_ask_recap_wounded_help_003a"><text>#I_we_l# went to help more wounded #near_location#.</text></string>
+
+  <!-- wounded_hunt: subject = predators   other = wounded target (may be nil)            -->
+  <!-- populated: pronoun tokens, location tokens                                         -->
+  <!-- #a_member_other# may be empty; write lines that work without it                   -->
+  <string id="st_wom_ask_recap_wounded_hunt_001a"><text>#I_we_blank_l# tracked down some wounded targets #near_location#.</text></string>
+  <string id="st_wom_ask_recap_wounded_hunt_001b"><text>heard about someone hurt bad #near_location#. #I_We_u# moved in.</text></string>
+  <string id="st_wom_ask_recap_wounded_hunt_002a"><text>again #I_we_blank_l# heard about more wounded to track down #near_location#.</text></string>
+  <string id="st_wom_ask_recap_wounded_hunt_003a"><text>once again #I_we_blank_l# went after wounded targets again #near_location#.</text></string>
+
+  <string id="st_wom_ask_recap_supply_trader_001a"><text>#I_we_blank_l# made a supply run #to_location#.</text></string>
+  <string id="st_wom_ask_recap_supply_trader_001b"><text>#I_we_blank_l# set out to top off on gear #at_location#.</text></string>
+  <string id="st_wom_ask_recap_supply_trader_002a"><text>#I_we_blank_l# went out for more supplies #at_location#.</text></string>
+  <string id="st_wom_ask_recap_supply_trader_002b"><text>#I_we_blank_l# headed #to_location# to pick up more supplies.</text></string>
+  <string id="st_wom_ask_recap_supply_trader_003a"><text>#I_we_blank_l# did another supply run #to_location#.</text></string>
+  <string id="st_wom_ask_recap_supply_trader_003b"><text>#I_we_blank_l# spent more time picking up gear #at_location#.</text></string>
+  <string id="st_wom_ask_recap_supply_trader_004a"><text>#I_we_blank_l# went on yet another supply run #to_location#.</text></string>
+
+  <!-- barter: subject = the trading squad, no second party on the record            -->
+  <!-- populated: pronoun tokens, location tokens                                    -->
+  <!-- NOTE: needs-family consequences call add_record without other_squad, so every -->
+  <!-- other-party slot (#a_member_other#, #some_members_other#, #count_other#) is   -->
+  <!-- always empty here — do not write lines that depend on one.                    -->
+  <!-- ALifePlus barters same-faction only, so "our own" is always accurate.         -->
+  <!-- No money changes hands: keep the wording swap/trade, never buy/sell/haggle.   -->
+  <string id="st_wom_ask_recap_barter_001a"><text>#I_we_blank_l# went looking for someone #at_location# to swap gear with.</text></string>
+  <string id="st_wom_ask_recap_barter_001b"><text>#I_we_blank_l# decided to check around #at_location# to see if anyone was looking to trade gear.</text></string>
+  <string id="st_wom_ask_recap_barter_001c"><text>#I_we_blank_l# set out hoping to find someone #at_location# looking to barter.</text></string>
+  <string id="st_wom_ask_recap_barter_002a"><text>#I_we_blank_l# went to see if #I_we_l# could work out another gear exchange #at_location#.</text></string>
+  <string id="st_wom_ask_recap_barter_002b"><text>#I_we_blank_l# set out to swap a few more things with another stalker #at_location#.</text></string>
+  <string id="st_wom_ask_recap_barter_003a"><text>#I_we_blank_l# figured #I_we_l# might try yet another gear swap #at_location#.</text></string>
+  <string id="st_wom_ask_recap_barter_003b"><text>#I_we_blank_l# set out to do yet another trade #at_location#.</text></string>
+  <string id="st_wom_ask_recap_barter_004a"><text>#I_we_blank_l# went to trade off yet more spare kit #at_location#.</text></string>
+
+  <!-- barter_offmap: same trade, but the squad travels to another map to reach a    -->
+  <!-- friendly squad. get_location_name appends "in <Level>" for an off-map smart,  -->
+  <!-- so the token already reads "the Skadovsk in Zaton" — never add region wording -->
+  <!-- on top. These use #at_location# rather than a #to_location# motion frame on   -->
+  <!-- purpose: if the player meets the squad at the destination, set_where_slots     -->
+  <!-- substitutes "nearby", and "made the trip nearby" reads wrong while "made the  -->
+  <!-- long haul over to trade with our own people nearby" still holds. The distance  -->
+  <!-- is carried by the verb phrase, not by the location token.                     -->
+  <string id="st_wom_ask_recap_barter_offmap_001a"><text>#I_we_blank_l# set off on a long haul to see if anyone wanted to exchange gear #at_location#.</text></string>
+  <string id="st_wom_ask_recap_barter_offmap_001b"><text>#I_we_blank_l# headed out on a trip, hoping #I_we_l# could find someone #at_location# to trade gear.</text></string>
+  <string id="st_wom_ask_recap_barter_offmap_002a"><text>#I_we_blank_l# made our way on another trip to see if anyone #at_location# had some spare gear to swap.</text></string>
+  <string id="st_wom_ask_recap_barter_offmap_002b"><text>#I_we_blank_l# set out to haul more spare kit over to swap #at_location#.</text></string>
+  <string id="st_wom_ask_recap_barter_offmap_003a"><text>#I_we_blank_l# went on yet another trek to look for people to swap gear with #at_location#.</text></string>
+
+  <string id="st_wom_ask_recap_roam_001a"><text>#I_we_blank_l# wandered around #at_location#.</text></string>
+  <string id="st_wom_ask_recap_roam_001b"><text>#I_we_blank_l# roamed around for a bit #at_location#.</text></string>
+  <string id="st_wom_ask_recap_roam_002a"><text>#Iwas# feeling restless and spent some time roaming around #at_location#.</text></string>
+  <string id="st_wom_ask_recap_roam_003a"><text>#I_we_blank_l# did more wandering #at_location#.</text></string>
+
+
+<!-- combat_kill1: NPC's squad killed exactly one enemy                                -->
+  <!-- populated: pronoun tokens (#I_We_u# #I_we_blank_l# #Iwas# etc.)                 -->
+  <!-- populated: #a_member_other# = "a Loner" / "an Ecologist" when known, else "someone"    -->
+  <!-- populated: #plural_other# (plural name, e.g. "Loners")                                 -->
+  <!-- location: #at_location# #near_location# #to_location# etc. (drop out when nil) -->
+  <!-- falls back to combat_* strings when no combat_kill1_* are authored              -->
+  <string id="st_wom_ask_recap_combat_kill1_001a"><text>#I_we_blank_l# ran into #a_member_other# #at_location# and dropped them.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_001b"><text>#I_we_blank_l# put down #a_member_other# #at_location#.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_001c"><text>#I_we_blank_l# spotted #a_member_other# #at_location# and dealt with them.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_001d"><text>ran across #a_member_other# #at_location# and dropped them before they could blink.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_001e"><text>#I_we_blank_l# crossed paths with #a_member_other# #at_location#, that's one less in the Zone.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_kill1_001f"><text>ran across #a_member_other# and dropped them.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_001g"><text>got into a little scuffle and took out #a_member_other#.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_001h"><text>clashed with #a_member_other#.</text></string>
+  
+  <string id="st_wom_ask_recap_combat_kill1_002a"><text>saw more action after #I_we_l# ran into #a_member_other# #at_location# and dropped them.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_002b"><text>#I_we_l# got into another skirmish, this time put down #a_member_other# #at_location#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_kill1_002c"><text>#I_we_blank_l# got into another fight and dispatched #a_member_other#.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_002d"><text>saw more action and shot up #a_member_other#.</text></string>
+
+  <string id="st_wom_ask_recap_combat_kill1_003a"><text>#I_we_blank_l# saw even more action, came across #a_member_other# #at_location# and did them in.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_kill1_003b"><text>#I_we_blank_l# got into it yet again, this time offed #a_member_other#.</text></string>
+
+
+
+  <!-- combat: NPC's squad got multiple kills with no losses                             -->
+  <!-- populated: pronoun tokens, #count_other#, #plural_other#, #kills# (always present),   -->
+  <!--            location tokens                                                        -->
+  <string id="st_wom_ask_recap_combat_001a"><text>#I_We_u# ran into #count_other# #at_location#, killed #kills#.</text></string>
+  <string id="st_wom_ask_recap_combat_001b"><text>#I_we_blank_l# clashed with #count_other# #at_location#, killed #kills#.</text></string>
+  <string id="st_wom_ask_recap_combat_001c"><text>#I_we_blank_l# hit #count_other# #at_location#, killing #kills#.</text></string>
+  <string id="st_wom_ask_recap_combat_001d"><text>#I_We_u# killed #kills# #plural_other# #at_location#.</text></string>
+  <string id="st_wom_ask_recap_combat_001e"><text>#I_we_blank_l# put down #kills# #plural_other# #at_location#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_001f"><text>#I_we_blank_l# easily dropped #kills# #plural_other# in a fight.</text></string>
+  <string id="st_wom_ask_recap_combat_001g"><text>came across #plural_other# and downed #kills# with no losses.</text></string>
+
+  <string id="st_wom_ask_recap_combat_002a"><text>saw more action when #I_we_l# came across #count_other# #at_location#, put down #kills#.</text></string>
+  <string id="st_wom_ask_recap_combat_002b"><text>#I_we_blank_l# hit #count_other# again #near_location#, killing #kills#.</text></string>
+  <string id="st_wom_ask_recap_combat_002c"><text>got into another skirmish when #I_we_l# ran into #count_other#, killed #kills#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_002d"><text>got into another fight when #I_we_l# made contact with #count_other#, killed #kills#.</text></string>
+  
+  <string id="st_wom_ask_recap_combat_003a"><text>#I_we_blank_l# had yet another scuffle, ran into #count_other# #at_location# and killed #kills#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_003b"><text>#I_we_blank_l# did even more fighting when we ran into #count_other# and downed #kills#.</text></string>
+
+
+  <!-- combat_loss: multiple kills, also took losses                                     -->
+  <!-- populated: pronoun tokens, #count_other#, #plural_other#, #kills# (always present),   -->
+  <!--            #losses# (always present), location tokens                            -->
+  <string id="st_wom_ask_recap_combat_loss_001a"><text>#I_We_u# hit #count_other# #at_location#. Killed #kills#, cost us #losses#.</text></string>
+  <string id="st_wom_ask_recap_combat_loss_001b"><text>Fought #count_other# #at_location#. Put down #kills# but lost #losses# of our own.</text></string>
+  <string id="st_wom_ask_recap_combat_loss_001c"><text>#I_we_blank_l# clashed with #count_other# #at_location#. Killed #kills#, lost #losses#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_loss_001d"><text>#I_we_blank_l# lost #losses# in a clash with #count_other#, killed #kills# though.</text></string>
+  <string id="st_wom_ask_recap_combat_loss_001e"><text>#I_we_blank_l# fought #count_other#, killed #kills# but lost #losses#.</text></string>
+  
+  <string id="st_wom_ask_recap_combat_loss_002a"><text>more fighting, ran into #count_other# #at_location#. Killed #kills#, lost #losses#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_loss_002b"><text>did more fighting, came across #count_other# and killed #kills# but lost #losses#.</text></string>
+  <string id="st_wom_ask_recap_combat_loss_002c"><text>there was another scuffle, lost #losses# when we made contact with #count_other#, killed #kills# though.</text></string>
+  
+  <string id="st_wom_ask_recap_combat_loss_003a"><text>another hard fight, caught #count_other# #at_location#. Killed #kills#, cost us #losses#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_loss_003b"><text>another fight, came across #count_other# and killed #kills# but lost #losses#.</text></string>
+
+
+
+  <!-- combat_kill1_loss: exactly one kill, also took losses                             -->
+  <!-- populated: pronoun tokens, #a_member_other#, #count_other#, #losses# (always present), -->
+  <!--            location tokens                                                        -->
+  <string id="st_wom_ask_recap_combat_kill1_loss_001a"><text>#I_we_blank_l# ran into #count_other# #at_location#, dropped one but lost #losses#.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_loss_001b"><text>got into it with #count_other# #at_location#, got one kill but cost us #losses#.</text></string>
+  <string id="st_wom_ask_recap_combat_kill1_loss_001c"><text>#I_we_blank_l# crossed paths with #count_other# #at_location#; killed one but lost #losses#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_kill1_loss_001d"><text>#I_we_blank_l# ran into #count_other#, dropped one but at the cost of #losses# of our own.</text></string>
+  
+  <string id="st_wom_ask_recap_combat_kill1_loss_002a"><text>another scrap when #I_we_l# ran into #count_other# #at_location#. Dropped one, lost #losses#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_kill1_loss_002b"><text>lost #losses# in another scrap, came across #count_other#, managed to drop one though.</text></string>
+
+  <string id="st_wom_ask_recap_combat_kill1_loss_003a"><text>saw more action with #count_other# #at_location#. Got one kill but lost #losses# doing it.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_kill1_loss_003b"><text>saw more action when #I_we_l# ran into #count_other#, got one kill but lost #losses# in the process.</text></string>
+
+
+
+  <!-- combat_skirmish: no kills, no losses, both sides disengaged                     -->
+  <!-- populated: pronoun tokens, #count_other#, #plural_other#, #a_member_other#, location tokens   -->
+  <string id="st_wom_ask_recap_combat_skirmish_001a"><text>#I_We_u# ran into #count_other# #at_location#, but neither side took a loss.</text></string>
+  <string id="st_wom_ask_recap_combat_skirmish_001b"><text>#I_we_blank_l# crossed paths with #count_other# #at_location#, nobody got hurt though.</text></string>
+  <string id="st_wom_ask_recap_combat_skirmish_001c"><text>had a standoff with #count_other# #at_location#, at least #I_we_l# walked away clean.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_skirmish_001d"><text>#I_We_u# ran into #count_other#, but neither side took a loss.</text></string>
+  <string id="st_wom_ask_recap_combat_skirmish_001e"><text>#I_we_blank_l# crossed paths with #count_other#, but nobody got seriously hurt.</text></string>
+  <string id="st_wom_ask_recap_combat_skirmish_001f"><text>crossed paths with #count_other#, at least #I_we_l# walked away clean.</text></string>
+
+  <string id="st_wom_ask_recap_combat_skirmish_002a"><text>had more inconclusive combat when #I_we_l# ran into #count_other# #at_location#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_skirmish_002b"><text>had another stalemate when #I_we_l# ran into #count_other#.</text></string>
+  
+  <string id="st_wom_ask_recap_combat_skirmish_003a"><text>another run-in with #count_other# #at_location#, no casualties either side.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_skirmish_003b"><text>yet another stalemate when #I_we_l# came across #count_other#.</text></string>
+
+
+
+  <!-- combat_fell_back: no kills, took losses, we got hurt and disengaged             -->
+  <!-- populated: pronoun tokens, #count_other#, #plural_other#, #losses# (always present),  -->
+  <!--            location tokens                                                        -->
+  <string id="st_wom_ask_recap_combat_fell_back_001a"><text>#I_We_u# ran into #count_other# #at_location#, lost #losses# before we could pull back.</text></string>
+  <string id="st_wom_ask_recap_combat_fell_back_001b"><text>got hit by #count_other# #near_location#, lost #losses# and had to disengage.</text></string>
+  <string id="st_wom_ask_recap_combat_fell_back_001c"><text>#count_other# hit us #at_location#, #I_we_l# fell back and lost #losses# in the process.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_fell_back_001d"><text>#I_We_u# ran into #count_other#, lost #losses# before we could pull back.</text></string>
+  <string id="st_wom_ask_recap_combat_fell_back_001e"><text>#I_We_u# had to pull back from #count_other#, lost #losses# in the process.</text></string>
+
+  <string id="st_wom_ask_recap_combat_fell_back_002a"><text>once again lost a fight, ran into #count_other# #at_location# and lost #losses# before we broke contact.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_fell_back_002b"><text>once again had bad luck, ran into #count_other# and lost #losses#.</text></string>
+  
+  <string id="st_wom_ask_recap_combat_fell_back_003a"><text>yet another bad run-in with #count_other# #at_location#. Lost #losses#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_fell_back_003b"><text>even more bad news when we lost #losses# to #count_other#.</text></string>
+
+
+  <!-- combat_multi_skirmish: multi-faction standoff, no kills, no losses                     -->
+  <!-- populated: pronoun tokens, #participant_list# (all sides), #enemy_list# (enemy sides) -->
+  <!-- populated: location tokens                                                             -->
+  <string id="st_wom_ask_recap_combat_multi_skirmish_001a"><text>#I_We_u# ended up in the middle of a standoff between #participant_list# #at_location#.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_skirmish_001b"><text>#I_we_blank_l# took part in a brawl between #participant_list# #at_location#, didn't manage to take any down.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_skirmish_001c"><text>got involved in a fight with #participant_list# all #at_location#, but didn't drop any.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_skirmish_001d"><text>was part of a multi-way fight with #participant_list#, didn't manage any kills.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_skirmish_001e"><text>took part in a fight between #participant_list#, although #I_we_l# didn't contribute much.</text></string>
+  
+  <string id="st_wom_ask_recap_combat_multi_skirmish_002a"><text>another fight involving #participant_list# #at_location#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_skirmish_002b"><text>another big scuffle involving #participant_list#, didn't get any kills.</text></string>
+
+
+
+  <!-- combat_multi: NPC's squad fought in a multi-faction engagement; has kills, no losses   -->
+  <!-- populated: pronoun tokens, #participant_list# (all sides), #enemy_list# (enemy sides) -->
+  <!-- populated: #kills# (always present), #subject_identity# (NPC's own faction), location tokens -->
+  <string id="st_wom_ask_recap_combat_multi_001a"><text>#Iwas# in a clash between #participant_list# #at_location#. All told, #subject_identity# dropped #kills#.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_001b"><text>#I_we_blank_l# got caught up in a fight between #subject_identity# #at_location#. #subject_identity# put down #kills# in the end.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_001c"><text>got involved in a brawl between #participant_list# #at_location#. #subject_identity# came out ahead, #kills# down.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_001d"><text>#Iwas# in a fight with #participant_list# #at_location#. #subject_identity# dropped #kills# before it was done.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_001e"><text>#I_we_blank_l# took part in a clash with #participant_list#, #subject_identity# dropped #kills# before it was done.</text></string>
+
+  <string id="st_wom_ask_recap_combat_multi_002a"><text>things got even messier, another big fight involving #participant_list# #at_location#, #subject_identity# put down #kills#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_002b"><text>#I_we_l# had another big fight involving #participant_list#, #subject_identity# took out #kills#.</text></string>
+
+  <string id="st_wom_ask_recap_combat_multi_003a"><text>more carnage, #I_we_blank_l# were caught up in another clash between #participant_list# #at_location#, #subject_identity# dropped #kills#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_003b"><text>#I_we_blank_l# got pulled into another fight between #participant_list#, #subject_identity# dropped #kills#.</text></string>
+
+
+  <!-- combat_multi_loss: NPC's squad in multi-faction fight; has kills and losses            -->
+  <!-- populated: pronoun tokens, #participant_list#, #enemy_list#, #kills#, #losses#,        -->
+  <!--            location tokens                                                             -->
+  <string id="st_wom_ask_recap_combat_multi_loss_001a"><text>#I_we_blank_l# took part in a messy clash between #participant_list# #at_location#; #subject_identity# dropped #kills# but lost #losses#.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_loss_001b"><text>#I_we_blank_l# got drawn into a fight involving #participant_list# #at_location#; #subject_identity# killed #kills#, lost #losses#.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_loss_001c"><text>killed #kills# and lost #losses# in a chaotic fight involving #participant_list# #at_location#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_loss_001d"><text>#I_we_blank_l# were in a big fight, #participant_list# all clashing; #subject_identity# dropped #kills# but lost #losses#.</text></string>
+
+  <string id="st_wom_ask_recap_combat_multi_loss_002a"><text>more carnage in another multi-way fight involving #participant_list# #at_location#; #subject_identity# killed #kills#, lost #losses#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_loss_002b"><text>#I_we_l# took part in another multi-way fight involving #participant_list#; #subject_identity# killed #kills# and lost #losses#.</text></string>
+
+  <string id="st_wom_ask_recap_combat_multi_loss_003a"><text>another brutal fight involving #participant_list# #at_location#; #subject_identity# dropped #kills# but lost #losses#.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_loss_003b"><text>#subject_identity# killed #kills# and lost #losses# in yet another brutal fight involving #participant_list#.</text></string>
+
+
+  <!-- combat_multi_fell_back: NPC's squad in multi-faction fight; no kills, took losses      -->
+  <!-- populated: pronoun tokens, #participant_list#, #enemy_list#,                           -->
+  <!--            #losses# (always present), location tokens                                  -->
+  <string id="st_wom_ask_recap_combat_multi_fell_back_001a"><text>#I_we_blank_l# got caught in the middle of a fight between #participant_list# #at_location#, #subject_identity# lost #losses# before #I_we_l# could disengage.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_fell_back_001b"><text>a chaotic brawl broke out involving #subject_identity# #at_location#; #subject_identity# lost #losses# and had to pull back.</text></string>
+  <string id="st_wom_ask_recap_combat_multi_fell_back_001c"><text>#Iwas# caught in a fight between #participant_list# #at_location#, #subject_identity# lost #losses# trying to break contact.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_fell_back_001d"><text>#I_we_blank_l# got caught in a fight involving #participant_list#, #subject_identity# lost #losses# but didn't drop any.</text></string>
+
+  <string id="st_wom_ask_recap_combat_multi_fell_back_002a"><text>got caught in another big fight involving #participant_list# #at_location#, #subject_identity# lost #losses# before pulling back.</text></string>
+  <!-- Location-agnostic fallbacks -->
+  <string id="st_wom_ask_recap_combat_multi_fell_back_002b"><text>got caught in another big fight involving #participant_list#, #subject_identity# didn't down any and lost #losses#.</text></string>
+
+
+</string_table>

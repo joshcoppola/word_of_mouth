@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <!-- Territory strings for wom_territory.script ("Who's holding ground around here?").
+         Russian counterpart of eng/st_wom_territory.xml — same ids, same slots.
+         Comments stay in English per project convention.
+
+         The answer is assembled as: an optional intro line, the leading hold, then up to
+         two more each preceded by a connector from st_wom_territory_seq_*. The lead is the
+         camp the speaker is standing at when there is one, which draws from _here_own_
+         (their own faction holds it — first person plural) or _here_ (someone else does).
+         Selection order for a live hold: _here_own_service_, _here_own_, _here_service_,
+         _here_, _service_, _held_; the first pool that renders wins, so _held_<kind> must
+         always be authored. Every *_service_* line must name the services — those pools are
+         chosen precisely because the camp has them.
+         Connectors are complete sentences, so nothing is decapitalized and no case
+         agreement is needed across the join.
+
+         SLOT CASE — the hold lines here are built around #plural# (nominative plural:
+         "бойцы Долга", "кровососы") rather than #identity#, because #identity# is
+         singular for some factions ("Долг") and plural for others ("одиночки"), and
+         Russian verbs must agree in number. #plural# is always plural, so a plural verb
+         is always correct. #identity# is used only in verbless/nominal frames.
+         #some_members# and #a_squad# are avoided entirely: their Russian forms carry the
+         quantifier-case limitation documented in TRANSLATION.md, and nothing here needs
+         them. Every pool keeps a variant using only #location# and #plural#.
+
+         #location# is an undeclined engine name, so lines use the established
+         military-designator framing ("в районе X") rather than a bare preposition —
+         same convention as st_wom_recap_smart_terrain.xml. See TRANSLATION.md.
+
+         Ownership is read off the smart terrain's own spawn pool, so the _held lines are
+         accurate as stated. The _fading pools describe holds that have ENDED and are
+         remembered only — they must keep their hedge. #Ago#/#ago# is empty unless an
+         ALifePlus record survives. #service_list#/#service_role# (outpost services) are
+         non-empty only in the _service_ pools, which wom_territory prefers over _held for
+         any camp that has grown services — so every _service_ line must name them, and no
+         other pool may reference them. The service slots are nominative noun phrases
+         ("торговец и механик"), so keep them in a nominative position — "там есть
+         #service_list#", never a case-marked frame ("под #service_list#" is wrong). -->
+
+
+    <!-- ===== the question ===== -->
+    <string id="st_wom_ask_territory"><text>Кто здесь держит территорию?</text></string>
+
+    <!-- ===== intro ===== -->
+    <string id="st_wom_territory_intro_001"><text>Вот последние новости.</text></string>
+    <string id="st_wom_territory_intro_002"><text>Смотря кого спросишь, но вот, что знаю я.</text></string>
+    <string id="st_wom_territory_intro_003"><text>Вот, что стоит знать.</text></string>
+    <string id="st_wom_territory_intro_004"><text>Говорят, у пары мест сменились хозяева.</text></string>
+
+    <!-- ===== sequence connectors (complete sentences) ===== -->
+    <string id="st_wom_territory_seq_001"><text>Хм, что ещё?</text></string>
+    <string id="st_wom_territory_seq_002"><text>И это не единственное место.</text></string>
+    <string id="st_wom_territory_seq_003"><text>Ещё кое-что стоит знать:</text></string>
+    <string id="st_wom_territory_seq_004"><text>Это ещё не всё.</text></string>
+    <string id="st_wom_territory_seq_005"><text>Дай подумать...</text></string>
+    <string id="st_wom_territory_seq_006"><text>Так, посмотрим...</text></string>
+    <string id="st_wom_territory_seq_007"><text>Ещё стоит знать:</text></string>
+
+    <!-- ===== nothing held / nothing known ===== -->
+    <string id="st_wom_territory_none_001"><text>Ничего нового, насколько я знаю. Всё как всегда.</text></string>
+    <string id="st_wom_territory_none_002"><text>В последнее время особо ничего не изменилось.</text></string>
+    <string id="st_wom_territory_none_003"><text>Докладывать не о чем.</text></string>
+    <string id="st_wom_territory_none_004"><text>Я такого не слышал.</text></string>
+
+    <!-- ===== conquer: a faction took a camp ===== -->
+    <string id="st_wom_territory_held_conquer_001"><text>На точке — #location# теперь сидят #plural#, и делиться они не собираются.</text></string>
+    <string id="st_wom_territory_held_conquer_002"><text>Точку — #location# держат #plural# — #ago#, если нужно точнее.</text></string>
+    <string id="st_wom_territory_held_conquer_003"><text>#plural# заняли точку — #location# и остались, так что теперь это их земля.</text></string>
+    <string id="st_wom_territory_held_conquer_004"><text>Без нужды на точку — #location# не ходи — там теперь #plural#.</text></string>
+    <string id="st_wom_territory_held_conquer_005"><text>Земля на точке — #location# больше не общая: там хозяйничают #plural#.</text></string>
+    <string id="st_wom_territory_held_conquer_006"><text>#Ago# точку — #location# заняли #plural#, и до сих пор держат.</text></string>
+
+    <!-- ===== conquer, and the speaker is standing in it: their own faction holds it =====
+         First-person plural throughout: these lines are inherently about the speaker's own
+         squad holding the camp, which is the "мы" case per TRANSLATION.md. -->
+    <string id="st_wom_territory_here_own_conquer_001"><text>Так ведь #some_members# как раз здесь и стоят, на точке — #location#.</text></string>
+    <string id="st_wom_territory_here_own_conquer_002"><text>Ты в ней и стоишь. Точка — #location# теперь наша.</text></string>
+    <string id="st_wom_territory_here_own_conquer_003"><text>Начни с того, где стоишь: точку — #location# мы взяли и назад не отдадим.</text></string>
+    <string id="st_wom_territory_here_own_conquer_004"><text>Для начала — точка — #location#. Наша, с тех пор как мы выбили отсюда прежних.</text></string>
+    <string id="st_wom_territory_here_own_conquer_005"><text>Ну, мы, очевидно. Точка — #location# наша — #ago#, если точнее.</text></string>
+
+    <!-- ===== ... and it has outpost services: every line names them ===== -->
+    <string id="st_wom_territory_here_own_service_conquer_001"><text>Вот прямо здесь, для начала: точка — #location# наша, и #service_list# у нас тут уже работает.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_002"><text>Ты в ней стоишь. Точка — #location# наша, и если нужен #service_role# — он тоже здесь.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_003"><text>Так ведь это место теперь наше, и #service_list# у нас тут уже есть.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_004"><text>Точка — #location# наша, и мы тут не просто сидим: #service_list#, прямо здесь.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_005"><text>Ты вовремя спросил. Точка — #location# наша, и #service_role# при нас.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_006"><text>Начни с того, где стоишь: точку — #location# мы взяли, и #service_list# тут уже есть.</text></string>
+
+    <!-- ===== conquer, and the speaker is standing in it: somebody else holds it ===== -->
+    <string id="st_wom_territory_here_conquer_001"><text>Так ведь эта самая точка — #location# теперь за ними — тут #plural#.</text></string>
+    <string id="st_wom_territory_here_conquer_002"><text>Ты на ней и стоишь. Точку — #location# теперь держат #plural#.</text></string>
+    <string id="st_wom_territory_here_conquer_003"><text>Начни с того, где мы стоим: на точке — #location# теперь #plural#.</text></string>
+    <string id="st_wom_territory_here_conquer_004"><text>Точка — #location#, прямо где ты стоишь. #plural# её заняли и остались.</text></string>
+
+    <!-- ===== ... and it has outpost services: every line names them ===== -->
+    <string id="st_wom_territory_here_service_conquer_001"><text>Точка — #location#, вот здесь — тут #plural#, и #service_list# при них работает.</text></string>
+    <string id="st_wom_territory_here_service_conquer_002"><text>Прямо здесь. На точке — #location# теперь #plural#, а при них есть #service_role#.</text></string>
+    <string id="st_wom_territory_here_service_conquer_003"><text>Ты в ней и стоишь. Точка — #location# теперь за ними, и #service_list# у них тут работает.</text></string>
+    <string id="st_wom_territory_here_service_conquer_004"><text>Начни с этого места: на точке — #location# теперь #plural#, а с ними и #service_list#.</text></string>
+    <string id="st_wom_territory_here_service_conquer_005"><text>Ну, это место теперь держат #plural#. Что ни говори, а #service_list# они с собой привели.</text></string>
+
+    <!-- ===== swarm / infest, and the speaker is standing next to it ===== -->
+    <string id="st_wom_territory_here_swarm_001"><text>Ближайшее — вот оно. Точку — #location# заняли #plural#, и ближе я не подойду.</text></string>
+    <string id="st_wom_territory_here_swarm_002"><text>Отсюда почти видно — на точке — #location# теперь #plural#.</text></string>
+    <string id="st_wom_territory_here_infest_001"><text>Начни с того, что отсюда слышно. Точка — #location#, вот там, — логово, и там #plural#.</text></string>
+    <string id="st_wom_territory_here_infest_002"><text>Вот там, потому я и стою тут снаружи. #plural# устроили на точке — #location# логово.</text></string>
+
+    <!-- ===== conquer with outpost services: every line names them ===== -->
+    <string id="st_wom_territory_service_conquer_001"><text>Точку — #location# теперь держат #plural#. У них там даже #service_list# работает.</text></string>
+    <string id="st_wom_territory_service_conquer_002"><text>На точке — #location# теперь #plural#, и они успели поставить там #service_list#.</text></string>
+    <string id="st_wom_territory_service_conquer_003"><text>На точку — #location# и правда стоит зайти — там теперь #plural#, а при них есть #service_role#.</text></string>
+    <string id="st_wom_territory_service_conquer_004"><text>#plural# сделали точку — #location# своею, и там уже есть #service_list#.</text></string>
+    <string id="st_wom_territory_service_conquer_005"><text>Хозяева на точке — #location# теперь #plural#. Нужен #service_role# — тебе туда.</text></string>
+    <string id="st_wom_territory_service_conquer_006"><text>#Ago# точку — #location# заняли #plural#, и там уже есть #service_list#.</text></string>
+    <string id="st_wom_territory_service_conquer_007"><text>Если есть дела — иди на точку — #location#. Там теперь #plural#, а при них #service_list#.</text></string>
+    <string id="st_wom_territory_service_conquer_008"><text>#plural# превращают точку — #location# в настоящую базу. #service_list#, если я не ошибаюсь.</text></string>
+
+    <string id="st_wom_territory_fading_conquer_001"><text>#plural# держали точку — #location#, когда я слышал в последний раз, но это было давно.</text></string>
+    <string id="st_wom_territory_fading_conquer_002"><text>Раньше на точке — #location# были #plural# — если их оттуда не выбили с тех пор.</text></string>
+    <string id="st_wom_territory_fading_conquer_003"><text>Говорили, что точку — #location# держат #plural#, но слухи уже подстыли.</text></string>
+    <string id="st_wom_territory_fading_conquer_004"><text>Когда я знал в последний раз, на точке — #location# были #plural# — но головой за это не поручусь.</text></string>
+    <string id="st_wom_territory_fading_conquer_005"><text>#Ago# на точке — #location# сидели #plural#, и другого мне с тех пор никто не говорил.</text></string>
+
+    <!-- ===== swarm: a mutant pack took an empty camp ===== -->
+    <string id="st_wom_territory_held_swarm_001"><text>Точка — #location# больше не чья-то — там теперь #plural#.</text></string>
+    <string id="st_wom_territory_held_swarm_002"><text>Точку — #location# обходи стороной. Там живут #plural#.</text></string>
+    <string id="st_wom_territory_held_swarm_003"><text>#plural# прошли через точку — #location# и не ушли, так что место пустует.</text></string>
+    <string id="st_wom_territory_held_swarm_004"><text>#Ago# #plural# захватили точку — #location#, и они всё ещё там.</text></string>
+    <string id="st_wom_territory_held_swarm_005"><text>Кто был на точке — #location#, того уже нет — теперь там #plural#.</text></string>
+
+    <string id="st_wom_territory_fading_swarm_001"><text>На точке — #location# были #plural#, когда я слышал в последний раз, а было это давно.</text></string>
+    <string id="st_wom_territory_fading_swarm_002"><text>Короче, #plural# держали точку — #location# — может, их уже вычистили, может, и нет.</text></string>
+    <string id="st_wom_territory_fading_swarm_003"><text>Говорили, что точку — #location# захватили #plural#. Что там снова чисто, мне никто не говорил.</text></string>
+    <string id="st_wom_territory_fading_swarm_004"><text>#Ago# точку — #location# захватили #plural#. Так ли сейчас — не скажу.</text></string>
+
+    <!-- ===== infest: an alpha turned a lair into a nest ===== -->
+    <string id="st_wom_territory_held_infest_001"><text>Хм... Вроде #plural# устроили на точке — #location# логово, и в середине там что-то крупное.</text></string>
+    <string id="st_wom_territory_held_infest_002"><text>На точку — #location# вообще не суйся: там #plural#, и они расплодились.</text></string>
+    <string id="st_wom_territory_held_infest_003"><text>На точке — #location# теперь логово, и #plural# там каждый день всё больше.</text></string>
+    <string id="st_wom_territory_held_infest_004"><text>#Ago# #plural# превратили точку — #location# в гнездо, и стало только хуже.</text></string>
+    <string id="st_wom_territory_held_infest_005"><text>Кто говорит, что через точку — #location# можно пройти, тот там давно не был. Гнездятся там #plural#.</text></string>
+
+    <string id="st_wom_territory_fading_infest_001"><text>На точке — #location# было логово, #plural#, когда я слышал в последний раз — и с тех пор тишина.</text></string>
+    <string id="st_wom_territory_fading_infest_002"><text>Короче: #plural# держали логово на точке — #location# — может, ещё там, а может, и ушли уже.</text></string>
+    <string id="st_wom_territory_fading_infest_003"><text>Говорили, что #plural# гнездятся на точке — #location#. Но было это давно.</text></string>
+    <string id="st_wom_territory_fading_infest_004"><text>#Ago# на точке — #location# — были #plural#. Что там теперь пусто, мне не говорили.</text></string>
+</string_table>

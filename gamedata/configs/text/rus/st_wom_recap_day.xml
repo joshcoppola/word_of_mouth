@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+ <!-- ========================================================================= -->
+ <!-- Word of Mouth / Daily recap answer pool         -->
+ <!--                   -->
+ <!-- PRONOUN TOKENS (resolved by squad size: lone stalker vs 2+ squad):  -->
+ <!-- #Im_Were_u# -> I'm / We're  #Ive_Weve_u# -> I've / We've  #I_We_u# -> I / We  -->
+ <!-- #I_we_l# -> I / we   #my_our_l# -> my / our   #me_us_l# -> me / us  -->
+ <!-- DATA TOKENS: #location# (destination), #level#. A variant using a data -->
+ <!-- token is skipped when that data is missing, so keep a token-free line in -->
+ <!-- each generic pool. Author one line; it reads correctly singular OR plural.-->
+ <!-- ========================================================================= -->
+
+
+ <!-- Actor question for the "What have you been up to?" dialog topic -->
+ <string id="st_wom_ask_recap"><text>Чем занимался последнее время?</text></string>
+
+ <!-- ========================================================================= -->
+ <!-- SQUAD STATUS (first line — render_squad_status)       -->
+ <!-- No trailing period; Lua adds "." or ", <absent clause>."     -->
+ <!-- ========================================================================= -->
+
+ <!-- Alone (npc_count <= 1) -->
+ <string id="st_wom_recap_status_alone_001"><text>Сейчас я один</text></string>
+ <string id="st_wom_recap_status_alone_002"><text>Хожу сам по себе</text></string>
+ <string id="st_wom_recap_status_alone_003"><text>Сегодня один тут кручусь</text></string>
+
+ <!-- Leader, 2-member squad: #partner_name# = other member's first name -->
+ <string id="st_wom_recap_status_leader_pair_001"><text>Сейчас хожу в паре с #partner_name#</text></string>
+ <string id="st_wom_recap_status_leader_pair_002"><text>Хожу с #partner_name#, командую я</text></string>
+
+ <!-- Leader, 3+ squad: #squad_term# = faction collective noun, #squad_count# = number word -->
+ <string id="st_wom_recap_status_leader_squad_001"><text>Сейчас веду людей, нас тут #squad_term# #squad_count# человек</text></string>
+ <string id="st_wom_recap_status_leader_squad_002"><text>Командую тут ребятам, уже набралась #squad_term#, в группе #squad_count# человек</text></string>
+
+ <!-- Follower, 2-member squad: #leader_name# = commander's first name -->
+ <string id="st_wom_recap_status_follower_pair_001"><text>Сейчас хожу в паре, #leader_name# ведёт</text></string>
+ <string id="st_wom_recap_status_follower_pair_002"><text>Работаю под началом #leader_name#, нас всего двое</text></string>
+
+ <!-- Follower, 3+ squad: #leader_name#, #squad_term#, #squad_count# -->
+ <string id="st_wom_recap_status_follower_squad_001"><text>Иду за #leader_name#, нас #squad_count# в группе #squad_term#</text></string>
+ <string id="st_wom_recap_status_follower_squad_002"><text>Хожу с группой под началом #leader_name#, в отряде #squad_count# человек</text></string>
+
+ <!-- Follower, 2-member, no commander resolved: no leader name available -->
+ <string id="st_wom_recap_status_member_pair_001"><text>Сейчас хожу ещё с одним</text></string>
+ <string id="st_wom_recap_status_member_pair_002"><text>Нас тут двое</text></string>
+
+ <!-- Follower, 3+ squad, no commander resolved: #squad_term#, #squad_count# -->
+ <string id="st_wom_recap_status_member_squad_001"><text>Сейчас в составе группы #squad_term# из #squad_count# человек</text></string>
+ <string id="st_wom_recap_status_member_squad_002"><text>Хожу в отряде из #squad_count# человек</text></string>
+
+ <!-- Absent-member appended clause (Lua lowercases first letter via decapitalize_clause) -->
+ <!-- Singular: #absent_name# -->
+ <string id="st_wom_recap_status_absent_one_001"><text>хотя не знаю, чем сейчас занят #absent_name#</text></string>
+ <string id="st_wom_recap_status_absent_one_002"><text>хотя не уверен, где сейчас #absent_name#</text></string>
+ <!-- Plural: #absent_names# = joined list of first names -->
+ <string id="st_wom_recap_status_absent_many_001"><text>хотя не знаю, чем заняты #absent_names#</text></string>
+ <string id="st_wom_recap_status_absent_many_002"><text>хотя не уверен, где сейчас #absent_names#</text></string>
+
+ <!-- ========================================================================= -->
+ <!-- RANK-FLAVORED OPENERS              -->
+ <!-- ========================================================================= -->
+
+ <!-- quiet day -->
+ <string id="st_wom_ask_recap_quiet_novice_001"><text>Если честно? Просто стараюсь не словить пулю. Тихий день, я не против.</text></string>
+ <string id="st_wom_ask_recap_quiet_novice_002"><text>В передряги не влипал, если ты об этом. Тут это уже достижение.</text></string>
+ <string id="st_wom_ask_recap_quiet_novice_003"><text>Ничего особенного. Всё ещё привыкаю к таким дням.</text></string>
+
+ <string id="st_wom_ask_recap_quiet_veteran_001"><text>Тихо. Меня устраивает.</text></string>
+ <string id="st_wom_ask_recap_quiet_veteran_002"><text>Сегодня вялый день. Не жалуюсь.</text></string>
+ <string id="st_wom_ask_recap_quiet_veteran_003"><text>Немного. И ладно.</text></string>
+
+ <string id="st_wom_ask_recap_quiet_master_001"><text>Сегодня ничего. В Зоне это уже неплохо.</text></string>
+ <string id="st_wom_ask_recap_quiet_master_002"><text>Тихо. Со временем начинаешь это ценить.</text></string>
+ <string id="st_wom_ask_recap_quiet_master_003"><text>Рассказывать особо нечего. Зона дала мне сегодня передохнуть.</text></string>
+
+ <!-- 1-2 interesting events -->
+ <string id="st_wom_ask_recap_intro_some_novice_001"><text>Кое-что случилось. Всё ещё не пойму, что к чему.</text></string>
+ <string id="st_wom_ask_recap_intro_some_novice_002"><text>Денёк выдался тот ещё, если честно.</text></string>
+
+ <string id="st_wom_ask_recap_intro_some_veteran_001"><text>Пара вещей. Ничего необычного.</text></string>
+ <string id="st_wom_ask_recap_intro_some_veteran_002"><text>Было немного движухи. Не сказать чтобы много.</text></string>
+
+ <string id="st_wom_ask_recap_intro_some_master_001"><text>Пара вещей, о которых стоит сказать.</text></string>
+ <string id="st_wom_ask_recap_intro_some_master_002"><text>Слегка неспокойный день.</text></string>
+
+ <!-- 3+ interesting events -->
+ <string id="st_wom_ask_recap_intro_novice_001"><text>Сегодня много всего было... если честно, до сих пор укладываю в голове.</text></string>
+ <string id="st_wom_ask_recap_intro_novice_002"><text>Насыщенный день. Больше, чем я ожидал.</text></string>
+
+ <string id="st_wom_ask_recap_intro_veteran_001"><text>Хлопотный день был. Дай расскажу по порядку.</text></string>
+ <string id="st_wom_ask_recap_intro_veteran_002"><text>Полный день выдался. Вот короткая версия.</text></string>
+
+ <string id="st_wom_ask_recap_intro_master_001"><text>Долгий день. Рассказать подробно?</text></string>
+ <string id="st_wom_ask_recap_intro_master_002"><text>Всякого хватало. Расскажу коротко.</text></string>
+
+ <!-- ========================================================================= -->
+ <!-- SECRETIVE answers               -->
+ <!-- ========================================================================= -->
+ <string id="st_wom_ask_generic_secretive_001"><text>Это тебя не касается.</text></string>
+ <string id="st_wom_ask_generic_secretive_002"><text>Занимаюсь #my_our_l# делами. Советую и тебе делать так же.</text></string>
+ <string id="st_wom_ask_generic_secretive_003"><text>Об этом знать не обязательно.</text></string>
+ <string id="st_wom_ask_generic_secretive_004"><text>Не могу тебе этого рассказать.</text></string>
+ <string id="st_wom_ask_generic_secretive_005"><text>Не твоё дело.</text></string>
+ <string id="st_wom_ask_generic_secretive_006"><text>Извини, но это не подлежит разглашению.</text></string>
+
+ <!-- ========================================================================= -->
+ <!-- RECAP ("What have you been up to today?")         -->
+ <!-- ========================================================================= -->
+
+ <!-- opener for a quiet day -->
+ <string id="st_wom_ask_recap_quiet_001"><text>Сегодня особо ничем не занимался. Просто отдыхаю.</text></string>
+ <string id="st_wom_ask_recap_quiet_002"><text>Пока тихо. Просто существую тут.</text></string>
+ <string id="st_wom_ask_recap_quiet_003"><text>Ничего интересного не происходит. Наслаждаюсь жизнью в Зоне.</text></string>
+ <string id="st_wom_ask_recap_quiet_004"><text>Вялый выдался денёк. В основном просто время убиваю.</text></string>
+ <string id="st_wom_ask_recap_quiet_005"><text>Рассказывать особо нечего. В основном языком трепал.</text></string>
+ <string id="st_wom_ask_recap_quiet_006"><text>Ничего особенного. Живу себе потихоньку, как обычно.</text></string>
+ <string id="st_wom_ask_recap_quiet_007"><text>Тихий день. Снаряжение почистил, ноги размял — обычные дела.</text></string>
+ <string id="st_wom_ask_recap_quiet_008"><text>Не скажу, что много случилось. Просто убиваю время.</text></string>
+ <string id="st_wom_ask_recap_quiet_009"><text>Особо ничем не занимался. В основном держусь подальше от неприятностей.</text></string>
+ <string id="st_wom_ask_recap_quiet_010"><text>Медленный день. Жду следующее задание.</text></string>
+
+ <!-- 1-2 interesting events -->
+ <string id="st_wom_ask_recap_intro_some_001"><text>Хм...</text></string>
+ <string id="st_wom_ask_recap_intro_some_002"><text>Кое-что было.</text></string>
+ <string id="st_wom_ask_recap_intro_some_003"><text>Так, дай вспомню...</text></string>
+ <string id="st_wom_ask_recap_intro_some_004"><text>Не сказать чтобы совсем скучно.</text></string>
+
+ <!-- 3+ interesting events -->
+ <string id="st_wom_ask_recap_intro_001"><text>Денёк выдался насыщенный.</text></string>
+ <string id="st_wom_ask_recap_intro_002"><text>Сегодня много всего было. Дай подумаю...</text></string>
+ <string id="st_wom_ask_recap_intro_003"><text>С чего бы начать?</text></string>
+ <string id="st_wom_ask_recap_intro_004"><text>Много всего произошло.</text></string>
+
+ <!-- fallback (no events at all) -->
+ <string id="st_wom_ask_recap_none_001"><text>Просто не высовываюсь. Рассказывать нечего.</text></string>
+ <string id="st_wom_ask_recap_none_002"><text>Тихий день, в общем. Докладывать не о чем.</text></string>
+ <string id="st_wom_ask_recap_none_003"><text>Правда особо ничем не занимался.</text></string>
+ <string id="st_wom_ask_recap_none_004"><text>Ничего особенного.</text></string>
+
+ <!-- generic past fallback -->
+ <string id="st_wom_ask_recap_generic_001"><text>#Iwas# #action# #to_location#.</text></string>
+ <string id="st_wom_ask_recap_generic_002"><text>#I_we_blank_l# было дело #at_location#.</text></string>
+
+ <!-- lead-in for the closing line -->
+ <string id="st_wom_ask_recap_now_lead_001"><text>А сейчас?</text></string>
+ <string id="st_wom_ask_recap_now_lead_002"><text>А прямо сейчас?</text></string>
+ <string id="st_wom_ask_recap_now_lead_003"><text>Что до текущего момента?</text></string>
+ <string id="st_wom_ask_recap_now_lead_004"><text>А в данный момент?</text></string>
+ <string id="st_wom_ask_recap_now_lead_005"><text>А сейчас вот стою тут.</text></string>
+
+ <!-- busy-day summary of mundane activities -->
+ <string id="st_wom_ask_recap_lowsummary_001"><text>Кроме того, немного времени провёл за тем, что #list#.</text></string>
+ <string id="st_wom_ask_recap_lowsummary_002"><text>Ещё немного #list#.</text></string>
+ <string id="st_wom_ask_recap_lowsummary_alone_001"><text>Ничего особо интересного. В основном весь день #list#.</text></string>
+ <string id="st_wom_ask_recap_low_chatting_001"><text>трепался языком</text></string>
+ <string id="st_wom_ask_recap_low_eating_001"><text>ел</text></string>
+ <string id="st_wom_ask_recap_low_sleeping_001"><text>спал</text></string>
+ <string id="st_wom_ask_recap_low_resting_001"><text>отдыхал</text></string>
+ <string id="st_wom_ask_recap_low_sheltering_001"><text>отсиживался</text></string>
+ <string id="st_wom_ask_recap_low_healing_001"><text>лечился</text></string>
+
+ <!-- PER-GOAL RECAP LINES -->
+<string id="st_wom_ask_recap_massacre_investigate_001a"><text>#I_we_blank_l# не получил вестей от одного отряда #at_location#. Пошёл проверить, что там.</text></string>
+ <string id="st_wom_ask_recap_massacre_investigate_001b"><text>#I_we_l# узнал о пропавшем отряде #at_location#. Пошёл глянуть, в чём дело.</text></string>
+ <string id="st_wom_ask_recap_massacre_investigate_002a"><text>потерял связь с ещё одним отрядом #at_location#, пошёл на разведку, ожидая худшего.</text></string>
+ <string id="st_wom_ask_recap_massacre_investigate_003a"><text>#I_we_blank_l# проверил ещё один пропавший отряд #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_massacre_loot_001a"><text>узнал о большой драке #at_location#. Пошёл поживиться, чем можно.</text></string>
+ <string id="st_wom_ask_recap_massacre_loot_002a"><text>#I_we_blank_l# пошёл проверить место ещё одной стычки #at_location#.</text></string>
+ <string id="st_wom_ask_recap_massacre_loot_003a"><text>богатый день в Зоне выдался. Узнал о ещё одной драке #at_location#. Пошёл там всё подчистить.</text></string>
+
+ <string id="st_wom_ask_recap_massacre_scavenge_001a"><text>#I_we_blank_l# услышал о большой стычке #at_location#. Пошёл и поживился, чем смог.</text></string>
+ <string id="st_wom_ask_recap_massacre_scavenge_002a"><text>#I_we_blank_l# услышал о ещё одной резне. Направился #to_location# пошарить по карманам.</text></string>
+
+ <string id="st_wom_ask_recap_stash_loot_001a"><text>#I_we_blank_l# пошёл вскрыть тайник #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_loot_001b"><text>#I_we_blank_l# прогулялся #to_location# за тайником.</text></string>
+ <string id="st_wom_ask_recap_stash_loot_002a"><text>#I_we_blank_l# снова пошёл вскрывать тайник #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_loot_003a"><text>#I_we_blank_l# опять решил найти тайник #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_stash_fill_001a"><text>#I_we_blank_l# отправился спрятать снаряжение в тайнике #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_fill_001b"><text>#I_we_blank_l# пошёл заныкать снаряжение #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_fill_001c"><text>пошёл спрятать снаряжение в укромном месте #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_fill_002a"><text>#I_we_blank_l# снова отправился припрятать снаряжение в ещё одном тайнике #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_fill_003a"><text>#I_we_blank_l# пошёл заныкать ещё кое-что в новом тайнике #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_fill_004a"><text>#I_we_blank_l# зачем-то отправился ещё на один тайниковый рейд #to_location#.</text></string>
+
+ <string id="st_wom_ask_recap_stash_ambush_001a"><text>#I_we_blank_l# устроил засаду у тайника #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_ambush_001b"><text>#I_we_blank_l# пошёл устроить засаду на сталкеров, проверявших тайник #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_ambush_002a"><text>#I_we_blank_l# устроил ещё одну засаду на сталкеров, обшаривающих тайник #at_location#.</text></string>
+ <string id="st_wom_ask_recap_stash_ambush_003a"><text>снова устроил засаду на сталкеров у тайника #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_basekill_support_001a"><text>#I_we_blank_l# помог с обороной #at_location#.</text></string>
+ <string id="st_wom_ask_recap_basekill_support_001b"><text>#I_we_blank_l# помог оборонять #at_location#.</text></string>
+ <string id="st_wom_ask_recap_basekill_support_002a"><text>#I_we_blank_l# помог укрепить оборону #at_location#.</text></string>
+ <string id="st_wom_ask_recap_basekill_support_003a"><text>вызвали защищать точку #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_basekill_flee_001a"><text>к сожалению, пришлось отступить #to_location# после обстрела.</text></string>
+ <string id="st_wom_ask_recap_basekill_flee_001b"><text>крепко досталось, пришлось отойти #to_location#.</text></string>
+ <string id="st_wom_ask_recap_basekill_flee_002a"><text>снова пришлось отступить и перегруппироваться #at_location#.</text></string>
+ <string id="st_wom_ask_recap_basekill_flee_003a"><text>#I_we_blank_l# опять был вынужден отступить, надеясь найти укрытие #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_squadkill_revenge_001a"><text>всплыло одно мрачное дело. Узнал, что какая-то банда положила наших людей #at_location#. Отправился их выследить.</text></string>
+ <string id="st_wom_ask_recap_squadkill_revenge_001b"><text>услышал, что один из наших отрядов разгромили. Отправился перехватить убийц #at_location#.</text></string>
+ <string id="st_wom_ask_recap_squadkill_revenge_002a"><text>потом ещё одна месть назрела. Пошёл поквитаться с бандой #at_location#.</text></string>
+ <string id="st_wom_ask_recap_squadkill_revenge_003a"><text>снова пришли вести о том, что кто-то обидел наших людей. Пошёл их выследить #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_area_conquer_001a"><text>#I_we_blank_l# занял позиции #at_location#.</text></string>
+ <string id="st_wom_ask_recap_area_conquer_001b"><text>#I_we_blank_l# застолбил территорию #at_location#.</text></string>
+ <string id="st_wom_ask_recap_area_conquer_001c"><text>#I_we_blank_l# захватил территорию #at_location#.</text></string>
+ <string id="st_wom_ask_recap_area_conquer_002a"><text>потратил ещё время, закрепляясь на территории #at_location#.</text></string>
+ <string id="st_wom_ask_recap_area_conquer_003a"><text>#I_we_blank_l# застолбил ещё немного территории #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_job_explore_001a"><text>#I_we_blank_l# отправился на разведку #to_location#.</text></string>
+ <string id="st_wom_ask_recap_job_explore_001b"><text>#I_we_l# пошёл на разведку #at_location#.</text></string>
+ <string id="st_wom_ask_recap_job_explore_002a"><text>#I_we_blank_l# ещё поразведывал местность #at_location#.</text></string>
+ <string id="st_wom_ask_recap_job_explore_003a"><text>#I_we_blank_l# опять разведывал, на этот раз #at_location#.</text></string>
+ <string id="st_wom_ask_recap_job_explore_004a"><text>#I_we_blank_l# продолжил разведку #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_job_outpost_001a"><text>#I_we_blank_l# нёс вахту на посту #at_location#.</text></string>
+ <string id="st_wom_ask_recap_job_outpost_001b"><text>#I_we_blank_l# стоял на вахте #at_location#.</text></string>
+ <string id="st_wom_ask_recap_job_outpost_002a"><text>#I_we_blank_l# снова заступил на пост #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_job_research_001a"><text>#I_we_blank_l# провёл обследование #at_location#.</text></string>
+ <string id="st_wom_ask_recap_job_research_001b"><text>#I_we_blank_l# снимал показания #at_location#.</text></string>
+ <string id="st_wom_ask_recap_job_research_002a"><text>#I_we_blank_l# снял ещё показания #at_location#.</text></string>
+ <string id="st_wom_ask_recap_job_research_003a"><text>#I_we_blank_l# провёл ещё одно обследование, на этот раз #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_social_base_001a"><text>#I_we_blank_l# провёл время #at_location#, трепался со сталкерами.</text></string>
+ <string id="st_wom_ask_recap_social_base_001b"><text>потрепался немного #at_location#.</text></string>
+ <string id="st_wom_ask_recap_social_base_002a"><text>#I_we_blank_l# ещё потрепался #at_location#.</text></string>
+ <string id="st_wom_ask_recap_social_base_003a"><text>снова трепал языком #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_social_campfire_001a"><text>#I_we_blank_l# обменялся байками #at_location#.</text></string>
+ <string id="st_wom_ask_recap_social_campfire_001b"><text>провёл время, обсуждавая новости #at_location#.</text></string>
+ <string id="st_wom_ask_recap_social_campfire_002a"><text>#I_we_blank_l# ещё потрепался #at_location#.</text></string>
+ <string id="st_wom_ask_recap_social_campfire_003a"><text>#I_we_blank_l# задержался #at_location#, чтобы ещё поболтать.</text></string>
+
+ <string id="st_wom_ask_recap_rest_campfire_001a"><text>#I_we_blank_l# передохнул немного #at_location#.</text></string>
+ <string id="st_wom_ask_recap_rest_campfire_001b"><text>#I_we_blank_l# отдохнул чуток #at_location#.</text></string>
+ <string id="st_wom_ask_recap_rest_campfire_002a"><text>#I_we_blank_l# снова передохнул #at_location#.</text></string>
+ <string id="st_wom_ask_recap_rest_campfire_003a"><text>#I_we_blank_l# опять отдохнул #at_location#.</text></string>
+ <string id="st_wom_ask_recap_rest_campfire_004a"><text>#I_we_blank_l# ещё раз отдохнул подольше #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_sleep_campfire_001a"><text>#I_we_blank_l# урвал немного сна #at_location#.</text></string>
+ <string id="st_wom_ask_recap_sleep_campfire_002a"><text>#I_we_blank_l# снова немного поспал #at_location#.</text></string>
+ <string id="st_wom_ask_recap_sleep_campfire_003a"><text>в третий раз попытался вздремнуть #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_hunger_campfire_001a"><text>#I_we_blank_l# перекусил #at_location#.</text></string>
+ <string id="st_wom_ask_recap_hunger_campfire_001b"><text>#I_we_blank_l# подкрепился #at_location#.</text></string>
+ <string id="st_wom_ask_recap_hunger_campfire_001c"><text>поел #at_location#.</text></string>
+ <string id="st_wom_ask_recap_hunger_campfire_002a"><text>#I_we_blank_l# ещё перекусил #at_location#.</text></string>
+ <string id="st_wom_ask_recap_hunger_campfire_003a"><text>снова остановился поесть #at_location#.</text></string>
+ <string id="st_wom_ask_recap_hunger_campfire_004a"><text>ну, в последнее время сильно проголодался. Остановился перекусить #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_heal_shelter_001a"><text>#I_we_blank_l# потратил время #at_location#, чтобы подлечиться.</text></string>
+ <string id="st_wom_ask_recap_heal_shelter_001b"><text>#I_we_blank_l# пришлось выделить пару минут на лечение #at_location#.</text></string>
+ <string id="st_wom_ask_recap_heal_shelter_002a"><text>#I_we_blank_l# потребовалось больше времени, чтобы залечиться #at_location#.</text></string>
+ <string id="st_wom_ask_recap_heal_shelter_002b"><text>#I_we_blank_l# пришлось потратить больше времени на лечение #at_location#.</text></string>
+ <string id="st_wom_ask_recap_heal_shelter_003a"><text>каким-то образом снова потребовалось ещё больше времени на лечение #at_location#.</text></string>
+ <string id="st_wom_ask_recap_heal_shelter_003b"><text>каким-то образом снова понадобилось ещё больше времени на восстановление #at_location#.</text></string>
+ <string id="st_wom_ask_recap_heal_shelter_004a"><text>звучит нелепо, но снова понадобилась передышка, чтобы подлечиться #at_location#.</text></string>
+ <string id="st_wom_ask_recap_heal_shelter_005a"><text>#I_we_blank_l# к сожалению снова пришлось подлечиться #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_shelter_indoor_001a"><text>#I_we_blank_l# отсиделся немного #at_location#.</text></string>
+ <string id="st_wom_ask_recap_shelter_indoor_002a"><text>#I_we_blank_l# ещё провёл время в укрытии #at_location#.</text></string>
+ <string id="st_wom_ask_recap_shelter_indoor_003a"><text>#I_we_blank_l# провёл ещё больше времени в укрытии #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_shelter_outdoor_001a"><text>#I_we_blank_l# отсиделся #at_location#.</text></string>
+ <string id="st_wom_ask_recap_shelter_outdoor_002a"><text>#I_we_blank_l# провёл ещё немного времени под открытым небом #at_location#.</text></string>
+ <string id="st_wom_ask_recap_shelter_outdoor_003a"><text>#I_we_blank_l# снова отсиделся #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_money_harvest_001a"><text>#I_we_blank_l# охотился за артефактами #at_location#.</text></string>
+ <string id="st_wom_ask_recap_money_harvest_001b"><text>#I_we_blank_l# отправился на охоту за артефактами #at_location#.</text></string>
+ <string id="st_wom_ask_recap_money_harvest_002a"><text>#I_we_blank_l# ещё поохотился за артефактами #at_location#.</text></string>
+ <string id="st_wom_ask_recap_money_harvest_003a"><text>#I_we_blank_l# отправился на ещё одну охоту за артефактами #at_location#.</text></string>
+ <string id="st_wom_ask_recap_money_harvest_004a"><text>#I_we_blank_l# продолжил #my_our_l# похождения в поисках артефактов #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_money_hunt_001a"><text>#I_we_blank_l# отправился охотиться на мутантов #at_location#.</text></string>
+ <string id="st_wom_ask_recap_money_hunt_001b"><text>#I_we_blank_l# пошёл на охоту на мутантов #at_location#.</text></string>
+ <string id="st_wom_ask_recap_money_hunt_002a"><text>#I_we_blank_l# отправился на ещё одну охоту на мутантов #at_location#.</text></string>
+ <string id="st_wom_ask_recap_money_hunt_003a"><text>#I_we_blank_l# отправился на #my_our_l# третью охоту за день #at_location#.</text></string>
+ <string id="st_wom_ask_recap_money_hunt_004a"><text>#I_we_blank_l# отправился на очередную вылазку в поисках мутантов #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_harvest_rob_001a"><text>#I_we_blank_l# потряс охотников за артефактами #at_location#.</text></string>
+ <string id="st_wom_ask_recap_harvest_rob_001b"><text>#I_we_blank_l# выследил охотников за артефактами #at_location#.</text></string>
+ <string id="st_wom_ask_recap_harvest_rob_002a"><text>#I_we_blank_l# прознал ещё об охотниках за артефактами #at_location#. Выследил их и славно побеседовал.</text></string>
+ <string id="st_wom_ask_recap_harvest_rob_003a"><text>#I_we_blank_l# посчастливилось наткнуться ещё на охотников за артефактами #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_wounded_help_001a"><text>Короче, #I_we_blank_l# узнал, что кого-то ранили #near_location#, и пошёл на помощь.</text></string>
+ <string id="st_wom_ask_recap_wounded_help_001b"><text>В общем, #I_we_blank_l# пошёл вытаскивать раненых сталкеров #near_location#.</text></string>
+ <string id="st_wom_ask_recap_wounded_help_002a"><text>снова отправился помогать раненым #near_location#.</text></string>
+ <string id="st_wom_ask_recap_wounded_help_003a"><text>Такая инфа: #I_we_l# пошёл помогать ещё раненым #near_location#.</text></string>
+
+ <string id="st_wom_ask_recap_wounded_hunt_001a"><text>#I_we_blank_l# выследил раненых целей #near_location#.</text></string>
+ <string id="st_wom_ask_recap_wounded_hunt_001b"><text>услышал, что кого-то серьёзно ранили #near_location#. Двинулся туда.</text></string>
+ <string id="st_wom_ask_recap_wounded_hunt_002a"><text>снова услышал о раненых, которых надо выследить #near_location#.</text></string>
+ <string id="st_wom_ask_recap_wounded_hunt_003a"><text>ещё раз пошёл за ранеными целями #near_location#.</text></string>
+
+ <string id="st_wom_ask_recap_supply_trader_001a"><text>#I_we_blank_l# сделал вылазку за припасами #to_location#.</text></string>
+ <string id="st_wom_ask_recap_supply_trader_001b"><text>#I_we_blank_l# отправился пополнить запасы снаряжения #at_location#.</text></string>
+ <string id="st_wom_ask_recap_supply_trader_002a"><text>#I_we_blank_l# сходил ещё за припасами #at_location#.</text></string>
+ <string id="st_wom_ask_recap_supply_trader_002b"><text>#I_we_blank_l# отправился #to_location# за снаряжением.</text></string>
+ <string id="st_wom_ask_recap_supply_trader_003a"><text>#I_we_blank_l# сделал ещё одну вылазку за припасами #to_location#.</text></string>
+ <string id="st_wom_ask_recap_supply_trader_003b"><text>#I_we_blank_l# провёл ещё время, закупая снаряжение #at_location#.</text></string>
+ <string id="st_wom_ask_recap_supply_trader_004a"><text>#I_we_blank_l# отправился в очередную вылазку за припасами #to_location#.</text></string>
+
+ <string id="st_wom_ask_recap_roam_001a"><text>#I_we_blank_l# бродил без дела #at_location#.</text></string>
+ <string id="st_wom_ask_recap_roam_001b"><text>#I_we_blank_l# немного побродил #at_location#.</text></string>
+ <string id="st_wom_ask_recap_roam_002a"><text>что-то не сиделось на месте, и провёл время, бродя #at_location#.</text></string>
+ <string id="st_wom_ask_recap_roam_003a"><text>#I_we_blank_l# ещё побродил #at_location#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_kill1_001a"><text>#I_we_blank_l# наткнулся на противника — это был #a_member_other# — #at_location# и завалил его.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_001b"><text>#I_we_blank_l# уложил противника — это был #a_member_other# — #at_location#.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_001c"><text>#I_we_blank_l# заметил противника — это был #a_member_other# — #at_location# и разобрался с ним.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_001d"><text>наткнулся на противника — это был #a_member_other# — #at_location# и завалил его прежде, чем тот успел моргнуть.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_001e"><text>#I_we_blank_l# пересёкся с противника — это был #a_member_other# — #at_location#, одним уродом в Зоне меньше.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_001f"><text>наткнулся на противника — это был #a_member_other# — и завалил его.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_001g"><text>ввязался в небольшую перестрелку и завалил противника — это был #a_member_other#.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_001h"><text>схлестнулся с противником — это был #a_member_other#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_kill1_002a"><text>досталось ещё движухи, когда наткнулся на противника — это был #a_member_other# — #at_location# и завалил его.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_002b"><text>влип ещё в одну перестрелку, на этот раз уложил противника — это был #a_member_other# — #at_location#.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_002c"><text>Короче, #I_we_blank_l# влип в очередную драку и разобрался с противника — это был #a_member_other#.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_002d"><text>досталось ещё движухи, продырявил противника — это был #a_member_other#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_kill1_003a"><text>#I_we_blank_l# видел ещё больше движухи, наткнулся на противника — это был #a_member_other# — #at_location# и прикончил его.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_003b"><text>#I_we_blank_l# опять влип, на этот раз прикончил противника — это был #a_member_other#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_001a"><text>наткнулись на группу из #count_other# #at_location#, убили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_001b"><text>#I_we_blank_l# схлестнулся с группой из #count_other# #at_location#, убили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_001c"><text>#I_we_blank_l# ударил по группе из #count_other# #at_location#, убив #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_001d"><text>убили #kills# #plural_other# #at_location#.</text></string>
+ <string id="st_wom_ask_recap_combat_001e"><text>#I_we_blank_l# уложил #kills# #plural_other# #at_location#.</text></string>
+ <string id="st_wom_ask_recap_combat_001f"><text>#I_we_blank_l# легко завалил #kills# #plural_other# в бою.</text></string>
+ <string id="st_wom_ask_recap_combat_001g"><text>наткнулся на #plural_other# и завалил #kills# без потерь.</text></string>
+
+ <string id="st_wom_ask_recap_combat_002a"><text>досталось ещё движухи, когда наткнулись на группу из #count_other# #at_location#, уложили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_002b"><text>#I_we_blank_l# снова ударил по группе из #count_other# #near_location#, убив #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_002c"><text>влип в ещё одну перестрелку, наткнулись на группу из #count_other#, убили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_002d"><text>влип в очередную драку, столкнулись с группой из #count_other#, убили #kills#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_003a"><text>Такая инфа: #I_we_blank_l# ввязался в очередную стычку, наткнулись на группу из #count_other# #at_location# и убили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_003b"><text>Слушай, #I_we_blank_l# ещё подрался, когда наткнулись на группу из #count_other# и завалили #kills#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_loss_001a"><text>ударили по группе из #count_other# #at_location#. Убили #kills#, потеряли #losses# наших.</text></string>
+ <string id="st_wom_ask_recap_combat_loss_001b"><text>дрались с группой из #count_other# #at_location#. Уложили #kills#, но потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_loss_001c"><text>#I_we_blank_l# схлестнулся с группой из #count_other# #at_location#. Убили #kills#, потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_loss_001d"><text>#I_we_blank_l# потерял наших #losses# в стычке с группой из #count_other#, зато убили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_loss_001e"><text>Короче, #I_we_blank_l# дрался с группой из #count_other#, убили #kills#, но потеряли наших #losses#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_loss_002a"><text>ещё одна драка, наткнулись на группу из #count_other# #at_location#. Убили #kills#, потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_loss_002b"><text>ещё подрались, наткнулись на группу из #count_other# и убили #kills#, но потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_loss_002c"><text>была ещё одна стычка, потеряли наших #losses#, столкнувшись с группой из #count_other#, зато убили #kills#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_loss_003a"><text>ещё один тяжёлый бой, накрыли группу из #count_other# #at_location#. Убили #kills#, потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_loss_003b"><text>ещё бой, наткнулись на группу из #count_other# и убили #kills#, но потеряли наших #losses#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_kill1_loss_001a"><text>#I_we_blank_l# наткнулся на группу из #count_other# #at_location#, завалил одного, но потерял наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_loss_001b"><text>сцепился с группой из #count_other# #at_location#, взял одного, но потерял наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_loss_001c"><text>#I_we_blank_l# пересёкся с группой из #count_other# #at_location#; убил одного, но потерял наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_loss_001d"><text>#I_we_blank_l# наткнулся на группу из #count_other#, завалил одного, но ценой наших #losses#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_kill1_loss_002a"><text>ещё одна стычка, когда наткнулись на группу из #count_other# #at_location#. Завалили одного, потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_loss_002b"><text>потеряли наших #losses# в очередной стычке, наткнулись на группу из #count_other#, но одного завалить успели.</text></string>
+
+ <string id="st_wom_ask_recap_combat_kill1_loss_003a"><text>досталось ещё движухи с группой из #count_other# #at_location#. Взял одного, но потерял наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_kill1_loss_003b"><text>досталось ещё движухи, наткнулись на группу из #count_other#, взял одного, но потерял наших #losses#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_skirmish_001a"><text>наткнулись на группу из #count_other# #at_location#, но обошлось без потерь с обеих сторон.</text></string>
+ <string id="st_wom_ask_recap_combat_skirmish_001b"><text>#I_we_blank_l# пересёкся с группой из #count_other# #at_location#, но никто не пострадал.</text></string>
+ <string id="st_wom_ask_recap_combat_skirmish_001c"><text>было противостояние с группой из #count_other# #at_location#, зато разошлись целыми.</text></string>
+ <string id="st_wom_ask_recap_combat_skirmish_001d"><text>наткнулись на группу из #count_other#, но обошлось без потерь с обеих сторон.</text></string>
+ <string id="st_wom_ask_recap_combat_skirmish_001e"><text>#I_we_blank_l# пересёкся с группой из #count_other#, но никто серьёзно не пострадал.</text></string>
+ <string id="st_wom_ask_recap_combat_skirmish_001f"><text>пересёкся с группой из #count_other#, зато разошлись целыми.</text></string>
+
+ <string id="st_wom_ask_recap_combat_skirmish_002a"><text>был ещё один бой без явного исхода, когда наткнулись на группу противника из #count_other# #at_location#.</text></string>
+ <string id="st_wom_ask_recap_combat_skirmish_002b"><text>ещё одно противостояние без исхода, когда наткнулись на группу противника из #count_other#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_skirmish_003a"><text>ещё одна встреча с группой противникаиз #count_other# #at_location#, потерь нет ни с одной стороны.</text></string>
+ <string id="st_wom_ask_recap_combat_skirmish_003b"><text>снова противостояние без результата, наткнулись на группу противника из #count_other#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_fell_back_001a"><text>наткнулись на группу противника из #count_other# #at_location#, потеряли наших #losses#, прежде чем удалось отступить.</text></string>
+ <string id="st_wom_ask_recap_combat_fell_back_001b"><text>досталось от группы противника из #count_other# #near_location#, потеряли наших #losses# и пришлось отойти.</text></string>
+ <string id="st_wom_ask_recap_combat_fell_back_001c"><text>группа противника из #count_other# ударила по нам #at_location#, отступили и потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_fell_back_001d"><text>наткнулись на группу противника из #count_other#, потеряли наших #losses#, прежде чем удалось отступить.</text></string>
+ <string id="st_wom_ask_recap_combat_fell_back_001e"><text>пришлось отступить от группы противника из #count_other#, потеряли наших #losses#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_fell_back_002a"><text>опять неудачный бой, наткнулись на группу из #count_other# #at_location# и потеряли наших #losses#, прежде чем оторвались.</text></string>
+ <string id="st_wom_ask_recap_combat_fell_back_002b"><text>опять не повезло, наткнулись на группу из #count_other# и потеряли наших #losses#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_fell_back_003a"><text>ещё одна неудачная встреча с группой из #count_other# #at_location#. Потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_fell_back_003b"><text>ещё плохие новости, потеряли наших #losses# из-за группы из #count_other#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_skirmish_001a"><text>оказались посреди противостояния между #participant_list# #at_location#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_skirmish_001b"><text>#I_we_blank_l# поучаствовал в стычке между #participant_list# #at_location#, но никого не завалил.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_skirmish_001c"><text>ввязался в бой с #participant_list# #at_location#, но никого не уложил.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_skirmish_001d"><text>был частью многосторонней драки с #participant_list#, без единого убийства.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_skirmish_001e"><text>поучаствовал в бою между #participant_list#, хоть и не сильно помог.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_skirmish_002a"><text>ещё один бой с участием #participant_list# #at_location#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_skirmish_002b"><text>ещё одна большая заваруха с участием #participant_list#, без убийств.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_001a"><text>оказался в стычке между #participant_list# #at_location#. В итоге #subject_identity# уложили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_001b"><text>#I_we_blank_l# влип в бой между #participant_list# #at_location#. В конце концов #subject_identity# в итоге уложили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_001c"><text>ввязался в драку между #participant_list# #at_location#. В итоге #subject_identity# взяли верх, #kills# положили.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_001d"><text>оказался в бою с #participant_list# #at_location#. В итоге #subject_identity# уложили #kills#, прежде чем всё закончилось.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_001e"><text>#I_we_blank_l# поучаствовал в стычке с #participant_list#, #subject_identity# уложили #kills#, прежде чем всё закончилось.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_002a"><text>стало ещё сумбурнее, ещё одна большая драка с участием #participant_list# #at_location#, #subject_identity# уложили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_002b"><text>была ещё одна большая драка с участием #participant_list#, #subject_identity# взяли #kills#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_003a"><text>ещё больше крови, влип в очередную стычку между #participant_list# #at_location#, #subject_identity# уложили #kills#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_003b"><text>Слушай, #I_we_blank_l# затянуло в очередной бой между #participant_list#, #subject_identity# уложили #kills#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_loss_001a"><text>#I_we_blank_l# поучаствовал в грязной схватке между #participant_list# #at_location#; #subject_identity# уложили #kills#, но потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_loss_001b"><text>#I_we_blank_l# затянуло в бой с участием #participant_list# #at_location#; #subject_identity# убили #kills#, потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_loss_001c"><text>убили #kills# и потеряли наших #losses# в хаотичном бою с участием #participant_list# #at_location#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_loss_001d"><text>#I_we_blank_l# был в большой драке, #participant_list# все сцепились; #subject_identity# уложили #kills#, но потеряли наших #losses#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_loss_002a"><text>ещё больше крови в очередной многосторонней драке с участием #participant_list# #at_location#; #subject_identity# убили #kills#, потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_loss_002b"><text>поучаствовал в очередной многосторонней драке с участием #participant_list#; #subject_identity# убили #kills# и потеряли наших #losses#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_loss_003a"><text>ещё один жестокий бой с участием #participant_list# #at_location#; #subject_identity# уложили #kills#, но потеряли наших #losses#.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_loss_003b"><text>#subject_identity# убили #kills# и потеряли наших #losses# в очередном жестоком бою с участием #participant_list#.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_fell_back_001a"><text>#I_we_blank_l# оказался в гуще боя между #participant_list# #at_location#, #subject_identity# потеряли наших #losses#, прежде чем удалось выйти из боя.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_fell_back_001b"><text>вспыхнула хаотичная драка с участием #participant_list# #at_location#; #subject_identity# потеряли наших #losses# и пришлось отступить.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_fell_back_001c"><text>оказался в бою между #participant_list# #at_location#, #subject_identity# потеряли наших #losses#, пытаясь оторваться.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_fell_back_001d"><text>#I_we_blank_l# оказался в бою с участием #participant_list#, #subject_identity# потеряли наших #losses#, но никого не уложили.</text></string>
+
+ <string id="st_wom_ask_recap_combat_multi_fell_back_002a"><text>оказался в ещё одной большой драке с участием #participant_list# #at_location#, #subject_identity# потеряли наших #losses#, прежде чем отступили.</text></string>
+ <string id="st_wom_ask_recap_combat_multi_fell_back_002b"><text>оказался в ещё одной большой драке с участием #participant_list#, #subject_identity# никого не завалили и потеряли наших #losses#.</text></string>
+
+</string_table>

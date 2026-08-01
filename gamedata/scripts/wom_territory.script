@@ -1,0 +1,509 @@
+--- wom_territory.script
+--- "Who's holding ground around here?" — which faction (or which mutants) currently
+--- holds which smart terrain on the actor's level, plus what a stalker remembers about
+--- takeovers that have since ended.
+---
+--- Why this is worth asking about: before ALifePlus 1.8.4 a conquest was additive —
+--- the winner's squads simply joined the respawn mix, so no one really owned anything.
+--- 1.8.4 makes the winner the sole owner of the smart: only its own squads respawn
+--- there, and the hold stands until it decays. That is a real, askable fact about the
+--- map, and a stalker who walks the area is exactly who would know it.
+---
+--- DETECTION — the smart terrain's own spawn pool, not a ledger of past events.
+--- ALifePlus takes a smart by writing three fields onto the smart server object through
+--- xsmart_spawn._write_exclusive:
+---     smart.faction_controlled = "ap_conquest" | "ap_swarm" | "ap_infest"
+---     smart.faction            = the holding faction or mutant species
+---     smart.respawn_params[key] = { ..., faction = identity }
+--- so one field read per smart answers whether the ground is taken, by whom, and by
+--- which kind of takeover. This is deliberately NOT ap_ext_smart_mutator.is_taken /
+--- is_infested: it reads the engine object those functions describe, which is also what
+--- an NPC walking past would infer from seeing only one faction's squads spawn there.
+---
+--- **`faction_controlled` is a vanilla field**, read from a smart's ltx section
+--- (smart_terrain.script:226), and roughly ten vanilla smarts ship with it set —
+--- esc_smart_terrain_6_8, gar_smart_terrain_3_5, three mil_smart_terrain_*, two in
+--- Marsh, cit_killers_vs_bandits, red_bridge_bandit_smart_skirmish, ds2_domik_st.
+--- A truthiness test on that field would therefore report Escape and Garbage as freshly
+--- conquered on every save, forever. Vanilla's value is a faction-list string, so the
+--- test MUST be an exact match against the three ALifePlus keys in TAKEOVER_KEYS.
+---
+--- Two classes of answer, and the split is what keeps this honest:
+---   • a live hold — confirmed by the spawn pool right now, so it is stated plainly
+---     from the `_held_<kind>` pools, or from `_service_<kind>` when the camp has grown
+---     outpost services and every line should name them. Timing is the only uncertain
+---     part: an AP record supplies "about six hours ago" when one still exists, and the
+---     line falls back to a timeless variant when it does not.
+---   • a remembered hold — an AP takeover record whose smart is NOT currently held.
+---     Either it decayed or the squad never arrived (records are written at dispatch),
+---     so it is hedged from the `_fading_<kind>` pools: "Duty had it last I heard,
+---     unless somebody has pushed them out since." Capped at the decay window so
+---     ancient memories do not pile up.
+---
+--- Nothing is persisted and nothing is baselined: both sources are derived on demand.
+--- Note that the engine wipes respawn_params and reverts smart.faction on load, and
+--- ALifePlus restores them on a 60-second re-apply pass, so for up to a minute after a
+--- load live holds read as absent (remembered holds still answer).
+---
+--- The speaker's own location leads the answer: when they are standing at a held camp —
+--- slotted into its jobs, posted there with their squad, or within HERE_RADIUS_METRES of
+--- it — that hold sorts first and renders from a `_here_` pool, with a separate
+--- `_here_own_` pool for the case where the camp belongs to the speaker's own faction.
+--- See _speaker_smart_id for why all three signals are needed.
+---
+--- Depends on: wom_dialogue_helper, wom_terminology_helper, wom_ap_bridge, wom_npc_role,
+---             wom_utils (squad resolution),
+---             wom_outpost (soft, for service role vocabulary),
+---             ap_api / xsmart / xlevel / xtime (soft)
+
+-- smart.faction_controlled values ALifePlus writes, mapped to the short kind key used in
+-- template prefixes and in wom_ap_bridge.get_area_decay_hours. These are the literal
+-- CONQUEST_KEY / SWARM_KEY / INFEST_KEY constants from ap_ext_smart_mutator.
+local TAKEOVER_KEYS = {
+    ap_conquest = "conquer",
+    ap_swarm    = "swarm",
+    ap_infest   = "infest",
+}
+
+-- Maps the three ALifePlus takeover causes to the same kind keys, for the record pass.
+local TAKEOVER_CAUSES = {
+    ["cause:area_conquer"] = "conquer",
+    ["cause:area_swarm"]   = "swarm",
+    ["cause:area_infest"]  = "infest",
+}
+
+-- respawn_params key pattern for an outpost service entry ("ap_service_trader"), which
+-- ALifePlus injects per role on a held smart and tears down on decay
+-- (ap_ext_smart_mutator._service_key / _role_from_key).
+local SERVICE_KEY_PATTERN = "^ap_service_(%a+)$"
+
+-- Most holds mentioned in one answer. Beyond this the NPC would be reciting a list.
+local MAX_REPORTED_HOLDS = 3
+
+-- How close the speaker must be to a held smart to count as standing at it, when neither
+-- the smart's job roster nor their squad places them there. Measured from the smart's
+-- centre point, so this is deliberately tight: "you are standing in it" should mean the
+-- speaker is actually inside the camp, not merely on its approach. The two stronger
+-- signals already cover anyone who belongs to the camp, so a small radius only affects
+-- passers-by, where being wrong reads worse than saying nothing.
+local HERE_RADIUS_METRES = 50
+
+-- ---- spawn-state pass -------------------------------------------------------
+
+-- Returns the set of outpost service roles whose respawn entry is present on a smart.
+-- Reads the same table the mutator writes, so a role appears as soon as ALifePlus grants
+-- it — which can be one respawn cycle before the service NPC itself exists. That is a
+-- small over-claim ("they have a trader") in exchange for needing no squad registry.
+-- @param smart userdata  smart terrain server object
+-- @return table  set { [role] = true }, possibly empty
+local function _services_at(smart)
+    local roles = {}
+    local params = smart.respawn_params
+    if type(params) ~= "table" then return roles end
+    for key in pairs(params) do
+        if type(key) == "string" then
+            local role = string.match(key, SERVICE_KEY_PATTERN)
+            if role then roles[role] = true end
+        end
+    end
+    return roles
+end
+
+-- Scans every smart terrain on the given level for a live ALifePlus takeover.
+-- Returns an empty table when the smart registry is unavailable.
+-- @param level_id number  level to scan
+-- @return table  { [smart_id] = { kind, community, services, position } }
+local function _scan_held_smarts(level_id)
+    local held = {}
+    if not (xsmart and xsmart.smarts_by_names and xlevel and xlevel.get_level_id) then return held end
+    local smarts = xsmart.smarts_by_names()
+    if not smarts then return held end
+
+    for _, smart in pairs(smarts) do
+        local kind = TAKEOVER_KEYS[smart.faction_controlled]
+        local community = smart.faction
+        if kind and community and xlevel.get_level_id(smart) == level_id then
+            held[smart.id] = {
+                kind      = kind,
+                community = community,
+                services  = _services_at(smart),
+                -- Server smart terrains carry position as a field, so this resolves to a
+                -- plain field read — but going through the helper means the proximity
+                -- step downstream can never be handed a member function by mistake.
+                position  = wom_utils.get_object_position(smart),
+            }
+        end
+    end
+    return held
+end
+
+-- ---- record pass ------------------------------------------------------------
+
+-- Returns the most recent takeover record per smart terrain on the given level, within
+-- the decay window for its own kind. Used for two things: the "how long ago" phrase on a
+-- live hold, and the remembered-hold entries for smarts no longer held.
+-- Returns an empty table when ALifePlus is absent.
+-- @param level_id       number
+-- @param now_game_hours number  current cumulative in-game hour
+-- @return table  { [smart_id] = { kind, community, game_hours } }
+local function _scan_takeover_records(level_id, now_game_hours)
+    local newest = {}
+    if not (ap_api and ap_api.get_records) then return newest end
+
+    local records = ap_api.get_records({ level_id = level_id }) or {}
+    for i = 1, #records do
+        local record = records[i]
+        local kind   = TAKEOVER_CAUSES[record.cause_key]
+        if kind and record.smart_id and record.game_hours then
+            -- A decay window of 0 means the takeover never decays (ALifePlus skips the
+            -- check entirely), so no record of that kind ever ages out.
+            local decay_hours = wom_ap_bridge.get_area_decay_hours(kind)
+            local age_hours   = math.max(0, now_game_hours - record.game_hours)
+            if decay_hours <= 0 or age_hours <= decay_hours then
+                local community = wom_terminology_helper.extract_community_key(
+                    record.subject_faction_key, record.subject_species_key)
+                local previous = newest[record.smart_id]
+                if community and (not previous or record.game_hours >= previous.game_hours) then
+                    newest[record.smart_id] = {
+                        kind       = kind,
+                        community  = community,
+                        game_hours = record.game_hours,
+                    }
+                end
+            end
+        end
+    end
+    return newest
+end
+
+-- ---- speaker position -------------------------------------------------------
+
+-- Emits a debug trace line when WoM logging is on. No-op otherwise.
+-- Routed through wom_debug.log_trace so the lines land in wom_combat.log, not only in the
+-- engine's xray_<user>.log — a feature trace is impractical to find in the latter.
+-- Callers pass a complete string: numeric format specifiers (%d, %.0f) came out of the
+-- game's printf unsubstituted, so everything is formatted here with tostring first.
+-- @param message string  fully formatted line
+local function _trace(message)
+    if not (wom_debug and wom_debug.log_trace) then return end
+    wom_debug.log_trace("wom_territory", message)
+end
+
+-- Squared ground-plane distance between two positions, read through .x/.z fields so this
+-- works on an engine vector without depending on its methods.
+-- @param a table|userdata
+-- @param b table|userdata
+-- @return number|nil  squared distance, or nil when either position is unusable
+local function _flat_dist_sqr(a, b)
+    if not (a and b and a.x and b.x and a.z and b.z) then return nil end
+    local dx, dz = a.x - b.x, a.z - b.z
+    return dx * dx + dz * dz
+end
+
+-- Returns the position of the speaking NPC, or nil.
+-- `position` is a METHOD on a client game object (npc:position()) and a field on a
+-- server object — reading it as a field on the client object gets you the method
+-- itself, not a vector, which is how the "here" pools once shipped silently dead.
+-- wom_utils.get_object_position resolves either shape.
+-- @param npc userdata
+-- @return userdata|nil
+local function _npc_position(npc)
+    return wom_utils.get_object_position(npc)
+end
+
+-- Returns the id of the HELD smart terrain the speaker is standing at, or nil.
+--
+-- Every candidate is tested against `held` rather than returned on sight, which is the
+-- crux: each signal can legitimately name a smart that is not under a takeover (an NPC
+-- slotted into a neighbouring camp, a travelling squad whose assigned_target_id points at
+-- its destination, the nearest smart of any kind). Returning the first non-nil candidate
+-- therefore answered "some smart" instead of "a held smart" and defeated the whole test.
+--
+-- Candidates, in order:
+--   1. the smart whose job roster (npc_info) lists this NPC — the engine's own answer,
+--      but it only holds for an NPC the smart actually handed a job to;
+--   2. the NPC's squad's smart (smart_id / assigned_target_id). ALifePlus pins outpost
+--      guard and service squads with scripted_target rather than through the board, so a
+--      pinned garrison can sit inside a camp without ever entering its npc_info;
+--   3. the nearest held smart within HERE_RADIUS_METRES, measured directly against the
+--      held smarts' own positions. Deliberately not xsmart.find_smart: that ranks every
+--      smart on the level and would return an unheld neighbour as the nearest.
+-- @param held table          { [smart_id] = entry } from _scan_held_smarts
+-- @param npc  userdata|nil   NPC client game object
+-- @return number|nil  held smart terrain id
+local function _resolve_here_smart_id(held, npc)
+    if not npc or next(held) == nil then return nil end
+
+    if wom_npc_role and wom_npc_role.current_smart then
+        local smart = wom_npc_role.current_smart(npc)
+        local smart_id = smart and smart.id
+        if smart_id then
+            _trace("job-roster smart=" .. tostring(smart_id) .. " held=" .. tostring(held[smart_id] ~= nil))
+            if held[smart_id] then return smart_id end
+        end
+    end
+
+    if wom_npc_role and wom_npc_role.smart_id_of_squad and wom_utils and wom_utils.resolve_squad then
+        local smart_id = wom_npc_role.smart_id_of_squad(wom_utils.resolve_squad(npc))
+        if smart_id then
+            _trace("squad smart=" .. tostring(smart_id) .. " held=" .. tostring(held[smart_id] ~= nil))
+            if held[smart_id] then return smart_id end
+        end
+    end
+
+    local position = _npc_position(npc)
+    if not position then
+        _trace("no usable npc position; proximity test skipped")
+        return nil
+    end
+
+    local radius_sqr = HERE_RADIUS_METRES * HERE_RADIUS_METRES
+    local best_id, best_dist_sqr = nil, radius_sqr
+    for smart_id, entry in pairs(held) do
+        local dist_sqr = _flat_dist_sqr(position, entry.position)
+        if dist_sqr and dist_sqr < best_dist_sqr then
+            best_id, best_dist_sqr = smart_id, dist_sqr
+        end
+    end
+    if best_id then
+        _trace("nearest held smart=" .. tostring(best_id)
+               .. " at " .. tostring(math.floor(math.sqrt(best_dist_sqr) + 0.5)) .. "m")
+    else
+        _trace("no held smart within " .. tostring(HERE_RADIUS_METRES) .. "m")
+    end
+    return best_id
+end
+
+-- ---- ledger -----------------------------------------------------------------
+
+-- Orders holdings for the answer: the hold the speaker is standing at first, then live
+-- holds before remembered ones, and within each group the most recently known first. A
+-- live hold with no surviving record has no timestamp and sorts to the back of its group.
+-- @param a table  holding entry
+-- @param b table  holding entry
+-- @return boolean
+local function _holding_order(a, b)
+    if a.is_here ~= b.is_here then return a.is_here == true end
+    if a.is_remembered ~= b.is_remembered then return not a.is_remembered end
+    local a_hours = a.game_hours or -math.huge
+    local b_hours = b.game_hours or -math.huge
+    return a_hours > b_hours
+end
+
+-- Builds the territory ledger for the given level: every smart ALifePlus currently holds,
+-- plus remembered takeovers whose smart is no longer held.
+-- A live hold always wins over a record for the same smart — the spawn pool is the current
+-- truth, and a record naming a different (earlier) holder is not evidence about now, so it
+-- contributes a timestamp only when it names the same holder.
+-- @param level_id       number|nil    level to scan (xlevel.get_actor_level_id())
+-- @param now_game_hours number        current cumulative in-game hour
+-- @param speaker_npc    userdata|nil  the NPC being asked; when they are standing at one of
+--                                     the held smarts, that holding sorts first and is
+--                                     flagged is_here
+-- @return table  array, the speaker's own location first, then live holds, then remembered, each {
+--   smart_id      number,
+--   kind          string,      "conquer" | "swarm" | "infest"
+--   community     string,      raw community/species key of the holder
+--   game_hours    number|nil,  when the takeover was recorded, when a record survives
+--   is_remembered boolean,     true when the hold has ended and this is hearsay
+--   is_here       boolean,     true when the speaker is standing at this smart
+--   services      table|nil,   live conquer holds: set { [role] = true }
+-- }
+function collect_holdings(level_id, now_game_hours, speaker_npc)
+    local holdings = {}
+    if not level_id then return holdings end
+
+    local held    = _scan_held_smarts(level_id)
+    local records = _scan_takeover_records(level_id, now_game_hours)
+
+    -- Resolved here, not by the caller: deciding whether the speaker is standing at a hold
+    -- requires the held set, since every position signal has to be checked against it.
+    local here_smart_id = _resolve_here_smart_id(held, speaker_npc)
+
+    for smart_id, entry in pairs(held) do
+        local record = records[smart_id]
+        holdings[#holdings + 1] = {
+            smart_id      = smart_id,
+            kind          = entry.kind,
+            community     = entry.community,
+            game_hours    = (record and record.community == entry.community) and record.game_hours or nil,
+            is_remembered = false,
+            is_here       = (here_smart_id ~= nil) and (smart_id == here_smart_id),
+            services      = entry.services,
+        }
+    end
+
+    for smart_id, record in pairs(records) do
+        if not held[smart_id] then
+            holdings[#holdings + 1] = {
+                smart_id      = smart_id,
+                kind          = record.kind,
+                community     = record.community,
+                game_hours    = record.game_hours,
+                is_remembered = true,
+                -- An ended hold at the speaker's own feet is not "of course, we hold this"
+                -- news — there is nothing there to see any more, so it stays ordinary hearsay.
+                is_here       = false,
+            }
+        end
+    end
+
+    table.sort(holdings, _holding_order)
+    return holdings
+end
+
+-- ---- rendering --------------------------------------------------------------
+
+-- Builds the slot table for one hold line.
+-- @param holding        table       one entry from collect_holdings
+-- @param npc_faction    string|nil  speaker's community key; drives first-person phrasing
+--                                   when the speaker's own faction is the holder
+-- @param now_game_hours number      current cumulative in-game hour
+-- @return table  populated slot map
+local function _build_slots(holding, npc_faction, now_game_hours)
+    local community = holding.community
+    local ago       = wom_terminology_helper.get_ago_phrase(holding.game_hours, now_game_hours)
+
+    -- Service vocabulary lives in wom_outpost, which owns the role words; absent that
+    -- module the service slots stay empty and their variants gate out.
+    local service_list, service_role = "", ""
+    if holding.services and wom_outpost and wom_outpost.describe_roles then
+        service_list, service_role = wom_outpost.describe_roles(holding.services)
+    end
+
+    return {
+        location     = wom_terminology_helper.get_location_name(holding.smart_id),
+        identity     = wom_terminology_helper.get_faction_identity(community),
+        some_members = wom_terminology_helper.get_some_faction(community, npc_faction),
+        a_squad      = wom_terminology_helper.get_a_faction_squad(community, npc_faction),
+        plural       = wom_terminology_helper.get_faction_members_plural(community),
+        Ago          = ago,
+        ago          = (ago ~= "") and wom_dialogue_helper.decapitalize_clause(ago) or "",
+        service_list = service_list,
+        service_role = service_role,
+    }
+end
+
+-- Every slot in a hold line is gated: a variant referencing one that resolves empty is
+-- dropped before selection, so each pool needs a variant using only #location# and one
+-- widely-available holder slot.
+local GATED_TOKENS = {
+    "location", "identity", "some_members", "a_squad", "plural",
+    "Ago", "ago", "service_list", "service_role",
+}
+
+-- Returns the pool prefixes to try for a live hold, most specific first. The first one
+-- that renders a line wins, so every prefix after the first is a fallback and the last
+-- (`_held_<kind>`) always exists — a hold can never fall through to silence.
+--
+--   _here_own_service_<kind>  standing at a camp their own faction holds, which has grown
+--                             outpost services: "of course this is ours — and we have a
+--                             trader in now"
+--   _here_own_<kind>          standing at a camp their own faction holds
+--   _here_service_<kind>      standing at someone else's camp, which has services
+--   _here_<kind>              standing at someone else's camp
+--   _service_<kind>           the camp has grown outpost services
+--   _held_<kind>              the plain case
+--
+-- The speaker relationship (own camp / standing there) is the outer distinction and the
+-- service split sits inside it, so a missing `_service` pool degrades to the same framing
+-- without the shop rather than jumping to a stranger's phrasing. Every `_service` pool
+-- names the services in every line, which is the point of separating them: a camp with a
+-- trader always says so.
+--
+-- Only conquest grows services and only human factions garrison a camp, so the narrower
+-- prefixes are authored for the kinds where they can actually occur and fall back for the
+-- rest.
+-- @param holding     table
+-- @param npc_faction string|nil
+-- @return table  array of localisation key prefixes
+local function _live_pool_prefixes(holding, npc_faction)
+    local base         = "st_wom_territory_"
+    local kind         = holding.kind
+    local has_services = holding.services ~= nil and next(holding.services) ~= nil
+    local prefixes     = {}
+    if holding.is_here then
+        if npc_faction and npc_faction == holding.community then
+            if has_services then prefixes[#prefixes + 1] = base .. "here_own_service_" .. kind end
+            prefixes[#prefixes + 1] = base .. "here_own_" .. kind
+        end
+        if has_services then prefixes[#prefixes + 1] = base .. "here_service_" .. kind end
+        prefixes[#prefixes + 1] = base .. "here_" .. kind
+    end
+    if has_services then
+        prefixes[#prefixes + 1] = base .. "service_" .. kind
+    end
+    prefixes[#prefixes + 1] = base .. "held_" .. kind
+    return prefixes
+end
+
+-- Renders one hold as a sentence, or "" when no template survives gating.
+-- @param holding        table
+-- @param npc_faction    string|nil
+-- @param now_game_hours number
+-- @return string
+local function _render_holding(holding, npc_faction, now_game_hours)
+    local slots = _build_slots(holding, npc_faction, now_game_hours)
+    if slots.location == "" then return "" end
+
+    if holding.is_remembered then
+        return wom_dialogue_helper.pick_dialogue_variant(
+            "st_wom_territory_fading_" .. holding.kind, slots, GATED_TOKENS)
+    end
+
+    local prefixes = _live_pool_prefixes(holding, npc_faction)
+    for i = 1, #prefixes do
+        local line = wom_dialogue_helper.pick_dialogue_variant(prefixes[i], slots, GATED_TOKENS)
+        if line ~= "" then return line end
+    end
+    return ""
+end
+
+-- ---- public -----------------------------------------------------------------
+
+-- Composes the "Who's holding ground around here?" response for the given NPC.
+-- When the speaker is standing at a held camp, that one leads the answer and draws from
+-- the `_here_own_` / `_here_` pools ("well, of course, this place is ours now") — a
+-- stalker asked who holds the ground would start with the ground under their feet.
+-- Reports up to MAX_REPORTED_HOLDS entries on the actor's level, live holds first: the
+-- first as a full sentence, each later one introduced by a sequence connector so the
+-- answer reads as one turn of speech rather than a list. Falls back to the "nothing
+-- known" pool when nothing is held or remembered, or when every template gates out.
+-- @param npc userdata  NPC client game object
+-- @return string
+function render_territory(npc)
+    local npc_faction = npc and npc:character_community() or nil
+
+    local level_id = xlevel and xlevel.get_actor_level_id and xlevel.get_actor_level_id()
+    local now_game_hours = (xtime and xtime.game_sec) and math.floor(xtime.game_sec() / 3600) or 0
+
+    local holdings = collect_holdings(level_id, now_game_hours, npc)
+
+    local lines = {}
+    for i = 1, #holdings do
+        if #lines >= MAX_REPORTED_HOLDS then break end
+        local line = _render_holding(holdings[i], npc_faction, now_game_hours)
+        if line ~= "" then
+            if #lines > 0 then
+                -- Connectors are complete sentences of their own, deliberately not
+                -- clause fragments: a hold line can open with a slot that resolves to a
+                -- proper noun ("Duty holds ..."), which cannot be decapitalized to sit
+                -- after a comma. A missing pool just leaves the hold sentences adjacent,
+                -- which still reads correctly.
+                local connector = wom_dialogue_helper.pick_dialogue_variant("st_wom_territory_seq", {})
+                if connector ~= "" then
+                    line = connector .. " " .. line
+                end
+            end
+            lines[#lines + 1] = line
+        end
+    end
+
+    if #lines == 0 then
+        return wom_dialogue_helper.pick_dialogue_variant("st_wom_territory_none", {})
+    end
+
+    local intro = wom_dialogue_helper.pick_dialogue_variant("st_wom_territory_intro", {})
+    if intro ~= "" then table.insert(lines, 1, intro) end
+    return table.concat(lines, " ")
+end

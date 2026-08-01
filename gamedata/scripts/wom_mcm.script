@@ -1,0 +1,268 @@
+--- wom_mcm.script
+--- MCM menu and settings readers for Word of Mouth.
+---
+--- Read live via ui_mcm.get so changes apply without a restart.
+--- When MCM is not installed, DEFAULTS apply.
+--- MCM root id: "word_of_mouth" — labels live in ui_st_mcm_word_of_mouth.xml.
+
+local DEFAULTS = {
+    enable_logging       = false,
+    dev_mode             = false,
+    campfire_enabled     = true,
+    campfire_interval    = 30,
+    campfire_range       = 25,
+    chatter_enabled      = true,
+    chatter_range        = 25,
+    reaction_enabled     = true,
+    reaction_scope       = "allies",
+    outpost_enabled            = true,
+    outpost_scope              = "allies",
+    outpost_announce_services  = true,
+    secret_money_harvest           = "none",
+    secret_harvest_rob             = "none",
+    secret_stash_fill              = "none",
+    secret_stash_loot              = "none",
+    secret_stash_ambush            = "none",
+    area_recap_respects_secrets    = false,
+}
+
+-- Returns the current value of key from MCM, or the default when MCM is absent.
+-- Guards against reads during MCM's gather phase (is_gathering), which can return stale state.
+-- @param key string  option id within the "word_of_mouth" MCM node
+-- @return any
+local function _get(key)
+    if ui_mcm and ui_mcm.get and not (ui_mcm.is_gathering and ui_mcm.is_gathering()) then
+        local value = ui_mcm.get("word_of_mouth/" .. key)
+        if value ~= nil then return value end
+    end
+    return DEFAULTS[key]
+end
+
+-- ---- public readers --------------------------------------------------------
+
+-- True when combat event logging to disk and console is enabled.
+-- @return boolean
+function enable_logging()
+    return _get("enable_logging") == true
+end
+
+-- True when developer mode is enabled.
+-- Removes distance gates from ambient features (campfire chat, goal announce) so
+-- all online stalkers are eligible regardless of proximity.
+-- @return boolean
+function dev_mode()
+    return _get("dev_mode") == true
+end
+
+-- True when campfire/animpoint ambient chatter is enabled.
+-- @return boolean
+function campfire_enabled()
+    return _get("campfire_enabled") == true
+end
+
+-- Real seconds between campfire scan ticks.
+-- @return number
+function campfire_interval()
+    return _get("campfire_interval")
+end
+
+-- Detection radius in metres for campfire chatter (ignored in dev mode).
+-- @return number
+function campfire_range()
+    return _get("campfire_range")
+end
+
+-- True when goal-change announce chatter is enabled.
+-- @return boolean
+function chatter_enabled()
+    return _get("chatter_enabled") == true
+end
+
+-- Detection radius in metres for goal announce chatter (ignored in dev mode).
+-- @return number
+function chatter_range()
+    return _get("chatter_range")
+end
+
+-- True when real-time event reaction barks are enabled.
+-- @return boolean
+function reaction_enabled()
+    return _get("reaction_enabled") == true
+end
+
+-- Faction scope for reaction barks: "faction" (player's faction only) or
+-- "allies" (player's faction and allied factions).
+-- @return string  "faction" or "allies"
+function reaction_scope()
+    local value = _get("reaction_scope")
+    if value == "faction" or value == "allies" then return value end
+    return "allies"
+end
+
+-- True when ALifePlus outpost service discovery is enabled (PDA announcements
+-- plus outpost mentions in area recaps).
+--
+-- TEMPORARILY DISABLED: hardcoded to false regardless of the MCM/DEFAULTS value.
+-- Pending a performance/architecture rework of the detection mechanism -- see the long
+-- note on wom_outpost.on_game_start. Remove this early return to re-enable.
+-- @return boolean
+function outpost_enabled()
+    return false
+end
+
+-- Faction scope for outpost announcements: "faction" (player's faction only),
+-- "allies" (also allied factions), or "neutral" (also any non-hostile faction).
+-- Wider than reaction_scope by one step — see the note on outpost_scope_options.
+-- @return string  "faction", "allies" or "neutral"
+function outpost_scope()
+    local value = _get("outpost_scope")
+    if value == "faction" or value == "allies" or value == "neutral" then return value end
+    return "allies"
+end
+
+-- True when each additional specialist arriving at an existing outpost announces
+-- itself. When false, only the outpost's first service is announced.
+-- Inert under ALifePlus 1.8.5+, which grows exactly one service per smart for its
+-- whole life, so no outpost ever gains a second specialist to announce. Kept
+-- against AP re-widening; see the "service" entry in wom_outpost.script's header.
+-- @return boolean
+function outpost_announce_services()
+    return _get("outpost_announce_services") == true
+end
+
+-- Maps consequence suffix -> MCM key for per-goal secret toggles.
+local SECRET_GOAL_MCM_KEYS = {
+    money_harvest = "secret_money_harvest",
+    harvest_rob   = "secret_harvest_rob",
+    stash_fill    = "secret_stash_fill",
+    stash_loot    = "secret_stash_loot",
+    stash_ambush  = "secret_stash_ambush",
+}
+
+-- True when area recaps skip events whose goal visibility is not "public".
+-- @return boolean
+function area_recap_respects_secrets()
+    return _get("area_recap_respects_secrets") == true
+end
+
+-- Returns the visibility mode for the given goal key: "public", "faction", or "none".
+-- "public"  → always revealed regardless of the player's faction.
+-- "faction" → revealed only to the same faction (disguise-aware).
+-- "none"    → never revealed to anyone.
+-- Migrates old boolean saves: true → "faction", false → "public".
+-- @param goal string  consequence suffix, e.g. "money_harvest"
+-- @return string
+function get_goal_visibility(goal)
+    local key = SECRET_GOAL_MCM_KEYS[goal]
+    if not key then return "public" end
+    local val = _get(key)
+    if val == "public" or val == "faction" or val == "none" then return val end
+    if val == true  then return "faction" end   -- legacy boolean migration
+    if val == false then return "public"  end   -- legacy boolean migration
+    return "public"
+end
+
+-- ---- MCM button handlers --------------------------------------------------
+
+-- Resets all Word of Mouth settings to their defaults and closes the MCM dialog.
+-- Called via functor_ui so MCM passes the UI_MCM instance as the argument.
+-- Uses On_Cancel (not On_Discard) to avoid the scroll_opt:Clear use-after-free
+-- in MCM 1.7.2fix when a button's click handler is still on the stack.
+-- @param gui table  UI_MCM instance
+function reset_to_defaults(gui)
+    local config = axr_main.config
+    for key, value in pairs(DEFAULTS) do
+        config:w_value("mcm", "word_of_mouth/" .. key, value)
+    end
+    config:save()
+    local status_message = "Word of Mouth: all settings restored to defaults."
+    if gui and gui.owner and gui.owner.SetMsg then
+        gui.owner:SetMsg(status_message, 5)
+    end
+    if gui and gui.On_Cancel then
+        gui:On_Cancel()
+    end
+    if db.actor then
+        news_manager.send_tip(db.actor, status_message, nil, nil, 5000)
+    end
+end
+
+-- ---- MCM registration ------------------------------------------------------
+
+-- Called by MCM to build the Word of Mouth settings page.
+-- Tab label:    ui_mcm_menu_word_of_mouth
+-- Option label: ui_mcm_word_of_mouth_<id>  (+ _desc for tooltip)
+function on_mcm_load()
+    local visibility_options = {
+        {"public",  "wom_public"},
+        {"faction", "wom_faction"},
+        {"none",    "wom_none"},
+    }
+    local scope_options = {
+        {"allies",  "wom_scope_allies"},
+        {"faction", "wom_scope_faction"},
+    }
+    -- Outposts get a third, wider scope. A neutral faction's shop is genuinely useful to
+    -- the player (they can walk in and trade), which is not true of a neutral faction's
+    -- firefight, so this is deliberately not added to the shared scope_options that
+    -- reaction_scope reads.
+    local outpost_scope_options = {
+        {"allies",  "wom_scope_allies"},
+        {"faction", "wom_scope_faction"},
+        {"neutral", "wom_scope_neutral"},
+    }
+    return {
+        id = "word_of_mouth",
+        sh = true,
+        gr = {
+            { id = "title", type = "slide", link = "ui_options_slider_player", text = "ui_mcm_word_of_mouth_title", size = { 512, 50 }, spacing = 20 },
+
+            { id = "description", type = "desc",
+              text = game.translate_string("ui_mcm_word_of_mouth_description") },
+
+            { id = "mod_desc_1", type = "desc",
+              text = game.translate_string("ui_mcm_word_of_mouth_conversation_details") },
+
+            { id = "mod_desc_2", type = "desc",
+              text = game.translate_string("ui_mcm_word_of_mouth_chatter_details") },
+
+            { id = "title_campfire",    type = "title" },
+            { id = "campfire_enabled",  type = "check", val = 1, def = DEFAULTS.campfire_enabled },
+            { id = "campfire_interval", type = "track", val = 2, def = DEFAULTS.campfire_interval, min = 15, max = 120, step = 5 },
+            { id = "campfire_range",    type = "track", val = 2, def = DEFAULTS.campfire_range,    min = 10, max = 50,  step = 5 },
+
+            { id = "title_chatter",   type = "title" },
+            { id = "chatter_enabled", type = "check", val = 1, def = DEFAULTS.chatter_enabled },
+            { id = "chatter_range",   type = "track", val = 2, def = DEFAULTS.chatter_range,   min = 10, max = 50,  step = 5 },
+
+            { id = "title_reaction",   type = "title" },
+            { id = "reaction_enabled", type = "check", val = 1, def = DEFAULTS.reaction_enabled },
+            { id = "reaction_scope",   type = "list",  val = 0, def = DEFAULTS.reaction_scope,  content = scope_options },
+
+            -- TEMPORARILY DISABLED: outpost announcement feature is hardcoded off in
+            -- outpost_enabled() above, so its MCM group is hidden rather than shown inert.
+            -- { id = "title_outpost",              type = "title" },
+            -- { id = "outpost_enabled",            type = "check", val = 1, def = DEFAULTS.outpost_enabled },
+            -- { id = "outpost_scope",              type = "list",  val = 0, def = DEFAULTS.outpost_scope, content = outpost_scope_options },
+            -- { id = "outpost_announce_services",  type = "check", val = 1, def = DEFAULTS.outpost_announce_services },
+
+            { id = "title_secret",                  type = "title" },
+            { id = "secret_money_harvest", type = "list", val = 0, def = DEFAULTS.secret_money_harvest, content = visibility_options },
+            { id = "secret_harvest_rob",   type = "list", val = 0, def = DEFAULTS.secret_harvest_rob,   content = visibility_options },
+            { id = "secret_stash_fill",    type = "list", val = 0, def = DEFAULTS.secret_stash_fill,    content = visibility_options },
+            { id = "secret_stash_loot",    type = "list", val = 0, def = DEFAULTS.secret_stash_loot,    content = visibility_options },
+            { id = "secret_stash_ambush",  type = "list", val = 0, def = DEFAULTS.secret_stash_ambush,  content = visibility_options },
+            { id = "area_recap_respects_secrets",   type = "check", val = 1, def = DEFAULTS.area_recap_respects_secrets },
+
+
+            { id = "div_reset",          type = "line" },
+            { id = "btn_reset_defaults", type = "button", functor_ui = { reset_to_defaults } },
+
+            { id = "title_debug",    type = "title" },
+            { id = "enable_logging", type = "check", val = 1, def = DEFAULTS.enable_logging },
+            { id = "log_path_note",  type = "desc",
+              text = "Log folder: " .. (wom_debug and wom_debug.get_log_dir and wom_debug.get_log_dir() or "appdata\\logs") },
+            { id = "dev_mode",       type = "check", val = 1, def = DEFAULTS.dev_mode },
+        },
+    }
+end

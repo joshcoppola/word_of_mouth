@@ -1,0 +1,355 @@
+--- wom_reaction.script
+--- Faction news-wire: when ALifePlus records a high-signal event involving
+--- the player's faction or allies (or a mutant event), a stationed member of
+--- the affected faction anywhere in the simulation delivers a short PDA message.
+--- Fires for events on any map — not just the current level.
+---
+--- Detection: polls ap_api.get_records() every POLL_INTERVAL real seconds and
+--- tracks seen cons_ids (ALifePlus monotonic record ids). On the first tick
+--- after a session load all current records are baselined as seen so no backlog
+--- fires. A record older than REACTION_MAX_AGE_GAME_HOURS is also baselined.
+---
+--- Sender selection: scans all squads in the simulation via xsquad.iter_squads(),
+--- prefers a stationed (garrisoning) commander of the affected faction, falls back
+--- to any squad member of that faction, then to a generic faction handle. For mutant
+--- events with no human subject, any online human stalker is used instead.
+---
+--- Delivery: wom_bark.send_news_pda — unquoted amber text, pda_beep_1, no hello bark.
+--- A global throttle (REACTION_MIN_INTERVAL_GAME_SEC) prevents bursts when multiple
+--- events arrive in the same scan window.
+---
+--- TODO — de-duplicate against ALifePlus's own news channel. ap_ext_news picks
+--- unreported records on the actor's level and gossips them over the PDA, then
+--- sets entry.reported via ap_core_record.mark_reported. We poll the same record
+--- store, so the player can receive both AP's news line and our reaction line for
+--- one cons_id. Skipping records whose `reported` flag is set in _collect_candidates
+--- would fix it, but `reported` is not in the field list ALifePlus documents in
+--- doc/integration.md — treat it as semi-internal and nil-guard the read if adopted.
+---
+--- Depends on: ap_api (soft), xtime (soft), xsquad (soft),
+---             wom_bark, wom_recap_smart_terrain, wom_dialogue_helper,
+---             wom_terminology_helper, wom_mcm, db
+
+local POLL_INTERVAL                  = 5     -- real seconds between scans
+local REACTION_MAX_AGE_GAME_HOURS    = 2     -- events older than this are baselined, not fired
+local REACTION_MIN_INTERVAL_GAME_SEC = 1800  -- 30 in-game minutes global throttle between deliveries
+
+-- High-signal ALifePlus cause_keys that trigger reaction barks.
+-- Kept narrow on purpose; widen here to add more.
+local REACTION_CAUSES = {
+    ["cause:massacre"]     = "massacre",
+    ["cause:squadkill"]    = "squadkill",
+    ["cause:basekill"]     = "basekill",
+    ["cause:area_conquer"] = "conquer",
+    ["cause:alpha"]        = "alpha",
+    ["cause:alphakill"]    = "alphakill",
+}
+
+-- Categories that always fire regardless of player faction (mutant events).
+local MUTANT_CATEGORIES = { alpha = true, alphakill = true }
+
+local TIMER_ID = "wom_reaction"
+local TIMER_EV = "tick"
+
+-- Engine "no commander" sentinel. Not a vanilla global, so it is read from
+-- xconst with a literal fallback.
+local INVALID_ENTITY_ID = (xconst and xconst.INVALID_ENTITY_ID) or 65535
+
+-- cons_id -> true for every record seen this session (baselined or already fired).
+local _seen_cons_ids = {}
+-- True once the first tick has run and baselined existing records.
+local _baselined     = false
+-- Game-sec timestamp of the last delivered message; used for global throttle.
+local _last_fire_sec = 0
+
+-- ---- helpers ----------------------------------------------------------------
+
+-- Returns current game_sec from xlibs, or 0 when unavailable.
+-- @return number
+local function _now_game_sec()
+    if not (xtime and xtime.game_sec) then return 0 end
+    return xtime.game_sec()
+end
+
+-- Returns current game hours (floored) from xlibs, or 0 when unavailable.
+-- @return number
+local function _now_game_hours()
+    return math.floor(_now_game_sec() / 3600)
+end
+
+-- ---- relevance gate ---------------------------------------------------------
+
+-- Player-faction relevance test. The implementation lives in wom_bark so every
+-- news-wire feature reads one MCM scope setting the same way. Resolved per call,
+-- not captured at load time, to avoid depending on script load order.
+-- @param community   string|nil  raw community string to test
+-- @param player_comm string|nil  get_actor_true_community()
+-- @param scope       string      "faction" or "allies"
+-- @return boolean
+local function _faction_matches(community, player_comm, scope)
+    return wom_bark.faction_matches(community, player_comm, scope)
+end
+
+-- Returns true when this event should fire given the player's faction and scope.
+-- Mutant categories always pass. Otherwise fires when either subject or other side
+-- matches the player's faction, or (scope == "allies") is a friendly faction.
+-- @param category     string      e.g. "massacre", "alpha"
+-- @param subject_comm string|nil  raw community string for the subject side
+-- @param other_comm   string|nil  raw community string for the other side
+-- @param player_comm  string|nil  get_actor_true_community()
+-- @param scope        string      "faction" or "allies"
+-- @return boolean
+local function _event_involves_player(category, subject_comm, other_comm, player_comm, scope)
+    if MUTANT_CATEGORIES[category] then return true end
+    if not player_comm then return false end
+    return _faction_matches(subject_comm, player_comm, scope)
+        or _faction_matches(other_comm, player_comm, scope)
+end
+
+-- Returns the community string of the faction that should be attributed as the
+-- sender. For faction events: the matched side (subject preferred). For mutant
+-- events: the human side if present (subject hunter for alphakill), else nil.
+-- A nil return means the caller should fall back to any available human stalker.
+-- @param category     string
+-- @param subject_comm string|nil
+-- @param other_comm   string|nil
+-- @param player_comm  string|nil
+-- @param scope        string
+-- @return string|nil
+local function _affected_faction(category, subject_comm, other_comm, player_comm, scope)
+    if MUTANT_CATEGORIES[category] then
+        if wom_bark.is_human_faction(subject_comm) then return subject_comm end
+        if wom_bark.is_human_faction(other_comm)   then return other_comm   end
+        return nil  -- pure mutant event with no human side; caller picks any human
+    end
+    if not player_comm then return subject_comm end
+    if _faction_matches(subject_comm, player_comm, scope) then return subject_comm end
+    if _faction_matches(other_comm,   player_comm, scope) then return other_comm   end
+    return subject_comm  -- fallback; shouldn't reach here if relevance gate passed
+end
+
+-- ---- sender lookup ----------------------------------------------------------
+
+-- Resolves a (name, icon) pair from a shuffled array of squads.
+-- Names come from xsquad.get_commander_name, which prefers the commander's
+-- online game object and falls back to its server object, and filters out
+-- non-stalker commanders (a mutant squad's leader has no character name, but
+-- the raw server-object read this replaced returned one anyway).
+-- The icon still needs the commander's own server object, so it is read here.
+-- Returns nil, nil when no squad in the array yields a name.
+-- @param squads table  array of squad server objects (mutated in-place for shuffle)
+-- @return string|nil, string|nil
+local function _resolve_random_commander(squads)
+    if not (xsquad and xsquad.get_commander_name) then return nil, nil end
+    if #squads == 0 then return nil, nil end
+    for i = #squads, 2, -1 do
+        local j = math.random(i)
+        squads[i], squads[j] = squads[j], squads[i]
+    end
+    for _, squad in ipairs(squads) do
+        local character_name = xsquad.get_commander_name(squad)
+        if character_name and character_name ~= "" then
+            local commander = xobject and xobject.se and xobject.se(squad:commander_id())
+            return character_name, commander and commander:character_icon() or ""
+        end
+    end
+    return nil, nil
+end
+
+-- Generic (name, icon) pair for a faction, used when no real squad member can be
+-- resolved. Implementation lives in wom_bark; resolved per call, not captured at
+-- load time, to avoid depending on script load order.
+-- @param faction string  raw community string e.g. "dolg", "stalker"
+-- @return string, string  faction display name, faction portrait texture
+local function _faction_display(faction)
+    return wom_bark.faction_display(faction)
+end
+
+-- Finds (name, icon) for a sender by scanning all squads of the given faction in
+-- the simulation (any map). Prefers a stationed (garrisoning) commander, then any
+-- squad member, then falls back to a generic faction display name and portrait.
+-- @param faction string  raw community string e.g. "dolg", "stalker"
+-- @return string, string  sender name, sender icon (both may be empty strings)
+local function _pick_faction_reporter(faction)
+    if not (xsquad and xsquad.iter_squads and xsquad.is_stationed) then
+        return _faction_display(faction)
+    end
+
+    local stationed_squads = {}
+    local any_squads       = {}
+    for squad in xsquad.iter_squads() do
+        if squad.player_id == faction then
+            local commander_id = squad:commander_id()
+            if commander_id and commander_id ~= INVALID_ENTITY_ID then
+                if xsquad.is_stationed(squad) then
+                    stationed_squads[#stationed_squads + 1] = squad
+                else
+                    any_squads[#any_squads + 1] = squad
+                end
+            end
+        end
+    end
+
+    local sender_name, sender_icon = _resolve_random_commander(stationed_squads)
+    if not sender_name then
+        sender_name, sender_icon = _resolve_random_commander(any_squads)
+    end
+    if sender_name then return sender_name, sender_icon or "" end
+
+    return _faction_display(faction)
+end
+
+-- Picks (name, icon) from any online human stalker at random.
+-- Used for mutant events where no specific faction sender can be resolved.
+-- db.actor is guaranteed non-nil by _scan's early return.
+-- @return string|nil, string|nil
+local function _pick_any_human_reporter()
+    local npc = wom_bark.pick_nearby_stalker(db.actor, { dev = true, now_sec = 0, cooldown_sec = 0 })
+    if not npc then return nil, nil end
+    return npc:character_name(), npc:character_icon()
+end
+
+-- ---- scan -------------------------------------------------------------------
+
+-- Collects all qualifying records from the full AP record store (any level).
+-- Returns an array of { cons_id, record, category, age_hours } tables for records
+-- whose cause is in REACTION_CAUSES and whose cons_id and game_hours are present.
+-- @param now_game_hours number
+-- @return table
+local function _collect_candidates(now_game_hours)
+    local all_records = ap_api.get_records()
+    if not all_records or #all_records == 0 then return {} end
+    local candidates = {}
+    for _, record in ipairs(all_records) do
+        local category = record.cause_key and REACTION_CAUSES[record.cause_key]
+        if category and record.cons_id and record.game_hours then
+            candidates[#candidates + 1] = {
+                cons_id   = record.cons_id,
+                record    = record,
+                category  = category,
+                age_hours = now_game_hours - record.game_hours,
+            }
+        end
+    end
+    return candidates
+end
+
+-- Prunes _seen_cons_ids of ids no longer present in the AP record store.
+-- Keeps the table bounded to the AP 256-slot FIFO.
+-- @param candidates table  result of _collect_candidates
+local function _prune_seen(candidates)
+    local live = {}
+    for _, candidate in ipairs(candidates) do live[candidate.cons_id] = true end
+    for id in pairs(_seen_cons_ids) do
+        if not live[id] then _seen_cons_ids[id] = nil end
+    end
+end
+
+-- Core scan: detect new records, baseline on first tick, then fire one if relevant.
+local function _scan()
+    if not wom_mcm.reaction_enabled() then return end
+    if not (ap_api and ap_api.get_records) then return end
+    if not db.actor then return end
+
+    local now_game_hours = _now_game_hours()
+    local now_sec        = _now_game_sec()
+    local candidates     = _collect_candidates(now_game_hours)
+
+    _prune_seen(candidates)
+
+    local fresh = {}
+    for _, candidate in ipairs(candidates) do
+        if not _seen_cons_ids[candidate.cons_id] then
+            fresh[#fresh + 1] = candidate
+        end
+    end
+
+    -- First tick after load: baseline all current records; fire nothing.
+    if not _baselined then
+        for _, candidate in ipairs(fresh) do
+            _seen_cons_ids[candidate.cons_id] = true
+        end
+        _baselined = true
+        return
+    end
+
+    if #fresh == 0 then return end
+
+    -- Mark all fresh records seen now so none re-fire on a later tick.
+    for _, candidate in ipairs(fresh) do
+        _seen_cons_ids[candidate.cons_id] = true
+    end
+
+    -- Global throttle: suppress delivery when the last bark was too recent.
+    if (now_sec - _last_fire_sec) < REACTION_MIN_INTERVAL_GAME_SEC then return end
+
+    -- Among fresh, non-stale records find one relevant to the player's faction.
+    local player_comm = get_actor_true_community and get_actor_true_community() or nil
+    local scope       = wom_mcm.reaction_scope()
+
+    local best = nil
+    for _, candidate in ipairs(fresh) do
+        if candidate.age_hours <= REACTION_MAX_AGE_GAME_HOURS then
+            local record     = candidate.record
+            local subject_comm = wom_terminology_helper.extract_community_key(
+                record.subject_faction_key, record.subject_species_key)
+            local other_comm   = wom_terminology_helper.extract_community_key(
+                record.other_faction_key, record.other_species_key)
+            if _event_involves_player(
+                    candidate.category, subject_comm, other_comm, player_comm, scope) then
+                if not best or candidate.cons_id > best.cons_id then
+                    best              = candidate
+                    best.subject_comm = subject_comm
+                    best.other_comm   = other_comm
+                end
+            end
+        end
+    end
+    if not best then return end
+
+    -- Resolve the affected faction and pick a sender.
+    local affected_faction = _affected_faction(
+        best.category, best.subject_comm, best.other_comm, player_comm, scope)
+
+    local sender_name, sender_icon
+    if affected_faction then
+        sender_name, sender_icon = _pick_faction_reporter(affected_faction)
+    else
+        sender_name, sender_icon = _pick_any_human_reporter()
+    end
+    if not sender_name or sender_name == "" then return end
+
+    -- Render and deliver.
+    local event         = wom_recap_smart_terrain.record_to_event(best.record, best.category)
+    local location_name = wom_terminology_helper.get_location_name(best.record.smart_id)
+    local message       = wom_dialogue_helper.render_reaction(
+        event, location_name, affected_faction, nil)
+
+    if message and message ~= "" then
+        wom_bark.send_news_pda(sender_name, sender_icon, message, "wom_reaction")
+        _last_fire_sec = now_sec
+    end
+end
+
+-- ---- timer ------------------------------------------------------------------
+
+-- Timer tick: reschedules itself and runs one guarded scan pass.
+-- Returns false so CreateTimeEvent keeps the event registered; never remove this.
+-- @return boolean  always false
+local function _on_timer()
+    ResetTimeEvent(TIMER_ID, TIMER_EV, POLL_INTERVAL)
+    local ok, err = pcall(_scan)
+    if not ok and printf then printf("~[wom_reaction] scan error: %s", tostring(err)) end
+    return false
+end
+
+-- ---- lifecycle --------------------------------------------------------------
+
+function on_game_start()
+    if not (ap_api and ap_api.get_records) then return end
+    wom_bark.reset_cooldowns()
+    _seen_cons_ids = {}
+    _baselined     = false
+    _last_fire_sec = 0
+    CreateTimeEvent(TIMER_ID, TIMER_EV, POLL_INTERVAL, _on_timer)
+end

@@ -1,0 +1,357 @@
+--- wom_recap_smart_terrain.script
+--- Collects and selects eligible ALifePlus event records for the current level,
+--- grouped by smart terrain location, for use in the Word of Mouth dialogue feature.
+--- Depends on: wom_utils.script, wom_terminology_helper.script, wom_outpost.script (soft)
+
+local WOM_NEWS_MAX_AGE_GAME_HOURS = 24
+
+-- Cause categories whose events suppress exact time stamps in area recaps.
+-- These are mutant-driven events with no stalker witness to pin down a time.
+-- render_report in wom_dialogue_helper replaces the TOD stamp with "At some point".
+-- alphakill is excluded: stalkers are the subject, so they can report when it happened.
+local TIMELESS_CATEGORIES = {
+    infest = true,
+    swarm  = true,
+    alpha  = true,
+}
+
+-- Returns (subject_key, other_key) for an engagement by picking the faction with the most
+-- kills as subject (the aggressors) and the faction with the most losses as other (the
+-- victims). When a single faction has both extremes, the second-highest-losses faction
+-- becomes other. Returns (nil, nil) when fewer than two distinct factions exist.
+-- @param engagement table  wom_combat engagement record
+-- @return string|nil  subject faction key
+-- @return string|nil  other faction key
+local function find_main_factions(engagement)
+    local subj_key, subj_kills    = nil, -1
+    local other_key, other_losses = nil, -1
+    for key, stats in pairs(engagement.factions) do
+        if (stats.kills or 0) > subj_kills then
+            subj_kills = stats.kills; subj_key = key
+        end
+        if (stats.losses or 0) > other_losses then
+            other_losses = stats.losses; other_key = key
+        end
+    end
+    -- When one faction holds both extremes, find the second-highest-losses faction.
+    if subj_key == other_key then
+        other_key = nil; other_losses = -1
+        for key, stats in pairs(engagement.factions) do
+            if key ~= subj_key and (stats.losses or 0) > other_losses then
+                other_losses = stats.losses; other_key = key
+            end
+        end
+    end
+    if not subj_key or not other_key then return nil, nil end
+    return subj_key, other_key
+end
+
+-- Builds a natural-language participant list for a multi-faction combat engagement.
+-- lead_faction is listed first; remaining factions are sorted by total activity
+-- (kills + losses, descending). Returns both the full participant list and the
+-- lead faction's identity name for use as a #top_faction_identity# slot.
+-- @param engagement   table       wom_combat engagement record
+-- @param lead_faction string|nil  faction key to list first (typically highest kills)
+-- @return string  participant_list    e.g. "a Duty unit, a Clear Sky fireteam, and a Psy-Dog pack"
+-- @return string  top_faction_identity  identity name of lead_faction, e.g. "Duty", "Loners"
+local function build_area_participant_list(engagement, lead_faction)
+    local participant_list, top_faction_identity =
+        wom_terminology_helper.build_faction_participant_list(engagement, lead_faction)
+    return participant_list, top_faction_identity
+end
+
+-- Maps cause keys to their secret-goals MCM goal key for the three causes that overlap
+-- with the configurable secret-goals list. Used when area_recap_respects_secrets is on.
+local SECRET_GOAL_BY_CAUSE = {
+    ["cause:harvest"]      = "money_harvest",
+    ["cause:stash_loot"]   = "stash_loot",
+    ["cause:stash_ambush"] = "stash_ambush",
+}
+
+-- Maps ALifePlus cause_key values to the short category names used in template prefixes.
+local TARGET_CAUSES = {
+    ["cause:area_infest"]  = "infest",
+    ["cause:area_swarm"]   = "swarm",
+    ["cause:area_conquer"] = "conquer",
+    ["cause:massacre"]     = "massacre",
+    ["cause:basekill"]     = "basekill",
+    ["cause:squadkill"]    = "squadkill",
+    ["cause:alpha"]        = "alpha",
+    ["cause:alphakill"]    = "alphakill",
+    ["cause:stash_loot"]   = "stash_loot",
+    ["cause:stash_ambush"] = "stash_ambush",
+    ["cause:harvest"]      = "harvest",
+    ["cause:wounded"]      = "wounded",
+}
+
+-- Builds the event table for one combat engagement to be merged into events_by_smart.
+-- Handles combat_cat classification, squad-size accumulation (single-faction only),
+-- and participant-list construction (multi-faction only).
+-- @param eng              table    wom_combat engagement record
+-- @param subj_key         string   dominant subject faction key (most kills)
+-- @param other_key        string   dominant other faction key (most losses)
+-- @param subj_stats       table    eng.factions[subj_key]
+-- @param is_multi_faction boolean
+-- @return table  event record ready to append to events_by_smart[eng.smart_id]
+local function _make_area_combat_event(eng, subj_key, other_key, subj_stats, is_multi_faction)
+    local kills     = subj_stats and subj_stats.kills
+    local has_kills = type(kills) == "number" and kills > 0
+
+    local combat_cat
+    if is_multi_faction then
+        combat_cat = not has_kills and "combat_multi_skirmish" or "combat_multi"
+    else
+        combat_cat = not has_kills and "combat_skirmish"
+                    or (kills == 1 and "combat_kill1" or "combat")
+    end
+
+    local other_initial_size, subject_initial_size
+    if not is_multi_faction then
+        local other_total, subj_total = 0, 0
+        for sq_id, sq_faction in pairs(eng.squad_factions) do
+            if sq_faction == other_key then
+                other_total = other_total + (eng.squad_sizes[sq_id] or 0)
+            elseif sq_faction == subj_key then
+                subj_total = subj_total + (eng.squad_sizes[sq_id] or 0)
+            end
+        end
+        if other_total > 0 then other_initial_size   = other_total end
+        if subj_total  > 0 then subject_initial_size = subj_total  end
+    end
+
+    local participant_list, top_faction_identity
+    if is_multi_faction then
+        participant_list, top_faction_identity = build_area_participant_list(eng, subj_key)
+    end
+
+    local subject_squad_ids, other_squad_ids = {}, {}
+    for sq_id, sq_faction in pairs(eng.squad_factions) do
+        if sq_faction == subj_key then
+            subject_squad_ids[sq_id] = true
+        else
+            other_squad_ids[sq_id] = true
+        end
+    end
+
+    return {
+        category             = combat_cat,
+        consequence_key      = nil,
+        subject_faction_key  = subj_key,
+        subject_species_key  = nil,
+        other_faction_key    = other_key,
+        other_species_key    = nil,
+        started_clock        = eng.started_clock,
+        game_hours           = eng.t_start / 3600,
+        kills                = kills,
+        kills_word           = wom_terminology_helper.number_word(kills),
+        losses_word          = wom_terminology_helper.number_word(subj_stats and subj_stats.losses),
+        other_initial_size   = other_initial_size,
+        subject_count        = subject_initial_size,
+        participant_list     = participant_list,
+        top_faction_identity = top_faction_identity,
+        subject_squad_ids    = subject_squad_ids,
+        other_squad_ids      = other_squad_ids,
+    }
+end
+
+-- Merges wom_combat engagements for the current level into events_by_smart in place.
+-- Only located engagements (smart_id non-nil) within the age window are included.
+-- @param events_by_smart   table   { [smart_id] = event_list } — mutated in place
+-- @param current_level_id  number
+-- @param now_game_hours    number  current cumulative in-game hours (integer floor)
+local function _merge_combat_engagements(events_by_smart, current_level_id, now_game_hours)
+    if not (wom_combat and wom_combat.get_engagements_for_level) then return end
+    local combat_engs = wom_combat.get_engagements_for_level(current_level_id)
+    for i = 1, #combat_engs do
+        local eng = combat_engs[i]
+        if eng.smart_id then
+            -- now_game_hours is an integer floor; eng.t_start/3600 is a float,
+            -- so age_hours can be slightly negative for very recent engagements.
+            local age_hours = math.max(0, now_game_hours - (eng.t_start / 3600))
+            if age_hours <= WOM_NEWS_MAX_AGE_GAME_HOURS then
+                local subj_key, other_key = find_main_factions(eng)
+                if subj_key then
+                    local subj_stats          = eng.factions[subj_key]
+                    local enemy_faction_count = 0
+                    for faction_key in pairs(eng.factions) do
+                        if faction_key ~= subj_key then enemy_faction_count = enemy_faction_count + 1 end
+                    end
+                    local is_multi_faction = enemy_faction_count >= 2
+                    local smart_id = eng.smart_id
+                    if not events_by_smart[smart_id] then events_by_smart[smart_id] = {} end
+                    local event_list = events_by_smart[smart_id]
+                    event_list[#event_list + 1] = _make_area_combat_event(
+                        eng, subj_key, other_key, subj_stats, is_multi_faction)
+                end
+            end
+        end
+    end
+end
+
+-- Merges known ALifePlus outposts on the current level into events_by_smart in place.
+-- An outpost is a standing condition, not a dated event: wom_outpost only learns of one
+-- when it first sees the service NPC, which for a pre-existing outpost is whenever the
+-- session loaded. Entries are therefore marked is_timeless, so render_report introduces
+-- them with a vague stamp ("At some point") instead of inventing a clock time.
+--
+-- An outpost is newsworthy on its own: it makes its smart terrain eligible even when
+-- nothing else happened there, in which case the report renders from the
+-- st_wom_event_solo_outpost pool. Where the smart does carry other events, the outpost
+-- line joins them.
+-- @param events_by_smart  table   { [smart_id] = event_list } — mutated in place
+-- @param current_level_id number
+local function _merge_outposts(events_by_smart, current_level_id)
+    if not (wom_outpost and wom_outpost.get_outposts_for_level) then return end
+    local outposts = wom_outpost.get_outposts_for_level(current_level_id)
+    for i = 1, #outposts do
+        local outpost = outposts[i]
+        if outpost.smart_id then
+            local event_list = events_by_smart[outpost.smart_id]
+            if not event_list then
+                event_list = {}
+                events_by_smart[outpost.smart_id] = event_list
+            end
+            event_list[#event_list + 1] = {
+                category            = "outpost",
+                consequence_key     = nil,
+                subject_faction_key = outpost.faction,
+                subject_species_key = nil,
+                other_faction_key   = nil,
+                other_species_key   = nil,
+                started_clock       = nil,
+                game_hours          = nil,
+                service_list        = outpost.service_list,
+                service_role        = outpost.service_role,
+                is_timeless         = true,
+            }
+        end
+    end
+end
+
+-- Deduplicates an event list, returning a new array without repeated consequence+party combos.
+-- Keyed on (consequence_key or category) .. subject_key .. other_key so two distinct
+-- consequences that share a category (e.g. harvest_rob / harvest_haunt) are not collapsed.
+-- @param event_list table  array of event tables
+-- @return table  new deduplicated array
+local function _deduplicate_events(event_list)
+    local seen   = {}
+    local result = {}
+    for _, event in ipairs(event_list) do
+        local subject_key = event.subject_faction_key or event.subject_species_key or ""
+        local other_key   = event.other_faction_key   or event.other_species_key   or ""
+        local dedup_key   = (event.consequence_key or event.category) .. subject_key .. other_key
+        if not seen[dedup_key] then
+            seen[dedup_key]        = true
+            result[#result + 1]    = event
+        end
+    end
+    return result
+end
+
+-- Converts one AP record into the WoM event shape used by the render pipeline.
+-- category must be a value from TARGET_CAUSES (e.g. "massacre", "alpha").
+-- Returns the event table. Does not validate record fields — caller must ensure
+-- record.smart_id, record.game_hours, etc. are present when needed.
+-- @param record   table   an AP record from ap_api.get_records()
+-- @param category string  short category key, e.g. "massacre", "alpha"
+-- @return table  event record ready for render_event / render_solo_event
+function record_to_event(record, category)
+    return {
+        category            = category,
+        consequence_key     = record.consequence_key,
+        subject_faction_key = record.subject_faction_key,
+        subject_species_key = record.subject_species_key,
+        other_faction_key   = record.other_faction_key,
+        other_species_key   = record.other_species_key,
+        started_clock       = record.started_clock,
+        game_hours          = record.game_hours,
+        -- Alpha events always involve one creature; subject_count drives #count_subject#.
+        subject_count       = (category == "alpha") and 1 or nil,
+        squad_id            = record.squad_id,
+        other_squad_id      = record.other_squad_id,
+        is_timeless         = TIMELESS_CATEGORIES[category] or nil,
+    }
+end
+
+-- Scans ALifePlus activity records for the current level, groups qualifying events
+-- by smart terrain, picks one location at random, deduplicates its events, and
+-- returns a report table ready for rendering.
+-- Returns nil when ALifePlus is unavailable or no qualifying events exist.
+-- @return table|nil  {
+--   smart_id      number,
+--   location_name string,
+--   events        table  array of {
+--     category             string,
+--     consequence_key      string|nil,
+--     subject_faction_key  string|nil,
+--     subject_species_key  string|nil,
+--     other_faction_key    string|nil,
+--     other_species_key    string|nil,
+--     started_clock        string|nil,
+--     game_hours           number|nil,
+--     squad_id             number|nil,   -- AP records only: subject squad id
+--     other_squad_id       number|nil,   -- AP records only: other squad id
+--     subject_squad_ids    table|nil,    -- combat events: set of subject-side squad ids
+--     other_squad_ids      table|nil,    -- combat events: set of other-side squad ids
+--     service_list         string|nil,   -- outpost events: "a trader and a mechanic"
+--     service_role         string|nil,   -- outpost events: one role phrase, "a mechanic"
+--   }
+-- }
+function collect_eligible_news()
+    if not (ap_api and ap_api.get_records) then return nil end
+    if not (xlevel and xlevel.get_actor_level_id) then return nil end
+    if not (xtime and xtime.game_sec) then return nil end
+
+    local current_level_id = xlevel.get_actor_level_id()
+    if not current_level_id then return nil end
+    local now_game_hours   = math.floor(xtime.game_sec() / 3600)
+
+    -- No early return on an empty record set: combat engagements and outposts are
+    -- independent sources, and either can carry a report on a level where ALifePlus
+    -- has recorded nothing. The eligible-smart check below is the real "no news" exit.
+    local all_records = ap_api.get_records({ level_id = current_level_id }) or {}
+
+    -- Phase A: group qualifying AP records by smart terrain.
+    local events_by_smart = {}
+    local filter_secrets  = wom_mcm and wom_mcm.area_recap_respects_secrets
+                            and wom_mcm.area_recap_respects_secrets()
+    for _, record in ipairs(all_records) do
+        local category    = TARGET_CAUSES[record.cause_key]
+        local secret_goal = SECRET_GOAL_BY_CAUSE[record.cause_key]
+        local suppressed  = filter_secrets and secret_goal
+                            and wom_mcm.get_goal_visibility(secret_goal) ~= "public"
+        if category
+            and not suppressed
+            and record.smart_id
+            and record.game_hours
+            and (now_game_hours - record.game_hours) <= WOM_NEWS_MAX_AGE_GAME_HOURS
+        then
+            local smart_id = record.smart_id
+            if not events_by_smart[smart_id] then events_by_smart[smart_id] = {} end
+            local event_list = events_by_smart[smart_id]
+            event_list[#event_list + 1] = record_to_event(record, category)
+        end
+    end
+
+    -- Phase B: merge located wom_combat engagements for this level.
+    _merge_combat_engagements(events_by_smart, current_level_id, now_game_hours)
+
+    -- Phase C: merge standing ALifePlus outposts onto smarts that already have news.
+    _merge_outposts(events_by_smart, current_level_id)
+
+    -- Pick one smart terrain at random.
+    local eligible_smart_ids = {}
+    for smart_id in pairs(events_by_smart) do
+        eligible_smart_ids[#eligible_smart_ids + 1] = smart_id
+    end
+    if #eligible_smart_ids == 0 then return nil end
+
+    local chosen_smart_id = wom_utils.pick_random_item(eligible_smart_ids)
+    local location_name   = wom_terminology_helper.get_location_name(chosen_smart_id)
+
+    return {
+        smart_id      = chosen_smart_id,
+        location_name = location_name,
+        events        = _deduplicate_events(events_by_smart[chosen_smart_id]),
+    }
+end

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+  <!-- ===== timestamp prefixes (prepended to an event line; news is lower-cased -->
+  <!-- after the comma). Tokens: #Period# "This morning", #period# "this morning", -->
+  <!-- #clock# "3:45" (12h, rounded to 15 min), #Ago# "About 10 hours ago". an_stamp is used when -->
+  <!-- a clock is known; an_stamp_noclock is the fallback when it isn't. ===== -->
+  <string id="st_wom_event_stamp_001"><text>#Period#,</text></string>
+  <string id="st_wom_event_stamp_002"><text>#Period# around #clock#,</text></string>
+  <string id="st_wom_event_stamp_003"><text>Around #clock# #period#,</text></string>
+
+  <!-- Timeless stamp variants — used instead of the TOD stamps for mutant events   -->
+  <!-- (infest, swarm, alpha, alphakill), where an exact or approximate time is not  -->
+  <!-- meaningful. No trailing comma: emit_fn in render_report appends ", " itself,  -->
+  <!-- the same way it does after make_time_stamp (which also strips its own comma). -->
+  <string id="st_wom_event_stamp_timeless_001"><text>At some point</text></string>
+
+  <!-- TIME-OF-DAY leads. The recap groups events by period; the FIRST event of a -->
+  <!-- period leads with one of these (filling keeping #I_we_blank_l# = I/we), e.g. -->
+  <!-- "This morning, I cracked open a stash." Add as many variants as you like. -->
+  <string id="st_wom_ask_recap_tod_early_001"><text>Before dawn</text></string>
+  <string id="st_wom_ask_recap_tod_morning_001"><text>This morning</text></string>
+  <string id="st_wom_ask_recap_tod_morning_002"><text>After dawn</text></string>
+  <string id="st_wom_ask_recap_tod_morning_003"><text>Late morning</text></string>
+  <string id="st_wom_ask_recap_tod_afternoon_001"><text>This afternoon</text></string>
+  <string id="st_wom_ask_recap_tod_afternoon_002"><text>In the afternoon</text></string>
+  <string id="st_wom_ask_recap_tod_evening_001"><text>This evening</text></string>
+  <string id="st_wom_ask_recap_tod_nightfall_001"><text>After nightfall</text></string>
+  <string id="st_wom_ask_recap_tod_nightfall_002"><text>After dark</text></string>
+
+  <!-- YESTERDAY time-of-day leads — same periods, previous calendar day -->
+  <string id="st_wom_ask_recap_tod_yesterday_early_001"><text>Yesterday before dawn</text></string>
+  <string id="st_wom_ask_recap_tod_yesterday_morning_001"><text>Yesterday morning</text></string>
+  <string id="st_wom_ask_recap_tod_yesterday_afternoon_001"><text>Yesterday afternoon</text></string>
+  <string id="st_wom_ask_recap_tod_yesterday_evening_001"><text>Yesterday evening</text></string>
+  <string id="st_wom_ask_recap_tod_yesterday_nightfall_001"><text>Last night</text></string>
+
+  <!-- SEQUENCE connectors. All events after the global first use one of these. -->
+  <!-- Variants referencing #clock# or #Ago# are gated and only picked when those -->
+  <!-- values are available. Plain variants serve as fallbacks. -->
+  <string id="st_wom_ask_recap_seq_mid_001"><text>After that</text></string>
+  <string id="st_wom_ask_recap_seq_mid_002"><text>Then</text></string>
+  <string id="st_wom_ask_recap_seq_mid_003"><text>A bit later</text></string>
+  <string id="st_wom_ask_recap_seq_mid_004"><text>Afterwards</text></string>
+  <string id="st_wom_ask_recap_seq_mid_005"><text>From there</text></string>
+  <string id="st_wom_ask_recap_seq_mid_006"><text>Next</text></string>
+
+  <string id="st_wom_ask_recap_seq_mid_007"><text>Then around #clock#</text></string>
+  <string id="st_wom_ask_recap_seq_mid_008"><text>Then at about #clock#</text></string>
+  <string id="st_wom_ask_recap_seq_mid_009"><text>#Ago#</text></string>
+
+  <!-- SAME-TIME connectors. Used instead of a sequence connector when the previous -->
+  <!-- and current events started within a few in-game minutes of each other -->
+  <!-- (typically two ALifePlus consequences reacting to the same cause). -->
+  <string id="st_wom_ask_recap_seq_same_time_001"><text>At the same time</text></string>
+  <string id="st_wom_ask_recap_seq_same_time_002"><text>Meanwhile</text></string>
+  <string id="st_wom_ask_recap_seq_same_time_003"><text>Right about then</text></string>
+
+</string_table>

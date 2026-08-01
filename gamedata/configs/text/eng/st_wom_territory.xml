@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+    <!-- Territory strings for wom_territory.script ("Who's holding ground around here?").
+
+         The answer is assembled as: an optional intro line, the most recent hold as a
+         full sentence, then up to two older holds each introduced by a sequence
+         connector. Connectors are complete sentences, never clause fragments: a hold
+         line can open with a slot that resolves to a proper noun ("Duty holds ..."),
+         which could not be decapitalized to sit after a comma. Keep new connector
+         variants self-contained and sentence-final for the same reason.
+
+         POOLS
+           st_wom_territory_intro_NNN            optional lead-in; no slots
+           st_wom_territory_seq_NNN              connector for the 2nd/3rd hold; no slots
+           st_wom_territory_none_NNN             nothing held, or nothing known
+           st_wom_territory_here_own_<kind>_NNN  the speaker is STANDING AT this camp and it
+                                                 belongs to their own faction — "well, of
+                                                 course, this place is ours". First choice
+                                                 for that case, and the hold also sorts to
+                                                 the front of the answer.
+           st_wom_territory_here_own_service_<kind>_NNN
+                                                 the same, for a camp that has grown outpost
+                                                 services. Preferred whenever they exist, so
+                                                 EVERY line must name them.
+           st_wom_territory_here_<kind>_NNN      the speaker is STANDING AT this camp but
+                                                 somebody else holds it. Never write these
+                                                 as if the speaker were the owner.
+           st_wom_territory_here_service_<kind>_NNN
+                                                 the same, with outpost services. Again,
+                                                 every line names them.
+           st_wom_territory_held_<kind>_NNN      the hold is LIVE — wom_territory read it
+                                                 off the smart's own spawn pool, so state
+                                                 it plainly. Only the timing is uncertain,
+                                                 which is why #Ago#/#ago# are gated. Never
+                                                 reference the service slots here; a camp
+                                                 with services uses the pool below.
+           st_wom_territory_service_<kind>_NNN   the hold is LIVE *and* has grown outpost
+                                                 services. Preferred over _held whenever
+                                                 services exist, so EVERY line here must
+                                                 name them — that is the whole reason the
+                                                 pool is separate. Only conquest grows
+                                                 services, so only _service_conquer needs
+                                                 authoring; an unauthored kind falls back
+                                                 to _held, as does a fully gated pool. A
+                                                 `here` camp uses its own _here_*_service_
+                                                 pool instead of this one.
+           st_wom_territory_fading_<kind>_NNN    the hold has ENDED (decayed, or the squad
+                                                 never arrived) and the speaker only
+                                                 remembers it — hedge every one of these,
+                                                 they are the pool that can be wrong.
+
+         Selection order for a live hold, first pool that renders a line wins:
+             _here_own_service_, _here_own_, _here_service_, _here_, _service_, _held_
+         Each is a fallback for the ones before it, and _held_<kind> must always be
+         authored. The speaker relationship is the outer distinction and the service split
+         sits inside it, so a missing _service_ pool degrades to the same framing without
+         the shop rather than to a stranger's phrasing.
+         A remembered hold always uses _fading_<kind> and is never treated as "here".
+
+         <kind> is conquer (a faction took a camp), swarm (a mutant pack took an empty
+         camp) or infest (an alpha turned a lair into a nest).
+
+         SLOTS (hold pools only)
+           #location#     — the smart terrain name
+           #identity#     — the holder as a named concept ("Duty", "the Loners", "blind dogs")
+           #some_members# — "some Duty soldiers", or "some of our guys" for the speaker's own faction
+           #a_squad#      — "a Duty fireteam", "one of our fireteams"
+           #plural#       — bare plural ("Duty soldiers", "bloodsuckers")
+           #Ago#/#ago#    — "About six hours ago" / "about six hours ago". Empty unless an
+                            ALifePlus record for the takeover still exists (a 256-entry
+                            FIFO), so a long-standing hold usually has no timing at all.
+           #service_list# — "a trader and a mechanic": the outpost services grown at this
+           #service_role#   camp, and one representative role ("a trader"). Guaranteed
+                            non-empty in every *_service_* pool and always empty everywhere
+                            else, so those two slots belong only in a *_service_* line —
+                            swarm and infest never grow services, and a remembered hold
+                            carries none.
+         All slots are gated: a variant referencing one that resolves empty is dropped
+         before selection, so every pool keeps at least one variant using nothing but
+         #location# and #identity#. Note that only variants _001.._010 are ever loaded
+         (MAX_TEMPLATE_VARIANTS in wom_dialogue_helper) — an _011 would be silently dead.
+
+         Ownership comes from the smart terrain's spawn pool, so the _held lines are
+         accurate as stated; the speaker's uncertainty lives in *when* it happened and in
+         the _fading pools, which describe holds that are over. -->
+
+
+    <!-- ===== the question ===== -->
+    <string id="st_wom_ask_territory"><text>Who's holding ground around here?</text></string>
+
+    <!-- ===== intro ===== -->
+    <string id="st_wom_territory_intro_001"><text>Here's the latest.</text></string>
+    <string id="st_wom_territory_intro_002"><text>Here's what I know.</text></string>
+    <string id="st_wom_territory_intro_003"><text>Let me give you the rundown.</text></string>
+    <string id="st_wom_territory_intro_004"><text>Here's what I've heard.</text></string>
+    <string id="st_wom_territory_intro_005"><text>OK, this is what I know.</text></string>
+
+    <!-- ===== sequence connectors (complete sentences — see the note above) ===== -->
+    <string id="st_wom_territory_seq_001"><text>Hmm, what else?</text></string>
+    <string id="st_wom_territory_seq_002"><text>That's not it.</text></string>
+    <string id="st_wom_territory_seq_003"><text>Also worth knowing:</text></string>
+    <string id="st_wom_territory_seq_004"><text>That's not everything.</text></string>
+    <string id="st_wom_territory_seq_005"><text>Let me think...</text></string>
+    <string id="st_wom_territory_seq_006"><text>Let's see...</text></string>
+    <string id="st_wom_territory_seq_007"><text>Hmm...</text></string>
+
+    <!-- ===== nothing held / nothing known ===== -->
+    <string id="st_wom_territory_none_001"><text>Nothing new that I know of. Same old, same old.</text></string>
+    <string id="st_wom_territory_none_002"><text>Nothing has really changed lately.</text></string>
+    <string id="st_wom_territory_none_003"><text>Nothing worth reporting.</text></string>
+    <string id="st_wom_territory_none_004"><text>Nothing that I have heard.</text></string>
+
+
+    <!-- ===== conquer: a faction took a camp ===== -->
+    <string id="st_wom_territory_held_conquer_001"><text>#location# belongs to #identity# now.</text></string>
+    <string id="st_wom_territory_held_conquer_002"><text>As of #ago#, #location# belongs to #identity#.</text></string>
+    <string id="st_wom_territory_held_conquer_003"><text>#some_members# moved into #location# and posted up.</text></string>
+    <string id="st_wom_territory_held_conquer_004"><text>#a_squad# took #location# and dug in.</text></string>
+    <string id="st_wom_territory_held_conquer_005"><text>#Ago#, #identity# set up at #location#.</text></string>
+    <string id="st_wom_territory_held_conquer_006"><text>#Ago#, #identity# claimed #location#.</text></string>
+
+
+    <!-- ===== conquer, and the speaker is standing in it: their own faction holds it ===== -->
+    <string id="st_wom_territory_here_own_conquer_001"><text>As you can see, #some_members# are posted up right here at #location#.</text></string>
+    <string id="st_wom_territory_here_own_conquer_002"><text>You can propbably tell that we're posted up here at #location# now.</text></string>
+    <string id="st_wom_territory_here_own_conquer_003"><text>For starters, we're posted up here at #location#.</text></string>
+    <string id="st_wom_territory_here_own_conquer_004"><text>#Ago# we posted up right here at #location#.</text></string>
+
+    <!-- ===== ... and it has outpost services: every line names them ===== -->
+    <string id="st_wom_territory_here_own_service_conquer_001"><text>As you can see, #location# is ours, and we even have #service_list# working out of it now.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_002"><text>You can probably tell that #location# is ours, and now there's even #service_list#.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_003"><text>We've been posted up right here at #location# and have even got #service_list# set up.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_004"><text>For starters, #location# is ours, and we even have #service_list# available.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_005"><text>#Ago# this spot at #location# belongs to us, and now there's even #service_list#.</text></string>
+    <string id="st_wom_territory_here_own_service_conquer_006"><text>We've been posted up here at #location#, and now there's we have #service_list#.</text></string>
+
+
+    <!-- ===== conquer, and the speaker is standing in it: somebody else holds it ===== -->
+    <string id="st_wom_territory_here_conquer_001"><text>Right here, #location#, belongs to #identity# now.</text></string>
+    <string id="st_wom_territory_here_conquer_002"><text>Right here, #location#, is claimed by #identity# these days.</text></string>
+    <string id="st_wom_territory_here_conquer_003"><text>You can probably tell that the area around here at #location# belongs to #identity# now.</text></string>
+    <string id="st_wom_territory_here_conquer_004"><text>You've probably noticed right here at #location# belongs to #identity# now.</text></string>
+
+    <!-- ===== ... and it has outpost services: every line names them ===== -->
+    <string id="st_wom_territory_here_service_conquer_001"><text>As you can see, #location# has been claimed by #identity# now, including #service_list#.</text></string>
+    <string id="st_wom_territory_here_service_conquer_002"><text>You can probably tell that right here at #location# belongs to #identity# now, and there is even #service_list# on site.</text></string>
+    <string id="st_wom_territory_here_service_conquer_003"><text>For starters, #location# belongs to #identity#, and they even have #service_list# here.</text></string>
+    <string id="st_wom_territory_here_service_conquer_004"><text>I'm sure you can see that #location# has been claimed by #identity#, and they've even brought in #service_list#.</text></string>
+    <string id="st_wom_territory_here_service_conquer_005"><text>To begin, #identity# have this place, including #service_list#.</text></string>
+
+
+    <!-- ===== swarm / infest, and the speaker is standing next to it ===== -->
+    <string id="st_wom_territory_here_swarm_001"><text>Closest one is right there. #plural# have #location#.</text></string>
+    <string id="st_wom_territory_here_swarm_002"><text>Careful, the area right here at #location# has been swarmed by #identity# now.</text></string>
+    <string id="st_wom_territory_here_infest_001"><text>You might be able to tell that right here at #location# has been infested with #identity#.</text></string>
+    <string id="st_wom_territory_here_infest_002"><text>Right here at #location# has been infested with #plural#.</text></string>
+
+
+    <!-- ===== conquer with outpost services: every line names them ===== -->
+    <string id="st_wom_territory_service_conquer_001"><text>#location# belongs to #identity# now, and they even have #service_list# working out of it.</text></string>
+    <string id="st_wom_territory_service_conquer_002"><text>#location# belongs to #identity# these days, and they have #service_list# set up there.</text></string>
+    <string id="st_wom_territory_service_conquer_003"><text>#location# is claimed by #identity# now, including #service_list# on site.</text></string>
+    <string id="st_wom_territory_service_conquer_004"><text>#some_members# have made #location# theirs, and there is #service_list# in there now.</text></string>
+    <string id="st_wom_territory_service_conquer_005"><text>#identity# set up now at #location#, there's even #service_list#.</text></string>
+    <string id="st_wom_territory_service_conquer_006"><text>#Ago#, #identity# claimed #location#, and they have #service_list# in there already.</text></string>
+    <string id="st_wom_territory_service_conquer_007"><text>Go to #location# if you have business, it is claimed by #identity#, and even has #service_list# on site.</text></string>
+    <string id="st_wom_territory_service_conquer_008"><text>#location# is turning into a proper base for #identity# now that they have #service_list#.</text></string>
+
+
+
+    <string id="st_wom_territory_fading_conquer_001"><text>#identity# had #location# last I heard, though that was a while back now.</text></string>
+    <string id="st_wom_territory_fading_conquer_002"><text>Last I heard, #location# belongs to #identity#, unless somebody has pushed them out since.</text></string>
+    <string id="st_wom_territory_fading_conquer_003"><text>Word was #some_members# were holding #location#, but not sure if that's still the case.</text></string>
+    <string id="st_wom_territory_fading_conquer_004"><text>Last I knew, #location# was claimed by #identity#, but it's been a while.</text></string>
+    <string id="st_wom_territory_fading_conquer_005"><text>#Ago#, #location# was taken by #identity#, and I haven't heard any recent updates.</text></string>
+
+    <!-- ===== swarm: a mutant pack took an empty camp ===== -->
+    <string id="st_wom_territory_held_swarm_001"><text>#location# was swarmed by #identity#.</text></string>
+    <string id="st_wom_territory_held_swarm_002"><text>Give #location# a wide berth. #plural# are living in it now.</text></string>
+    <string id="st_wom_territory_held_swarm_003"><text>#some_members# came through #location# and haven't left.</text></string>
+    <string id="st_wom_territory_held_swarm_004"><text>At some point #plural# overran #location#.</text></string>
+    <string id="st_wom_territory_held_swarm_005"><text>#location# was overrun by #identity#.</text></string>
+
+    <string id="st_wom_territory_fading_swarm_001"><text>#location# had #plural# all over it last I heard, but that was some time ago.</text></string>
+    <string id="st_wom_territory_fading_swarm_002"><text>A while back, #identity# had #location#... maybe something cleared them out by now, maybe not.</text></string>
+    <string id="st_wom_territory_fading_swarm_003"><text>Word was #location# was overrun, and I haven't heard whether anything's changed recently.</text></string>
+    <string id="st_wom_territory_fading_swarm_004"><text>Some time ago, #location# was swarming with #identity#. Whether it still is, who knows.</text></string>
+
+    <!-- ===== infest: an alpha turned a lair into a nest ===== -->
+    <string id="st_wom_territory_held_infest_001"><text>#identity# have made a nest at #location#, and there is something big at the middle of it.</text></string>
+    <string id="st_wom_territory_held_infest_002"><text>Stay out of #location# entirely. #plural# have it, and they have bred.</text></string>
+    <string id="st_wom_territory_held_infest_003"><text>#location# is a den of #identity# now, and there are more of them every day.</text></string>
+    <string id="st_wom_territory_held_infest_004"><text>At some point #identity# turned #location# into a nest.</text></string>
+    <string id="st_wom_territory_held_infest_005"><text>Whoever tells you #location# is passable has not been to #location# lately, they say #identity# nest there.</text></string>
+
+    <string id="st_wom_territory_fading_infest_001"><text>#location# was a nest of #identity# last I heard, but that was a while ago.</text></string>
+    <string id="st_wom_territory_fading_infest_002"><text>#plural# had a den at #location#, could still be there, could have moved on.</text></string>
+    <string id="st_wom_territory_fading_infest_003"><text>Word was #identity# nested at #location#, but that was a while back.</text></string>
+    <string id="st_wom_territory_fading_infest_004"><text>Some time ago, #location# was full of #plural#, not sure if it still is.</text></string>
+</string_table>

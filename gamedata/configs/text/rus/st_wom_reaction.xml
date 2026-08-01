@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <!-- Real-time event reaction bark templates for wom_reaction.script.
+         Delivered as PDA messages the moment ALifePlus records a high-signal event
+         on the current level, attributed to a nearby non-combat stalker.
+
+         Key format: st_wom_reaction_{consequence_suffix}_{NNN}
+                     st_wom_reaction_{category}_{NNN}     (category-level fallback)
+                     st_wom_reaction_generic_{NNN}         (catch-all)
+         One is picked at random; variants referencing a slot whose value is empty
+         are filtered out by pick_dialogue_variant's gated_tokens before selection,
+         so every pool must include at least one location-free line as a fallback.
+
+         Tone: present-tense, radio-chatter style — the speaker just heard this
+         through their earpiece or PDA feed, a moment ago.
+
+         Available slots (same as area-recap event templates):
+            #location#           — smart terrain display name (gated when absent)
+            #some_members_subject#  — e.g. "some Loners", "a Duty patrol"
+            #a_squad_subject#       — e.g. "a Loner crew", "a Duty unit"
+            #a_member_subject#      — e.g. "a Loner", "a Duty soldier"
+            #plural_subject#        — e.g. "Loners", "Duty soldiers"
+            #some_members_other#    — same forms for the other party
+            #a_squad_other#
+            #a_member_other#
+            #plural_other#
+            #kills#               — word form of kill count (e.g. "three", "a")
+            #count_other#         — e.g. "four Bandits", "some Mercs" -->
+
+    <!-- ===== MASSACRE (cause:massacre — investigation consequence) ===== -->
+    <!-- <string id="st_wom_reaction_massacre_investigate_001"><text>Just got word of a crew got wiped near #location#. #some_members_subject# are heading out to look into it.</text></string>
+    <string id="st_wom_reaction_massacre_investigate_002"><text>Something bad happened at #location#, #some_members_subject# are moving in to check it out.</text></string>
+    <string id="st_wom_reaction_massacre_investigate_003"><text>Heard #some_members_other# hit someone near #location#, #some_members_subject# just got sent to investigate.</text></string>
+    <string id="st_wom_reaction_massacre_investigate_004"><text>Sounds like a crew went dark near #location#.</text></string>
+    <string id="st_wom_reaction_massacre_investigate_005"><text>Word just came in of some unresponsive PDAs pinging near #location#. #some_members_subject# are on the way.</text></string>
+
+    <string id="st_wom_reaction_massacre_loot_001"><text>Heard a crew got wiped near #location#. Now #some_members_subject# are moving in to scavenge whatever's left.</text></string>
+    <string id="st_wom_reaction_massacre_loot_002"><text>Someone got hit hard near #location#. #some_members_subject# are already heading there to pick through the remains.</text></string>
+    <string id="st_wom_reaction_massacre_loot_003"><text>Massacre near #location#, and now #some_members_subject# are swooping in to loot the bodies.</text></string>
+    <string id="st_wom_reaction_massacre_loot_004"><text>Another crew wiped out. #some_members_subject# are moving to #location# to collect.</text></string>
+
+    <string id="st_wom_reaction_massacre_scavenge_001"><text>Another slaughter near #location#. #some_members_subject# are heading there to scavenge.</text></string>
+    <string id="st_wom_reaction_massacre_scavenge_002"><text>Bodies near #location# — #some_members_subject# are already on the move.</text></string> -->
+
+   <!-- category-level massacre fallback (no consequence suffix assumed) -->
+    <string id="st_wom_reaction_massacre_001"><text>Только что пришла весть о примолкших КПК на точке #location#. #some_members_other# знатно потрепали #some_members_subject#.</text></string>
+    <string id="st_wom_reaction_massacre_002"><text>Пришла весть с точки #location# — похоже, #some_members_other# вырезали #a_squad_subject# подчистую.</text></string>
+    <string id="st_wom_reaction_massacre_003"><text>Что-то недоброе случилось возле объекта на точке #location#. Судя по всему, целый отряд лёг.</text></string>
+    <string id="st_wom_reaction_massacre_004"><text>Нет связи с #a_squad_subject# на точке #location#. Похоже, всё, отвоевались пацаны тамошние.</text></string>
+    <string id="st_wom_reaction_massacre_005"><text>Похоже, связь с #a_squad_other# возле объекта на точке #location# потеряна. Тишина в эфире...</text></string>
+    <string id="st_wom_reaction_massacre_006"><text>Что-то совсем паршивое там стряслось. Ещё одну группу в фарш перемололо.</text></string>
+
+    <!-- ===== SQUADKILL (cause:squadkill — retaliation for a squad being wiped) ===== -->
+    <string id="st_wom_reaction_squadkill_001"><text>Короче, #a_squad_other# только что вырезали чью-то группу на точке #location#. Ребята #some_members_subject# такое им точно не спустят.</text></string>
+    <string id="st_wom_reaction_squadkill_002"><text>Только что пришла весть — #some_members_other# положили целый отряд возле объекта на точке #location#. Пацаны #some_members_subject# уже выдвигаются мстить.</text></string>
+    <string id="st_wom_reaction_squadkill_003"><text>Слышал, #some_members_other# вырезали группу на точке #location#. Некоторые #some_members_subject# идут по их душу.</text></string>
+    <string id="st_wom_reaction_squadkill_004"><text>Такая инфа: #a_squad_other# только что с потрохами уничтожили целый отряд. Особо бешенные из числа #some_members_subject# уже копытом бьют, мстить рвутся.</text></string>
+    <string id="st_wom_reaction_squadkill_005"><text>Целая группа полегла возле объекта на точке #location#. Мужики #some_members_subject# выдвигаются разобраться да долги вернуть.</text></string>
+
+    <!-- ===== BASEKILL (cause:basekill — base attack consequence) ===== -->
+    <string id="st_wom_reaction_basekill_support_001"><text>Слыхал? #some_members_other# только что атаковали объект на точке #location#. Теперь #some_members_subject# спешат на подмогу.</text></string>
+    <string id="st_wom_reaction_basekill_support_002"><text>Похоже, объект на точке #location# под штурм попал. Подкрепление уже летит на всех парах.</text></string>
+    <string id="st_wom_reaction_basekill_support_003"><text>Весточка пришла — #some_members_other# ударили по объекту на точке #location#. Видать, #some_members_subject# выдвигаются поддержать огоньком.</text></string>
+
+    <string id="st_wom_reaction_basekill_flee_001"><text>Похоже, объекту на точке #location# — досталось по полной. Говорят, #some_members_subject# отходят, чтоб шкуру спасти.</text></string>
+    <string id="st_wom_reaction_basekill_flee_002"><text>Наших выбили с объекта на точке #location#. Теперь #some_members_subject# отступают и перегруппировываются.</text></string>
+    <string id="st_wom_reaction_basekill_flee_003"><text>#some_members_subject# только что получили по зубам на точке #location#. Дают дёру и отходят.</text></string>
+
+    <!-- category-level basekill fallback -->
+    <string id="st_wom_reaction_basekill_001"><text>Слышишь? #some_members_other# только что потеряли пост возле объекта на точке #location#. Там сейчас полный передел идет.</text></string>
+    <string id="st_wom_reaction_basekill_002"><text>Только что пришла весть — на объект на точке #location# напали. Крепкие ребята из числа #some_members_other# ударили крепко, без жалости.</text></string>
+    <string id="st_wom_reaction_basekill_003"><text>Похоже, на точке #location# идёт жесткая перестрелка. Только что поймал по рации треск такой, будто шифер в костер кинули.</text></string>
+
+    <!-- ===== AREA_CONQUER (cause:area_conquer) ===== -->
+    <string id="st_wom_reaction_conquer_001"><text>Пришла весть — #some_members_subject# вошли в локацию #location# и заняли всю территорию.</text></string>
+    <string id="st_wom_reaction_conquer_002"><text>Только что услышал — #some_members_subject# закрепились на объекте на точке #location#. Это ещё многим боком вылезет.</text></string>
+    <string id="st_wom_reaction_conquer_003"><text>Слыхал тут, что #some_members_subject# только что отжали объект на точке #location#. Теперь это их делянка.</text></string>
+    <string id="st_wom_reaction_conquer_004"><text>Поймал кое-что по рации... Похоже, #some_members_subject# только что заняли объект на точке #location#.</text></string>
+    <string id="st_wom_reaction_conquer_005"><text>Похоже, обстановка на точке #location# изменилась. Теперь там держат оборону #some_members_subject#.</text></string>
+    <string id="st_wom_reaction_conquer_006"><text>Инфа такая: #a_squad_subject# только что заявили права на территорию. Говорят, где-то возле объекта на точке #location#.</text></string>
+
+    <!-- ===== STASH_LOOT (cause:stash_loot) ===== -->
+    <string id="st_wom_reaction_stash_loot_001"><text>Кто-то только что вскрыл хабар на точке #location#. Судя по всему, бывалые ворюги.</text></string>
+    <string id="st_wom_reaction_stash_loot_002"><text>Говорят, #some_members_subject# только что обчистили тайник возле объекта на точке #location#. Вынесли всё подчистую.</text></string>
+    <string id="st_wom_reaction_stash_loot_003"><text>Только что услышал — тайник возле объекта на точке #location# под ноль обчистили. Гопари из числа #some_members_subject# забрали всё добра.</text></string>
+    <string id="st_wom_reaction_stash_loot_004"><text>Тайник на точке #location# только что разграбили. Кто-то точно знал, где лежка.</text></string>
+    <string id="st_wom_reaction_stash_loot_005"><text>Поймал по рации — нычку возле объекта на точке, которую называют #location#, только что до суха выгребли.</text></string>
+    <string id="st_wom_reaction_stash_loot_006"><text>Тайник сменил хозяина. Кто-то прямо сейчас сидит и карманы набивает.</text></string>
+
+    <!-- ===== ALPHA (cause:alpha — mutant spawns) ===== -->
+    <string id="st_wom_reaction_alpha_001"><text>На точке #location# зафиксирована нездоровая активность мутантов.</text></string>
+    <string id="st_wom_reaction_alpha_002"><text>Только что поймал сигнал... возле объекта на точке, известной как #location#, что-то жуткое появилось. Смотри в оба, если пойдешь туда.</text></string>
+    <string id="st_wom_reaction_alpha_003"><text>Говорят, в округе завёлся лютый альфа-хищник. Судя по всему, крутится возле объекта, известного как #location#.</text></string>
+
+    <!-- ===== ALPHAKILL (cause:alphakill — apex creature killed) ===== -->
+    <string id="st_wom_reaction_alphakill_001"><text>Только что услышал — #some_members_subject# завалили #a_member_other# возле объекта на точке #location#. Задачка, сука, не из лёгких была!</text></string>
+    <string id="st_wom_reaction_alphakill_002"><text>Говорят, #some_members_subject# завалили знатную тварь на точке #location#. Чистая работа, ничего не скажешь.</text></string>
+    <string id="st_wom_reaction_alphakill_003"><text>Кое-кого очень опасного только что покрошили свинцом возле объекта на точке #location#. Это сделали #some_members_subject#.</text></string>
+    <string id="st_wom_reaction_alphakill_004"><text>Поймал по рации — возле объекта на точке #location# завалили мутанта-вожака. Молодцы #some_members_subject#.</text></string>
+    <string id="st_wom_reaction_alphakill_005"><text>Значит так: #a_member_other# нейтрализован возле объекта на точке #location#. У кого-то сегодня явно удачный день.</text></string>
+    <string id="st_wom_reaction_alphakill_006"><text>Вожака мутантов только что пустили на фарш. Зона продолжает жить своей суровой жизнью.</text></string>
+
+    <!-- ===== GENERIC catch-all ===== -->
+    <string id="st_wom_reaction_generic_001"><text>Только что поймал сигнал — говорят, на точке #location# что-то неладно.</text></string>
+    <string id="st_wom_reaction_generic_002"><text>Что-то непонятное только что стряслось возле объекта на точке #location#. Пока хрен поймешь, что именно.</text></string>
+    <string id="st_wom_reaction_generic_003"><text>Поймал шум по рации. Обстановка на точке с названием #location# накаляется.</text></string>
+    <string id="st_wom_reaction_generic_004"><text>Только что пришла весть по каналам. Где-то неподалеку какая-то заваруха начинается.</text></string>
+    <string id="st_wom_reaction_generic_005"><text>Только что поймал кое-что по каналу. Зона сегодня опять не в духе.</text></string>
+
+</string_table>

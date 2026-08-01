@@ -1,0 +1,415 @@
+--- wom_combat.script
+--- Tracks cross-faction combat engagements for use in NPC dialogue recaps.
+---
+--- Listens to engine death callbacks (npc_on_death_callback, monster_on_death_callback)
+--- for ONLINE deaths (both victim and killer are client objects with reliable attribution),
+--- and squad_on_npc_death for OFFLINE deaths (server objects via xsquad).
+--- A victim-id dedup guard prevents double-counting when both fire for the same death.
+---
+--- Design notes:
+---   * Engagement grouping key: (level_id, smart_id, time window). Deaths with no
+---     resolved smart terrain always start a new engagement — never fold into each other.
+---   * Each engagement tracks per-faction kills and losses using raw community/species
+---     keys (e.g. "dolg", "stalker", "bloodsucker"), so the same record covers multiple
+---     factions fighting at the same place (Loners + Clear Sky both killing mutants).
+---   * Friendly fire (victim_faction == killer_faction) is silently skipped.
+---   * Rendering/text generation is out of scope — callers consume raw engagement data
+---     and produce text via wom_terminology_helper.
+---
+--- Save/load: save_state / load_state pattern; only primitives stored.
+--- Safe to remove mid-save: orphaned data is silently ignored on reload.
+---
+--- Depends on: wom_utils (get_object_id, get_level_id),
+---             wom_terminology_helper (get_object_faction),
+---             wom_npc_role (smart_id_of_squad, nearest_smart_id),
+---             wom_debug (log_kill)
+--- Depends on (all soft-gated): xsquad, xtime, xlevel, xcreature, simulation_board, alife
+
+local SAVE_KEY         = "word_of_mouth_combat"
+local SAVE_VERSION     = 1     -- bump when the engagement record shape changes incompatibly
+local ENC_WINDOW       = 900   -- game-seconds: deaths this close fold into one engagement
+local MAX_ENGAGEMENTS  = 50    -- FIFO eviction cap
+local RETENTION_HOURS  = 48    -- drop engagements older than this (in-game hours)
+local DEDUP_WINDOW     = 5     -- game-seconds: suppress duplicate recordings of the same death
+
+local INVALID_GROUP_ID = 65535 -- engine "no squad" sentinel
+
+local _engagements      = {}   -- array; oldest at [1], newest at [#_engagements]
+local _next_id          = 1    -- monotonic engagement id counter
+local _processed_deaths = {}   -- [victim_id] = game_sec, dedup guard
+
+-- ============================================================
+-- Internal helpers
+-- ============================================================
+
+-- Returns the current game time in seconds, or 0 when xtime is unavailable.
+local function _now()
+    return (xtime and xtime.game_sec and xtime.game_sec()) or 0
+end
+
+-- Returns the current in-game wall-clock time as "HH:MM", or nil when unavailable.
+-- Uses level.get_time_hours() (actual calendar clock) not xtime.game_sec() (offset from start).
+local function _real_clock()
+    if not (level and level.get_time_hours) then return nil end
+    local h      = level.get_time_hours()
+    local hour   = math.floor(h)
+    local minute = math.floor((h - hour) * 60)
+    return string.format("%02d:%02d", hour, minute)
+end
+
+-- Returns an existing open engagement at (level_id, smart_id) within ENC_WINDOW of
+-- now_sec, or creates and appends a new one. When smart_id is nil, a new engagement
+-- is always created — unlocated deaths are never folded together.
+-- @param level_id number
+-- @param smart_id number|nil
+-- @param now_sec  number
+-- @return table  the engagement record to update
+local function _find_or_create(level_id, smart_id, now_sec)
+    if smart_id then
+        for i = #_engagements, 1, -1 do
+            local e = _engagements[i]
+            if e.level_id == level_id
+                and e.smart_id == smart_id
+                and (now_sec - e.t_last) <= ENC_WINDOW
+            then
+                return e
+            end
+        end
+    end
+    local e = {
+        id             = _next_id,
+        level_id       = level_id,
+        smart_id       = smart_id,
+        t_start        = now_sec,
+        t_last         = now_sec,
+        started_clock  = _real_clock(),
+        factions       = {},
+        squads         = {},
+        squad_sizes    = {},   -- [squad_id] = initial member count at first appearance
+        squad_factions = {},   -- [squad_id] = faction_key
+        total_kills    = 0,
+        total_losses   = 0,
+    }
+    _next_id = _next_id + 1
+    _engagements[#_engagements + 1] = e
+    return e
+end
+
+-- Adds one kill to killer_key and one loss to victim_key in the engagement.
+-- @param engagement table
+-- @param killer_key string|nil
+-- @param victim_key string|nil
+-- @param now_sec    number
+local function _credit(engagement, killer_key, victim_key, now_sec)
+    engagement.t_last = now_sec
+    if killer_key then
+        local f = engagement.factions[killer_key]
+        if not f then f = { kills = 0, losses = 0 }; engagement.factions[killer_key] = f end
+        f.kills                = f.kills + 1
+        engagement.total_kills = engagement.total_kills + 1
+    end
+    if victim_key then
+        local f = engagement.factions[victim_key]
+        if not f then f = { kills = 0, losses = 0 }; engagement.factions[victim_key] = f end
+        f.losses                = f.losses + 1
+        engagement.total_losses = engagement.total_losses + 1
+    end
+end
+
+-- Removes stale entries from _processed_deaths. Called on every _record invocation
+-- (not only on the success path) so the table stays bounded even when all deaths
+-- are skipped (e.g. same-faction infighting that never reaches _trim).
+-- @param now_sec number
+local function _prune_dedup(now_sec)
+    local dedup_cutoff = now_sec - DEDUP_WINDOW * 2
+    for victim_id, recorded_at in pairs(_processed_deaths) do
+        if recorded_at < dedup_cutoff then _processed_deaths[victim_id] = nil end
+    end
+end
+
+-- Evicts engagements older than RETENTION_HOURS or over the capacity cap.
+-- @param now_sec number
+local function _trim(now_sec)
+    local cutoff = now_sec - RETENTION_HOURS * 3600
+    local kept = {}
+    for i = 1, #_engagements do
+        if _engagements[i].t_last >= cutoff then kept[#kept + 1] = _engagements[i] end
+    end
+    if #kept > MAX_ENGAGEMENTS then
+        local start = #kept - MAX_ENGAGEMENTS + 1
+        local capped = {}
+        for i = start, #kept do capped[#capped + 1] = kept[i] end
+        kept = capped
+    end
+    _engagements = kept
+    _prune_dedup(now_sec)
+end
+
+-- Resolves the squad server object for a given numeric group_id.
+-- Returns nil when group_id is nil, the invalid sentinel, or not found in alife.
+-- @param sim      userdata|nil  alife() simulator
+-- @param group_id number|nil
+-- @return userdata|nil  squad server object
+local function _squad_from_group_id(sim, group_id)
+    if not group_id or group_id == INVALID_GROUP_ID then return nil end
+    return sim and sim:object(group_id)
+end
+
+-- Returns smart_id when it belongs to level_id, nil otherwise.
+-- Guards xlevel availability and uses pcall so a missing method never raises.
+-- @param sim      userdata|nil
+-- @param smart_id number|nil
+-- @param level_id number
+-- @return number|nil
+local function _validate_smart_level(sim, smart_id, level_id)
+    if not smart_id then return nil end
+    if not (xlevel and xlevel.get_level_id) then return smart_id end
+    local smart_se = sim and sim:object(smart_id)
+    if not smart_se then return smart_id end
+    local ok, smart_level = pcall(xlevel.get_level_id, smart_se)
+    if ok and smart_level and smart_level ~= level_id then return nil end
+    return smart_id
+end
+
+-- Captures initial squad sizes into engagement.squad_sizes / engagement.squad_factions.
+-- Only records the first appearance of each squad id (subsequent deaths are skipped).
+-- The victim's squad count is incremented by 1 because npc_count() has already decremented.
+-- @param engagement      table         mutable engagement record
+-- @param sim             userdata|nil  alife() simulator (needed to look up killer squad)
+-- @param victim_squad    userdata|nil  squad server object the victim belonged to
+-- @param victim_key      string|nil    victim's faction community key
+-- @param killer_squad_id number|nil    squad id of the killer
+-- @param killer_key      string|nil    killer's faction community key
+local function _capture_squad_sizes(engagement, sim, victim_squad, victim_key, killer_squad_id, killer_key)
+    if victim_squad and not engagement.squad_sizes[victim_squad.id] then
+        local count = (victim_squad.npc_count and victim_squad:npc_count() or 0) + 1
+        engagement.squad_sizes[victim_squad.id]    = count
+        engagement.squad_factions[victim_squad.id] = victim_key
+    end
+    if killer_squad_id and not engagement.squad_sizes[killer_squad_id] then
+        local killer_squad_object = sim and sim:object(killer_squad_id)
+        if killer_squad_object and killer_squad_object.npc_count then
+            engagement.squad_sizes[killer_squad_id]    = killer_squad_object:npc_count()
+            engagement.squad_factions[killer_squad_id] = killer_key
+        end
+    end
+end
+
+-- Extracts the squad id from a killer's server entity.
+-- Returns nil when killer_se is absent or has no valid group.
+-- @param killer_se  userdata|nil  server entity of the killer
+-- @return number|nil
+local function _killer_squad_id_from(killer_se)
+    if not killer_se then return nil end
+    local kg = killer_se.group_id
+    return (kg and kg ~= INVALID_GROUP_ID) and kg or nil
+end
+
+-- Shared crediting logic used by all engine death callbacks.
+-- victim_se is the server object (may be nil), victim_obj is the original callback
+-- object (may be a client object); faction is resolved from whichever is available.
+-- @param sim             userdata|nil  alife() simulator
+-- @param victim_se       userdata|nil  server object of the dead NPC/monster
+-- @param victim_obj      userdata      original callback object (may equal victim_se)
+-- @param killer_se       userdata|nil  server object of the killer
+-- @param victim_squad    userdata|nil  squad server object the victim belonged to
+-- @param victim_pos      vector|nil    world position; used as primary lookup (prefer_squad=false)
+--                                     or fallback lookup (prefer_squad=true). Resolved lazily
+--                                     after the dedup check so suppressed events skip the scan.
+-- @param killer_squad_id number|nil   squad id of the killer; recorded as a participant
+-- @param prefer_squad    boolean       true = squad smart first, position fallback (NPCs);
+--                                     false = position first, squad fallback (monsters)
+local function _record(sim, victim_se, victim_obj, killer_se, victim_squad, victim_pos, killer_squad_id, prefer_squad)
+    local now_sec = _now()
+
+    -- Prune stale dedup entries on every call (not only on the success path) so
+    -- _processed_deaths stays bounded even when all deaths are skipped (e.g.
+    -- same-faction infighting that never reaches _trim).
+    _prune_dedup(now_sec)
+
+    -- Dedup: npc_on_death_callback/monster_on_death_callback (online) and
+    -- squad_on_npc_death (offline/online via xsquad) may both fire for the same
+    -- death. Skip if this victim was already recorded within DEDUP_WINDOW seconds.
+    local victim_id = wom_utils.get_object_id(victim_se) or wom_utils.get_object_id(victim_obj)
+    if victim_id then
+        local last = _processed_deaths[victim_id]
+        if last and (now_sec - last) < DEDUP_WINDOW then
+            wom_debug.log_dedup(victim_id, now_sec - last)
+            return
+        end
+        _processed_deaths[victim_id] = now_sec
+    end
+
+    local victim_key = wom_terminology_helper.get_object_faction(sim, victim_se or victim_obj, victim_squad)
+    local killer_key = killer_se and wom_terminology_helper.get_object_faction(sim, killer_se, nil) or nil
+
+    if not victim_key                          then return end  -- unidentifiable victim
+    if killer_key and killer_key == victim_key then return end  -- skip friendly fire
+
+    local level_id = wom_utils.get_level_id(sim, victim_se)
+    if not level_id then return end
+
+    -- Resolve the smart terrain lazily here, after early-exit checks, so a
+    -- deduped or otherwise-skipped death does not pay the sim-wide scan cost.
+    -- NPCs (prefer_squad=true): squad smart first, position as fallback.
+    -- Monsters (prefer_squad=false): position first, squad smart as fallback.
+    -- Either path discards a squad smart that belongs to a different level, and
+    -- the position lookup is confined to the victim's own level: offline deaths
+    -- (on_squad_npc_death) report a squad position from any map, and positions
+    -- are per-level coordinate frames, so an unconfined nearest-smart scan can
+    -- pin a Zaton firefight to a Cordon camp that happens to share coordinates.
+    local smart_id
+    if prefer_squad then
+        smart_id = _validate_smart_level(sim, wom_npc_role.smart_id_of_squad(victim_squad), level_id)
+        if not smart_id and victim_pos then
+            smart_id = wom_npc_role.nearest_smart_id(victim_pos, nil, level_id)
+        end
+    else
+        smart_id = victim_pos and wom_npc_role.nearest_smart_id(victim_pos, nil, level_id)
+        if not smart_id then
+            smart_id = _validate_smart_level(sim, wom_npc_role.smart_id_of_squad(victim_squad), level_id)
+        end
+    end
+
+    local engagement = _find_or_create(level_id, smart_id, now_sec)
+
+    if victim_squad     then engagement.squads[victim_squad.id]  = true end
+    if killer_squad_id  then engagement.squads[killer_squad_id]  = true end
+
+    _capture_squad_sizes(engagement, sim, victim_squad, victim_key, killer_squad_id, killer_key)
+
+    _credit(engagement, killer_key, victim_key, now_sec)
+    wom_debug.log_kill(engagement, killer_key, victim_key)
+    _trim(now_sec)
+end
+
+-- ============================================================
+-- Engine callbacks
+-- ============================================================
+
+-- Handles online human NPC deaths. npc and killer are client objects.
+-- Covers squad-member human NPCs online (Duty vs Freedom, etc.).
+-- squad_on_npc_death may also fire for the same death; the dedup guard in _record
+-- suppresses the duplicate.
+function on_npc_death(npc, killer)
+    local sim = alife()
+    if not sim then return end
+    local npc_se        = sim:object(npc:id())
+    local victim_squad  = _squad_from_group_id(sim, npc_se and npc_se.group_id)
+    local killer_se       = killer and sim:object(killer:id()) or nil
+    local killer_squad_id = _killer_squad_id_from(killer_se)
+    _record(sim, npc_se, npc, killer_se, victim_squad, wom_utils.get_object_position(npc), killer_squad_id, true)
+end
+
+-- Handles online monster deaths. monster and killer are client objects.
+-- Covers both lone mutants and squad-member mutants (e.g. Clear Sky killing a Flesh).
+-- squad_on_npc_death may also fire for squad-member mutants; the dedup guard suppresses
+-- the duplicate.
+function on_monster_death(monster, killer)
+    local sim = alife()
+    if not sim then return end
+    local monster_se    = sim:object(monster:id())
+    local victim_squad  = _squad_from_group_id(sim, monster_se and monster_se.group_id)
+    local killer_se       = killer and sim:object(killer:id()) or nil
+    local killer_squad_id = _killer_squad_id_from(killer_se)
+    -- Pass the position so nearest_smart_id (position-first) finds the kill site.
+    -- The sim-wide scan is deferred until after the dedup guard in _record.
+    _record(sim, monster_se, monster, killer_se, victim_squad, wom_utils.get_object_position(monster), killer_squad_id, false)
+end
+
+-- Handles squad-member deaths for human and monster squads via xsquad (online + offline).
+-- npc and killer may be server objects (offline) or client objects (online).
+-- For offline deaths this is the only callback that fires; for online deaths the
+-- npc_on_death_callback / monster_on_death_callback above will have already run and
+-- the dedup guard in _record suppresses this duplicate.
+function on_squad_npc_death(squad, npc, killer)
+    local sim             = alife()
+    local killer_id       = killer and wom_utils.get_object_id(killer)
+    local killer_se       = sim and killer_id and sim:object(killer_id)
+    local killer_squad_id = _killer_squad_id_from(killer_se)
+    -- Prefer the squad's position over the NPC's for offline deaths: the squad's aggregate
+    -- position is more reliably set for offline server objects than an individual NPC's.
+    -- npc is a server object offline and a client object online, so its position must be
+    -- resolved by shape, never read as a field (see wom_utils.get_object_position).
+    -- The squad goes through the same helper: it is a server object today, so the helper
+    -- just hands back the field, but establishing that at the call site is exactly the
+    -- assumption this callback got wrong about npc.
+    local victim_pos = wom_utils.get_object_position(squad) or wom_utils.get_object_position(npc)
+    _record(sim, npc, npc, killer, squad, victim_pos, killer_squad_id, true)
+end
+
+-- ============================================================
+-- Save / load
+-- ============================================================
+
+local function _on_save(md)
+    md[SAVE_KEY] = { v = SAVE_VERSION, e = _engagements, nid = _next_id }
+end
+
+local function _on_load(md)
+    local data = md and md[SAVE_KEY]
+    if data and data.v == SAVE_VERSION and type(data.e) == "table" then
+        _engagements = data.e
+        _next_id     = (type(data.nid) == "number" and data.nid) or (#data.e + 1)
+    else
+        _engagements = {}
+        _next_id     = 1
+    end
+end
+
+-- ============================================================
+-- Public API
+-- ============================================================
+
+-- Returns all engagements, oldest-first. Treat the returned table as read-only.
+-- @return table  array of { id, level_id, smart_id, t_start, t_last,
+--                           factions = { [key] = { kills, losses } },
+--                           squad_sizes = { [squad_id] = number },
+--                           squad_factions = { [squad_id] = faction_key },
+--                           total_kills, total_losses }
+function get_engagements()
+    return _engagements
+end
+
+-- Returns engagements on a specific level, oldest-first.
+-- @param level_id number
+-- @return table
+function get_engagements_for_level(level_id)
+    local result = {}
+    for i = 1, #_engagements do
+        if _engagements[i].level_id == level_id then
+            result[#result + 1] = _engagements[i]
+        end
+    end
+    return result
+end
+
+-- Returns engagements anchored to a specific smart terrain, oldest-first.
+-- @param smart_id number
+-- @return table
+function get_engagements_for_smart(smart_id)
+    local result = {}
+    for i = 1, #_engagements do
+        if _engagements[i].smart_id == smart_id then
+            result[#result + 1] = _engagements[i]
+        end
+    end
+    return result
+end
+
+-- ============================================================
+-- Game start
+-- ============================================================
+
+-- Resets in-memory state and registers all callbacks. Called before load_state,
+-- so _on_load will overwrite the reset when the player loads an existing save.
+function on_game_start()
+    _engagements      = {}
+    _next_id          = 1
+    _processed_deaths = {}
+    RegisterScriptCallback("npc_on_death_callback",     on_npc_death)
+    RegisterScriptCallback("monster_on_death_callback", on_monster_death)
+    RegisterScriptCallback("squad_on_npc_death",        on_squad_npc_death)
+    RegisterScriptCallback("save_state",                _on_save)
+    RegisterScriptCallback("load_state",                _on_load)
+end

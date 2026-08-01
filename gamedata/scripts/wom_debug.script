@@ -1,0 +1,164 @@
+--- wom_debug.script
+--- Debug utilities for Word of Mouth. Log level is driven by wom_mcm via init_log_level().
+--- Depends on: xlog, wom_terminology_helper
+
+local log = xlog.get_logger("WOM", { outfile = "wom_combat.log", level = "WARN" })
+
+-- Returns the directory where the log file will be written (no trailing slash).
+-- Used by wom_mcm to show the log folder in the settings UI.
+-- @return string
+function get_log_dir()
+    local file_system = getFS and getFS()
+    if file_system and file_system.update_path then
+        return (file_system:update_path("$logs$", ""):gsub("[/\\]$", ""))
+    end
+    return "appdata\\logs"
+end
+
+-- Returns the current in-game time as "HH:MM", or "??:??" when unavailable.
+-- @return string
+local function _game_clock()
+    if not (level and level.get_time_hours) then return "??:??" end
+    local h = level.get_time_hours()
+    return string.format("%02d:%02d", math.floor(h), math.floor((h % 1) * 60))
+end
+
+-- Returns true when debug logging is enabled (xlog level >= DEBUG).
+-- @return boolean
+function enabled()
+    return log.get_level() >= 5
+end
+
+-- Logs msg to xlog at DEBUG and echoes it to the in-game console.
+-- @param fmt  string
+-- @param ...  any
+local function _emit(fmt, ...)
+    local msg = string.format(fmt, ...)
+    log.debug(msg)
+    printf("~[WOM] " .. msg)
+end
+
+-- Reads wom_mcm.enable_logging() and applies the corresponding xlog level.
+-- Safe to call any number of times; no-ops when wom_mcm is absent.
+-- @return nil
+function init_log_level()
+    local on = wom_mcm and wom_mcm.enable_logging and wom_mcm.enable_logging()
+    log.set_level(on and "DEBUG" or "WARN")
+end
+
+function on_game_start()
+    init_log_level()
+    RegisterScriptCallback("on_option_change", init_log_level)
+end
+
+-- ---- public API ------------------------------------------------------------
+
+-- Logs one combat kill event with the full engagement state at time of recording.
+-- No-ops when logging is disabled.
+-- @param engagement   table       the engagement record after _credit ran
+-- @param killer_key   string|nil  raw community/species key of the killer
+-- @param victim_key   string|nil  raw community/species key of the victim
+function log_kill(engagement, killer_key, victim_key)
+    if not enabled() then return end
+
+    local killer   = killer_key or "unknown"
+    local victim   = victim_key or "unknown"
+    local location = engagement.smart_id
+                     and wom_terminology_helper.get_location_name(engagement.smart_id)
+                     or  "unknown location"
+
+    _emit("[%s] eng#%d: %s killed %s at %s",
+        _game_clock(), engagement.id, killer, victim, location)
+
+    local squad_ids = {}
+    for squad_id in pairs(engagement.squads) do
+        squad_ids[#squad_ids + 1] = tostring(squad_id)
+    end
+    table.sort(squad_ids)
+    _emit("  squads=[%s]", table.concat(squad_ids, ", "))
+
+    local faction_parts = {}
+    for key, stats in pairs(engagement.factions) do
+        faction_parts[#faction_parts + 1] = string.format(
+            "%s(k=%d,l=%d)", key, stats.kills or 0, stats.losses or 0)
+    end
+    table.sort(faction_parts)
+    _emit("  factions={%s}", table.concat(faction_parts, " "))
+end
+
+-- Appends the raw NPC dialogue string to wom_responses.log, bracketed by a
+-- one-line header and a trailing blank line so multi-paragraph responses are
+-- readable without xlog's per-line prefixes.
+-- No-ops when debug logging is disabled.
+-- @param dialog_type string  short label, e.g. "NEWS" or "RECAP"
+-- @param text        string  the fully rendered NPC reply
+function log_response(dialog_type, text)
+    if not enabled() then return end
+    local path = get_log_dir() .. "\\wom_responses.log"
+    local file = io.open(path, "a")
+    if not file then return end
+    file:write(string.format("--- %s [%s] ---\n%s\n\n", dialog_type, _game_clock(), text))
+    file:close()
+end
+
+-- Logs one free-form trace line from a feature module, timestamped and tagged.
+-- Goes to wom_combat.log as well as the console — a raw printf reaches only the engine's
+-- xray_<user>.log, which is noisy enough that a feature trace is impractical to find in it.
+-- No-ops when logging is disabled.
+-- `message` is passed as an argument rather than as the format string, so a line
+-- containing a literal % cannot break string.format.
+-- @param tag     string  short module tag, e.g. "wom_outpost"
+-- @param message string  fully formatted line
+function log_trace(tag, message)
+    if not enabled() then return end
+    _emit("[%s] [%s] %s", _game_clock(), tostring(tag), tostring(message))
+end
+
+-- Logs when a death recording is suppressed by the dedup guard.
+-- No-ops when logging is disabled.
+-- @param victim_id number  game object id of the victim
+-- @param delta     number  game-seconds since the victim was last recorded
+function log_dedup(victim_id, delta)
+    if not enabled() then return end
+    _emit("[%s] DEDUP: victim_id=%d suppressed (%.1fs ago)", _game_clock(), victim_id, delta)
+end
+
+-- Logs the collect_entries combat scan for one NPC's recap.
+-- Call once per recap with the squad_id, npc_faction, now_gh, and the full
+-- engagements list so we can see exactly why each engagement is kept or skipped.
+-- No-ops when logging is disabled.
+-- @param squad_id    number      the talking NPC's squad id
+-- @param npc_faction string|nil  faction key derived from squad.player_id
+-- @param now_gh      number      current cumulative in-game hour
+-- @param window      number      recap window in hours
+-- @param engagements table       full _engagements array from wom_combat
+function log_collect_combat(squad_id, npc_faction, now_gh, window, engagements)
+    if not enabled() then return end
+    _emit("[%s] collect_combat: squad_id=%s npc_faction=%s now_gh=%d",
+        _game_clock(), tostring(squad_id), tostring(npc_faction), now_gh)
+    for i = 1, #engagements do
+        local eng      = engagements[i]
+        local age      = now_gh - (eng.t_start / 3600)
+        local in_squad = eng.squads and eng.squads[squad_id]
+        local in_age   = math.max(0, age) <= window
+        local verdict  = (in_squad and in_age) and "MATCH" or
+                         (not in_squad and "NO_SQUAD") or "OUT_OF_WINDOW"
+
+        local squad_ids = {}
+        for sid in pairs(eng.squads or {}) do
+            squad_ids[#squad_ids + 1] = tostring(sid)
+        end
+        table.sort(squad_ids)
+
+        local faction_parts = {}
+        for key, stats in pairs(eng.factions or {}) do
+            faction_parts[#faction_parts + 1] = key .. "(k=" .. (stats.kills or 0) .. ")"
+        end
+        table.sort(faction_parts)
+
+        _emit("  eng#%d age=%.1fh %s squads=[%s] factions={%s}",
+            eng.id, age, verdict,
+            table.concat(squad_ids, ","),
+            table.concat(faction_parts, " "))
+    end
+end

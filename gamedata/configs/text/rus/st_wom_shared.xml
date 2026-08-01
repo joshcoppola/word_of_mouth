@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="windows-1251" ?>
+<string_table>
+  <!-- ===== timestamp prefixes (prepended to an event line; news is lower-cased -->
+  <!-- after the comma). Tokens: #Period# "This morning", #period# "this morning", -->
+  <!-- #clock# "3:45" (12h, rounded to 15 min), #Ago# "About 10 hours ago". an_stamp is used when -->
+  <!-- a clock is known; an_stamp_noclock is the fallback when it isn't. ===== -->
+  <string id="st_wom_event_stamp_001"><text>#Period#,</text></string>
+  <string id="st_wom_event_stamp_002"><text>#Period#, примерно в #clock#,</text></string>
+  <string id="st_wom_event_stamp_003"><text>Примерно в #clock#, #period#,</text></string>
+
+  <!-- Timeless stamp variants — used instead of the TOD stamps for mutant events   -->
+  <!-- (infest, swarm, alpha, alphakill), where an exact or approximate time is not  -->
+  <!-- meaningful. No trailing comma: emit_fn in render_report appends ", " itself,  -->
+  <!-- the same way it does after make_time_stamp (which also strips its own comma). -->
+  <string id="st_wom_event_stamp_timeless_001"><text>В какой-то момент</text></string>
+
+  <!-- TIME-OF-DAY leads. The recap groups events by period; the FIRST event of a -->
+  <!-- period leads with one of these (filling keeping #I_we_blank_l# = I/we), e.g. -->
+  <!-- "This morning, I cracked open a stash." Add as many variants as you like. -->
+  <string id="st_wom_ask_recap_tod_early_001"><text>Ещё до рассвета</text></string>
+  <string id="st_wom_ask_recap_tod_morning_001"><text>Этим утром</text></string>
+  <string id="st_wom_ask_recap_tod_morning_002"><text>После рассвета</text></string>
+  <string id="st_wom_ask_recap_tod_morning_003"><text>Позднее утром</text></string>
+  <string id="st_wom_ask_recap_tod_afternoon_001"><text>Сегодня днём</text></string>
+  <string id="st_wom_ask_recap_tod_afternoon_002"><text>Днём</text></string>
+  <string id="st_wom_ask_recap_tod_evening_001"><text>Сегодня вечером</text></string>
+  <string id="st_wom_ask_recap_tod_nightfall_001"><text>После наступления темноты</text></string>
+  <string id="st_wom_ask_recap_tod_nightfall_002"><text>Когда стемнело</text></string>
+
+  <!-- YESTERDAY time-of-day leads — same periods, previous calendar day -->
+  <string id="st_wom_ask_recap_tod_yesterday_early_001"><text>Вчера, ещё до рассвета</text></string>
+  <string id="st_wom_ask_recap_tod_yesterday_morning_001"><text>Вчера утром</text></string>
+  <string id="st_wom_ask_recap_tod_yesterday_afternoon_001"><text>Вчера днём</text></string>
+  <string id="st_wom_ask_recap_tod_yesterday_evening_001"><text>Вчера вечером</text></string>
+  <string id="st_wom_ask_recap_tod_yesterday_nightfall_001"><text>Прошлой ночью</text></string>
+
+  <!-- SEQUENCE connectors. All events after the global first use one of these. -->
+  <!-- Variants referencing #clock# or #Ago# are gated and only picked when those -->
+  <!-- values are available. Plain variants serve as fallbacks. -->
+  <string id="st_wom_ask_recap_seq_mid_001"><text>После этого</text></string>
+  <string id="st_wom_ask_recap_seq_mid_002"><text>Потом</text></string>
+  <string id="st_wom_ask_recap_seq_mid_003"><text>Чуть позже</text></string>
+  <string id="st_wom_ask_recap_seq_mid_004"><text>Затем</text></string>
+  <string id="st_wom_ask_recap_seq_mid_005"><text>Оттуда</text></string>
+  <string id="st_wom_ask_recap_seq_mid_006"><text>Дальше</text></string>
+
+  <string id="st_wom_ask_recap_seq_mid_007"><text>Потом, примерно в #clock#,</text></string>
+  <string id="st_wom_ask_recap_seq_mid_008"><text>Потом, около #clock#,</text></string>
+  <string id="st_wom_ask_recap_seq_mid_009"><text>#Ago#</text></string>
+
+  <!-- SAME-TIME connectors. Used instead of a sequence connector when the previous -->
+  <!-- and current events started within a few in-game minutes of each other -->
+  <!-- (typically two ALifePlus consequences reacting to the same cause). -->
+  <string id="st_wom_ask_recap_seq_same_time_001"><text>В то же время</text></string>
+  <string id="st_wom_ask_recap_seq_same_time_002"><text>Тем временем</text></string>
+  <string id="st_wom_ask_recap_seq_same_time_003"><text>Тогда же</text></string>
+
+</string_table>
