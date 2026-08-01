@@ -1,5 +1,5 @@
 # What is this?
-Word of Mouth is a companion mod to [ALifePlus by damian_sirbu](https://github.com/damiansirbu-stalker/AlifePlus) for Stalker Anomaly. It adds several new conversation options. In addition, NPCs will also gossip in social areas, and announce their ALifePlus goals when they change.
+Word of Mouth [ModDB](https://www.moddb.com/mods/stalker-anomaly/addons/word-of-mouth/) is a companion mod to [ALifePlus by damian_sirbu](https://github.com/damiansirbu-stalker/AlifePlus) for Stalker Anomaly. It adds several new conversation options. In addition, NPCs will also gossip in social areas, and announce their ALifePlus goals when they change.
 
 This mod does not adjust AI or ALife in any way. No conflicts, safe to add / remove mid-save, load order doesn't matter.
 
