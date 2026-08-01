@@ -42,3 +42,8 @@ ALifePlus does not control every squad all the time, so many NPCs you talk to wi
 
 ### Does this support Warfare?
 It has not been tested in warfare, but should work just fine. NPCs will not gossip about territory changes due to warfare.
+
+
+## Credits
+* [damian_sirbu](https://github.com/damiansirbu-stalker/) for ALifePlus mod
+* [chibidock](https://www.moddb.com/members/chibidock) for improved RUS translation 
