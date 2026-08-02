@@ -1,3 +1,6 @@
+1.4.3
+* Add v1.3 of RUS translation by chibidock
+
 1.4.2
 * Speculative fix for busy hands issue
 * Fix for crash when killing mutants in labs
