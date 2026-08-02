@@ -64,13 +64,13 @@
   <!-- ========================================================================= -->
 
   <!-- light: 1 losses -->
-  <string id="st_wom_status_losses_light_001"><text>Схоронили одного из наших... Тварь эта, #a_member_other#, достала-таки его.</text></string>
-  <string id="st_wom_status_losses_light_002"><text>Минус пацан у нас. Не вывезли стычку, когда навалился #a_member_other#.</text></string>
+  <string id="st_wom_status_losses_light_001"><text>Схоронили одного из наших... Тварь эта, из числа #a_member_other#, достала-таки его.</text></string>
+  <string id="st_wom_status_losses_light_002"><text>Минус пацан у нас. Не вывезли стычку, когда навалился на урода из числа #a_member_other#.</text></string>
   <string id="st_wom_status_losses_light_003"><text>Недавно братуху потеряли — теперь двухсотый. Эх, не успели вытащить...</text></string>
 
   <!-- heavy: 2+ losses -->
-  <string id="st_wom_status_losses_heavy_001"><text>Покрошили наших... #losses_word# человек полегло, когда этот хрен, #a_member_other#, налетел.</text></string>
-  <string id="st_wom_status_losses_heavy_002"><text>Знатно нам бока понамяли. #a_member_other# там устроил нам кровавую баню.</text></string>
+  <string id="st_wom_status_losses_heavy_001"><text>Покрошили наших... #losses_word# человек полегло, когда этот хрен из числа #a_member_other# налетел.</text></string>
+  <string id="st_wom_status_losses_heavy_002"><text>Знатно нам бока понамяли. Урод этот вшивый, из числа #a_member_other#, устроил нам там кровавую баню.</text></string>
   <string id="st_wom_status_losses_heavy_003"><text>Парней жалко, пиздец. Сразу #losses_word# человек на тот свет отправились.</text></string>
 
 

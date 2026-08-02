@@ -176,101 +176,101 @@
   <!-- ===================================================== -->
   <!-- SQUAD COLLECTIVE NOUNS                                 -->
   <!-- ===================================================== -->
-  <string id="st_wom_term_squad_ecolog_001"><text>группа</text></string>
-  <string id="st_wom_term_squad_plural_ecolog_001"><text>группы</text></string>
-  <string id="st_wom_term_squad_ecolog_002"><text>исследовательская группа</text></string>
-  <string id="st_wom_term_squad_plural_ecolog_002"><text>исследовательские группы</text></string>
-  <string id="st_wom_term_squad_ecolog_003"><text>научная группа</text></string>
-  <string id="st_wom_term_squad_plural_ecolog_003"><text>научные группы</text></string>
-  <string id="st_wom_term_squad_ecolog_004"><text>полевая группа</text></string>
-  <string id="st_wom_term_squad_plural_ecolog_004"><text>полевые группы</text></string>
+<string id="st_wom_term_squad_ecolog_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_ecolog_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_ecolog_002"><text>исследовательский отряд</text></string>
+<string id="st_wom_term_squad_plural_ecolog_002"><text>исследовательский отряд</text></string>
+<string id="st_wom_term_squad_ecolog_003"><text>научный отряд</text></string>
+<string id="st_wom_term_squad_plural_ecolog_003"><text>научный отряд</text></string>
+<string id="st_wom_term_squad_ecolog_004"><text>полевой отряд</text></string>
+<string id="st_wom_term_squad_plural_ecolog_004"><text>полевой отряд</text></string>
 
-  <string id="st_wom_term_squad_csky_001"><text>отряд</text></string>
-  <string id="st_wom_term_squad_plural_csky_001"><text>отряды</text></string>
-  <string id="st_wom_term_squad_csky_002"><text>патруль</text></string>
-  <string id="st_wom_term_squad_plural_csky_002"><text>патрули</text></string>
-  <string id="st_wom_term_squad_csky_003"><text>группа</text></string>
-  <string id="st_wom_term_squad_plural_csky_003"><text>группы</text></string>
-  <string id="st_wom_term_squad_csky_004"><text>отделение</text></string>
-  <string id="st_wom_term_squad_plural_csky_004"><text>отделения</text></string>
+<string id="st_wom_term_squad_csky_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_csky_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_csky_002"><text>патруль</text></string>
+<string id="st_wom_term_squad_plural_csky_002"><text>патруль</text></string>
+<string id="st_wom_term_squad_csky_003"><text>взвод</text></string>
+<string id="st_wom_term_squad_plural_csky_003"><text>взвод</text></string>
+<string id="st_wom_term_squad_csky_004"><text>дозор</text></string>
+<string id="st_wom_term_squad_plural_csky_004"><text>дозор</text></string>
 
-  <string id="st_wom_term_squad_freedom_001"><text>отряд</text></string>
-  <string id="st_wom_term_squad_plural_freedom_001"><text>отряды</text></string>
-  <string id="st_wom_term_squad_freedom_002"><text>группа</text></string>
-  <string id="st_wom_term_squad_plural_freedom_002"><text>группы</text></string>
-  <string id="st_wom_term_squad_freedom_003"><text>подразделение</text></string>
-  <string id="st_wom_term_squad_plural_freedom_003"><text>подразделения</text></string>
+<string id="st_wom_term_squad_freedom_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_freedom_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_freedom_002"><text>патруль</text></string>
+<string id="st_wom_term_squad_plural_freedom_002"><text>патруль</text></string>
+<string id="st_wom_term_squad_freedom_003"><text>взвод</text></string>
+<string id="st_wom_term_squad_plural_freedom_003"><text>взвод</text></string>
 
-  <string id="st_wom_term_squad_renegade_001"><text>целая банда</text></string>
-  <string id="st_wom_term_squad_plural_renegade_001"><text>банды</text></string>
-  <string id="st_wom_term_squad_renegade_002"><text>целая шайка</text></string>
-  <string id="st_wom_term_squad_plural_renegade_002"><text>шайки</text></string>
-  <string id="st_wom_term_squad_renegade_003"><text>группа</text></string>
-  <string id="st_wom_term_squad_plural_renegade_003"><text>группы</text></string>
+<string id="st_wom_term_squad_renegade_001"><text>целый сброд</text></string>
+<string id="st_wom_term_squad_plural_renegade_001"><text>сброд</text></string>
+<string id="st_wom_term_squad_renegade_002"><text>целый кагал</text></string>
+<string id="st_wom_term_squad_plural_renegade_002"><text>кагал</text></string>
+<string id="st_wom_term_squad_renegade_003"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_renegade_003"><text>отряд</text></string>
 
-  <string id="st_wom_term_squad_dolg_001"><text>отряд</text></string>
-  <string id="st_wom_term_squad_plural_dolg_001"><text>отряды</text></string>
-  <string id="st_wom_term_squad_dolg_002"><text>подразделение</text></string>
-  <string id="st_wom_term_squad_plural_dolg_002"><text>подразделения</text></string>
-  <string id="st_wom_term_squad_dolg_003"><text>отделение</text></string>
-  <string id="st_wom_term_squad_plural_dolg_003"><text>отделения</text></string>
-  <string id="st_wom_term_squad_dolg_004"><text>огневая группа</text></string>
-  <string id="st_wom_term_squad_plural_dolg_004"><text>огневые группы</text></string>
+<string id="st_wom_term_squad_dolg_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_dolg_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_dolg_002"><text>взвод</text></string>
+<string id="st_wom_term_squad_plural_dolg_002"><text>взвод</text></string>
+<string id="st_wom_term_squad_dolg_003"><text>дозор</text></string>
+<string id="st_wom_term_squad_plural_dolg_003"><text>дозор</text></string>
+<string id="st_wom_term_squad_dolg_004"><text>огневой отряд</text></string>
+<string id="st_wom_term_squad_plural_dolg_004"><text>огневой отряд</text></string>
 
-  <string id="st_wom_term_squad_stalker_001"><text>целая группа</text></string>
-  <string id="st_wom_term_squad_plural_stalker_001"><text>группы</text></string>
-  <string id="st_wom_term_squad_stalker_002"><text>целая компания</text></string>
-  <string id="st_wom_term_squad_plural_stalker_002"><text>компании</text></string>
-  <string id="st_wom_term_squad_stalker_003"><text>целая ватага</text></string>
-  <string id="st_wom_term_squad_plural_stalker_003"><text>ватаги</text></string>
+<string id="st_wom_term_squad_stalker_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_stalker_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_stalker_002"><text>целый отряд</text></string>
+<string id="st_wom_term_squad_plural_stalker_002"><text>отряд</text></string>
+<string id="st_wom_term_squad_stalker_003"><text>целый табор</text></string>
+<string id="st_wom_term_squad_plural_stalker_003"><text>табор</text></string>
 
-  <string id="st_wom_term_squad_killer_001"><text>отряд</text></string>
-  <string id="st_wom_term_squad_plural_killer_001"><text>отряды</text></string>
-  <string id="st_wom_term_squad_killer_002"><text>группа</text></string>
-  <string id="st_wom_term_squad_plural_killer_002"><text>группы</text></string>
-  <string id="st_wom_term_squad_killer_003"><text>подразделение</text></string>
-  <string id="st_wom_term_squad_plural_killer_003"><text>подразделения</text></string>
-  <string id="st_wom_term_squad_killer_004"><text>огневая группа</text></string>
-  <string id="st_wom_term_squad_plural_killer_004"><text>огневые группы</text></string>
+<string id="st_wom_term_squad_killer_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_killer_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_killer_002"><text>патруль</text></string>
+<string id="st_wom_term_squad_plural_killer_002"><text>патруль</text></string>
+<string id="st_wom_term_squad_killer_003"><text>взвод</text></string>
+<string id="st_wom_term_squad_plural_killer_003"><text>взвод</text></string>
+<string id="st_wom_term_squad_killer_004"><text>огневой отряд</text></string>
+<string id="st_wom_term_squad_plural_killer_004"><text>огневой отряд</text></string>
 
-  <string id="st_wom_term_squad_isg_001"><text>группа</text></string>
-  <string id="st_wom_term_squad_plural_isg_001"><text>группы</text></string>
-  <string id="st_wom_term_squad_isg_002"><text>подразделение</text></string>
-  <string id="st_wom_term_squad_plural_isg_002"><text>подразделения</text></string>
-  <string id="st_wom_term_squad_isg_003"><text>отделение</text></string>
-  <string id="st_wom_term_squad_plural_isg_003"><text>отделения</text></string>
-  <string id="st_wom_term_squad_isg_004"><text>отряд</text></string>
-  <string id="st_wom_term_squad_plural_isg_004"><text>отряды</text></string>
+<string id="st_wom_term_squad_isg_001"><text>патруль</text></string>
+<string id="st_wom_term_squad_plural_isg_001"><text>патруль</text></string>
+<string id="st_wom_term_squad_isg_002"><text>взвод</text></string>
+<string id="st_wom_term_squad_plural_isg_002"><text>взвод</text></string>
+<string id="st_wom_term_squad_isg_003"><text>дозор</text></string>
+<string id="st_wom_term_squad_plural_isg_003"><text>дозор</text></string>
+<string id="st_wom_term_squad_isg_004"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_isg_004"><text>отряд</text></string>
 
-  <string id="st_wom_term_squad_monolith_001"><text>отряд</text></string>
-  <string id="st_wom_term_squad_plural_monolith_001"><text>отряды</text></string>
-  <string id="st_wom_term_squad_monolith_002"><text>подразделение</text></string>
-  <string id="st_wom_term_squad_plural_monolith_002"><text>подразделения</text></string>
-  <string id="st_wom_term_squad_monolith_003"><text>отделение</text></string>
-  <string id="st_wom_term_squad_plural_monolith_003"><text>отделения</text></string>
+<string id="st_wom_term_squad_monolith_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_monolith_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_monolith_002"><text>взвод</text></string>
+<string id="st_wom_term_squad_plural_monolith_002"><text>взвод</text></string>
+<string id="st_wom_term_squad_monolith_003"><text>дозор</text></string>
+<string id="st_wom_term_squad_plural_monolith_003"><text>дозор</text></string>
 
-  <string id="st_wom_term_squad_army_001"><text>отряд</text></string>
-  <string id="st_wom_term_squad_plural_army_001"><text>отряды</text></string>
-  <string id="st_wom_term_squad_army_002"><text>огневая группа</text></string>
-  <string id="st_wom_term_squad_plural_army_002"><text>огневые группы</text></string>
-  <string id="st_wom_term_squad_army_003"><text>подразделение</text></string>
-  <string id="st_wom_term_squad_plural_army_003"><text>подразделения</text></string>
-  <string id="st_wom_term_squad_army_004"><text>отделение</text></string>
-  <string id="st_wom_term_squad_plural_army_004"><text>отделения</text></string>
+<string id="st_wom_term_squad_army_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_army_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_army_002"><text>огневой отряд</text></string>
+<string id="st_wom_term_squad_plural_army_002"><text>огневой отряд</text></string>
+<string id="st_wom_term_squad_army_003"><text>взвод</text></string>
+<string id="st_wom_term_squad_plural_army_003"><text>взвод</text></string>
+<string id="st_wom_term_squad_army_004"><text>дозор</text></string>
+<string id="st_wom_term_squad_plural_army_004"><text>дозор</text></string>
 
-  <string id="st_wom_term_squad_bandit_001"><text>целая банда</text></string>
-  <string id="st_wom_term_squad_plural_bandit_001"><text>банды</text></string>
-  <string id="st_wom_term_squad_bandit_002"><text>целая шайка</text></string>
-  <string id="st_wom_term_squad_plural_bandit_002"><text>шайки</text></string>
-  <string id="st_wom_term_squad_bandit_003"><text>группа</text></string>
-  <string id="st_wom_term_squad_plural_bandit_003"><text>группы</text></string>
+<string id="st_wom_term_squad_bandit_001"><text>целый отряд</text></string>
+<string id="st_wom_term_squad_plural_bandit_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_bandit_002"><text>целый сброд</text></string>
+<string id="st_wom_term_squad_plural_bandit_002"><text>сброд</text></string>
+<string id="st_wom_term_squad_bandit_003"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_bandit_003"><text>отряд</text></string>
 
-  <string id="st_wom_term_squad_greh_001"><text>группа</text></string>
-  <string id="st_wom_term_squad_plural_greh_001"><text>группы</text></string>
-  <string id="st_wom_term_squad_greh_002"><text>ватага</text></string>
-  <string id="st_wom_term_squad_plural_greh_002"><text>ватаги</text></string>
-  <string id="st_wom_term_squad_greh_003"><text>компания</text></string>
-  <string id="st_wom_term_squad_plural_greh_003"><text>компании</text></string>
+<string id="st_wom_term_squad_greh_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_plural_greh_001"><text>отряд</text></string>
+<string id="st_wom_term_squad_greh_002"><text>табор</text></string>
+<string id="st_wom_term_squad_plural_greh_002"><text>табор</text></string>
+<string id="st_wom_term_squad_greh_003"><text>сброд</text></string>
+<string id="st_wom_term_squad_plural_greh_003"><text>сброд</text></string>
 
   <string id="st_wom_term_squad_dog_001"><text>целая стая</text></string>
   <string id="st_wom_term_squad_plural_dog_001"><text>стаи</text></string>
@@ -281,8 +281,8 @@
 
   <string id="st_wom_term_squad_tushkano_001"><text>целая стая</text></string>
   <string id="st_wom_term_squad_plural_tushkano_001"><text>стаи</text></string>
-  <string id="st_wom_term_squad_tushkano_002"><text>целый рой</text></string>
-  <string id="st_wom_term_squad_plural_tushkano_002"><text>рои</text></string>
+  <string id="st_wom_term_squad_tushkano_002"><text>целая орава</text></string>
+  <string id="st_wom_term_squad_plural_tushkano_002"><text>оравы</text></string>
 
   <string id="st_wom_term_squad_cat_001"><text>целая стая</text></string>
   <string id="st_wom_term_squad_plural_cat_001"><text>стаи</text></string>
@@ -296,13 +296,13 @@
 
   <string id="st_wom_term_squad_boar_001"><text>целое стадо</text></string>
   <string id="st_wom_term_squad_plural_boar_001"><text>стада</text></string>
-  <string id="st_wom_term_squad_boar_002"><text>стая</text></string>
-  <string id="st_wom_term_squad_plural_boar_002"><text>стаи</text></string>
+  <string id="st_wom_term_squad_boar_002"><text>дикое стадо</text></string>
+  <string id="st_wom_term_squad_plural_boar_002"><text>дикие стада</text></string>
 
   <string id="st_wom_term_squad_flesh_001"><text>целое стадо</text></string>
   <string id="st_wom_term_squad_plural_flesh_001"><text>стада</text></string>
-  <string id="st_wom_term_squad_flesh_002"><text>группа</text></string>
-  <string id="st_wom_term_squad_plural_flesh_002"><text>группы</text></string>
+  <string id="st_wom_term_squad_flesh_002"><text>небольшое стадо</text></string>
+  <string id="st_wom_term_squad_plural_flesh_002"><text>небольшие стада</text></string>
 
   <string id="st_wom_term_squad_lurker_001"><text>стая</text></string>
   <string id="st_wom_term_squad_plural_lurker_001"><text>стаи</text></string>
@@ -379,16 +379,16 @@
   <!-- ===================================================== -->
   <!-- NUMBER WORDS (Accusative / Genitive for creatures)     -->
   <!-- ===================================================== -->
-  <string id="st_wom_term_number_1"><text>в количестве одного</text></string>
-  <string id="st_wom_term_number_2"><text>в количестве двоих</text></string>
-  <string id="st_wom_term_number_3"><text>в количестве троих</text></string>
-  <string id="st_wom_term_number_4"><text>в количестве четверых</text></string>
-  <string id="st_wom_term_number_5"><text>в количестве пятерых</text></string>
-  <string id="st_wom_term_number_6"><text>в количестве шестерых</text></string>
-  <string id="st_wom_term_number_7"><text>в количестве семерых</text></string>
-  <string id="st_wom_term_number_8"><text>в количестве восьмерых</text></string>
-  <string id="st_wom_term_number_9"><text>в количестве девятерых</text></string>
-  <string id="st_wom_term_number_10"><text>в количестве десятерых</text></string>
+  <string id="st_wom_term_number_1"><text>одного</text></string>
+  <string id="st_wom_term_number_2"><text>двоих</text></string>
+  <string id="st_wom_term_number_3"><text>троих</text></string>
+  <string id="st_wom_term_number_4"><text>четверых</text></string>
+  <string id="st_wom_term_number_5"><text>пятерых</text></string>
+  <string id="st_wom_term_number_6"><text>шестерых</text></string>
+  <string id="st_wom_term_number_7"><text>семерых</text></string>
+  <string id="st_wom_term_number_8"><text>восьмерых</text></string>
+  <string id="st_wom_term_number_9"><text>девятерых</text></string>
+  <string id="st_wom_term_number_10"><text>десятерых</text></string>
   <string id="st_wom_term_number_11"><text>одиннадцать человек</text></string>
   <string id="st_wom_term_number_12"><text>двенадцать человек</text></string>
   <string id="st_wom_term_number_many"><text>многих</text></string>
@@ -443,11 +443,11 @@
   <string id="st_wom_term_pronoun_sg_me_us"><text>меня</text></string>
   <string id="st_wom_term_pronoun_sg_iwas_wewere"><text>я был</text></string>
 
-  <string id="st_wom_term_pronoun_pl_im_were"><text>мы</text></string>
-  <string id="st_wom_term_pronoun_pl_ive_weve"><text>мы</text></string>
-  <string id="st_wom_term_pronoun_pl_i_we"><text>мы</text></string>
+  <string id="st_wom_term_pronoun_pl_im_were"><text>наш отряд</text></string>
+  <string id="st_wom_term_pronoun_pl_ive_weve"><text>наш отряд</text></string>
+  <string id="st_wom_term_pronoun_pl_i_we"><text>наш отряд</text></string>
   <string id="st_wom_term_pronoun_pl_my_our"><text>наше</text></string>
   <string id="st_wom_term_pronoun_pl_me_us"><text>нас</text></string>
-  <string id="st_wom_term_pronoun_pl_iwas_wewere"><text>мы были</text></string>
+  <string id="st_wom_term_pronoun_pl_iwas_wewere"><text>наш отряд был</text></string>
 
 </string_table>
