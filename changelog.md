@@ -1,3 +1,6 @@
+1.4.4
+* Speculative fix for reports of new dialogue options sometimmes not appearing 
+
 1.4.3
 * Add v1.3 of RUS translation by chibidock
 
