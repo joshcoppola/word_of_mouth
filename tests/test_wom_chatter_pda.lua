@@ -44,10 +44,12 @@ local _render_raises = false   -- make the reply render raise, to test delivery 
 local _wire_quiet    = true    -- shared PDA quiet window: true == nothing on the wire
 local _pda_quiet_gap = 20      -- what the module reads from MCM and hands to is_pda_quiet
 local _last_force_region       -- force_region as the reply render last received it
+local _last_render_npc         -- the npc argument the reply render last received
 local _hooks_installed = 0     -- times on_game_start asked wom_bark to hook external news
 local _goal_by_squad = {}      -- squad_id -> goal suffix; absent == "job_explore" (public)
 local _goal_visibility = {}    -- goal suffix -> MCM visibility; absent == "public"
 local _story_ids = {}          -- id -> true, for is_story_character stub
+local _enemy_pairs = {}        -- "a|b" -> true, for the game_relations.is_factions_enemies stub
 
 local function reset()
     _squads, _by_id, _scripted = {}, {}, {}
@@ -67,9 +69,11 @@ local function reset()
     _wire_quiet    = true
     _pda_quiet_gap = 20
     _last_force_region = nil
+    _last_render_npc   = nil
     _goal_by_squad   = {}
     _goal_visibility = {}
     _story_ids       = {}
+    _enemy_pairs     = {}
     db.actor     = {}
     on_game_start()
 end
@@ -151,6 +155,20 @@ time_global = function() return _now_ms end
 
 get_actor_true_community = function() return _player_comm end
 
+-- The real call is a luabind crossing into the relation registry. Symmetric here, as
+-- faction enmity is in game; the module only ever asks (asker, candidate).
+game_relations = {
+    is_factions_enemies = function(a, b)
+        return _enemy_pairs[tostring(a) .. "|" .. tostring(b)] == true
+    end,
+}
+
+-- Marks two communities as at war for the is_factions_enemies stub.
+local function set_enemies(a, b)
+    _enemy_pairs[a .. "|" .. b] = true
+    _enemy_pairs[b .. "|" .. a] = true
+end
+
 ap_api = {
     get_scripted_squads = function()
         local out = {}
@@ -203,9 +221,10 @@ wom_bark = {
 }
 
 wom_recap_npc = {
-    render_current_action = function(squad, _npc, _plural, _current_smart_id, force_region)
+    render_current_action = function(squad, npc, _plural, _current_smart_id, force_region)
         if _render_raises then error("you are trying to use a destroyed object") end
         _last_force_region = force_region
+        _last_render_npc   = npc
         return _action_text == "" and "" or (_action_text .. squad.id)
     end,
     render_squad_status   = function(squad) return _status_text == "" and "" or (_status_text .. squad.id) end,
@@ -385,6 +404,44 @@ group("no answerer means no question", function()
     check("question withheld", #_pda_calls, 0)
     check("traced as no answerer", trace_contains("no AP-scripted squad in scope"), true)
     check("no reply scheduled", _reply_callback, nil)
+end)
+
+group("an enemy of the asker never answers", function()
+    -- Scope is "allies", so both communities are in scope for the PLAYER; the exchange is
+    -- still abandoned because the two SPEAKERS are at war. The gate is between them, not
+    -- between either of them and the player.
+    _scope = "allies"
+    set_enemies("stalker", "dolg")
+    add_squad(1, "stalker", 1, { smart_id = 500 })              -- asker
+    add_squad(2, "dolg", 0, { scripted = true })                -- only possible answerer
+    tick()
+    check("nothing delivered", #_pda_calls, 0)
+    check("traced as non-hostile answerer missing", trace_contains("non-hostile to the asker"), true)
+    check("no reply scheduled", _reply_callback, nil)
+end)
+
+group("a non-enemy answers even when an enemy is also available", function()
+    _scope = "allies"
+    set_enemies("stalker", "dolg")
+    add_squad(1, "stalker", 1, { smart_id = 500 })              -- asker
+    add_squad(2, "dolg", 0, { scripted = true })                -- at war with the asker
+    add_squad(3, "stalker", 0, { scripted = true })             -- same faction as the asker
+    tick()
+    fire_reply()
+    check("both messages delivered", #_pda_calls, 2)
+    check("reply came from the friendly squad", _pda_calls[2].name, "Commander3")
+end)
+
+group("an ally of the asker still answers", function()
+    -- Nothing is declared hostile, so "dolg" stays eligible: the gate removes enemies only,
+    -- it does not narrow the wire to the asker's own faction.
+    _scope = "allies"
+    add_squad(1, "stalker", 1, { smart_id = 500 })
+    add_squad(2, "dolg", 0, { scripted = true })
+    tick()
+    fire_reply()
+    check("both messages delivered", #_pda_calls, 2)
+    check("reply came from the allied squad", _pda_calls[2].name, "Commander2")
 end)
 
 group("answerer prefers a moving squad", function()
@@ -802,6 +859,75 @@ group("a story answerer is skipped for another AP-scripted squad", function()
     check("reply delivered", #_pda_calls, 2)
     check("reply came from the non-story answerer", _pda_calls[2].name, "Commander3")
     check("story answerer traced as skipped", trace_contains("skipped: story character"), true)
+end)
+
+group("a commander who dies into a story character stops the reply", function()
+    add_squad(1, "stalker", 1, { smart_id = 500 })
+    add_squad(2, "stalker", 0, { scripted = true })
+    tick()
+    check("question delivered", #_pda_calls, 1)
+
+    -- The original commander (1002) died inside the delay and a respawned unique took over.
+    -- The story gate ran at selection against 1002 and does not carry across the delay.
+    _by_id[2].commander_id = function() return 1009 end
+    _story_ids[1009] = true
+    fire_reply()
+    check("no reply from a story commander", #_pda_calls, 1)
+    check("traced as a story commander", trace_contains("commanded by a story character"), true)
+    check("no cooldown burned", _cooldowns[1009], nil)
+end)
+
+group("an ordinary commander change still answers", function()
+    add_squad(1, "stalker", 1, { smart_id = 500 })
+    add_squad(2, "stalker", 0, { scripted = true })
+    tick()
+
+    -- Same turnover, no story NPC involved: the reply lands and the cooldown is marked
+    -- against whoever leads the squad NOW, not who led it when the question went out.
+    _by_id[2].commander_id = function() return 1009 end
+    fire_reply()
+    check("reply delivered", #_pda_calls, 2)
+    check("new commander marked", _cooldowns[1009], _game_sec)
+    check("old commander untouched", _cooldowns[1002], nil)
+end)
+
+group("an answerer that comes online mid-delay still renders offline", function()
+    add_squad(1, "stalker", 1, { smart_id = 500 })
+    add_squad(2, "stalker", 0, { scripted = true })
+    tick()
+
+    -- The flip is claimed harmless by construction: the reply always renders through the
+    -- offline path (npc == nil), which never touches db.storage[...].object and so cannot
+    -- trip the destroyed-object raise. Pinned rather than assumed -- passing a client object
+    -- here is exactly the change that would break it silently in play.
+    _last_render_npc = "sentinel"
+    db.storage = { [1002] = { object = nil } }        -- online-ish, and a stale entry at that
+    fire_reply()
+    check("reply delivered", #_pda_calls, 2)
+    check("rendered with no client object", _last_render_npc, nil)
+    db.storage = nil
+end)
+
+group("a backwards clock jump does not wedge the feature", function()
+    add_squad(1, "stalker", 1, { smart_id = 500 })
+    add_squad(2, "stalker", 0, { scripted = true })
+    tick()
+    check("question delivered", #_pda_calls, 1)
+
+    -- A level change resets time_global() to near zero while a reply is owed. Its due_at is
+    -- an absolute stamp in the old clock, so without the rewind guard the pump waits on a
+    -- deadline minutes away AND blocks every new exchange behind the owed reply.
+    _now_ms = 50
+    _tick_callback()
+    check("owed reply dropped", #_pda_calls, 1)
+    check("traced as a clock jump", trace_contains("clock jumped backwards"), true)
+
+    -- Re-armed to FIRST_TICK_DELAY, i.e. exactly where a fresh load leaves the wire.
+    _game_sec = _game_sec + 5000                                -- clear the asker cooldown
+    pump(29000)
+    check("still waiting out the re-arm", #_pda_calls, 1)
+    pump(2000)
+    check("a new exchange runs after the re-arm", #_pda_calls, 2)
 end)
 
 group("startup installs the external-news hooks", function()

@@ -621,8 +621,16 @@ end
 --                                      npc == nil: rendering off a server object and wanting
 --                                      the region named are two different questions that
 --                                      happen to have the same answer for today's one caller.
+-- @param prefer_location boolean|nil  true to prefer template variants that name #location#
+--                                     whenever the location is genuinely known (i.e. a target
+--                                     smart resolved and produced a display name -- the
+--                                     "a location" fallback does not count). For the PDA wire,
+--                                     where the line is the listener's only clue to where the
+--                                     speaker is; face-to-face dialogue leaves it off so the
+--                                     pools keep their full variety. Never a hard filter: a
+--                                     pool with no location-bearing variant still speaks.
 -- @return string
-function render_current_action(squad, npc, plural, current_smart_id, force_region)
+function render_current_action(squad, npc, plural, current_smart_id, force_region, prefer_location)
     if not squad then return "" end
     local squad_id = squad.id
     if not (ap_api and ap_api.get_record) then return "" end
@@ -656,7 +664,11 @@ function render_current_action(squad, npc, plural, current_smart_id, force_regio
                           and wom_terminology_helper.get_location_name(
                                   target_smart_id, nil, force_region)
                           or ""
-    slots.location = location_name ~= "" and location_name or game.translate_string("st_wom_term_location_fallback")
+    local has_known_location = location_name ~= ""
+    slots.location = has_known_location and location_name or game.translate_string("st_wom_term_location_fallback")
+    -- Only a real resolved location is worth steering the pick towards; steering towards the
+    -- "a location" fallback would trade variety for a line that says nothing.
+    local preferred = (prefer_location and has_known_location) and { "location" } or nil
 
     -- Other-faction slots: populated from the AP record when a second party is present.
     -- Falls back to "someone" so templates using #some_members_other# or #a_member_other# are always safe.
@@ -688,19 +700,19 @@ function render_current_action(squad, npc, plural, current_smart_id, force_regio
     local result = ""
     if result == "" and goal and role and current_smart_id then
         result = wom_dialogue_helper.pick_dialogue_variant(
-            "st_wom_ask_" .. goal .. "_" .. role, slots)
+            "st_wom_ask_" .. goal .. "_" .. role, slots, nil, preferred)
     end
     if result == "" and goal then
         result = wom_dialogue_helper.pick_dialogue_variant(
-            "st_wom_ask_" .. goal .. "_" .. state, slots)
+            "st_wom_ask_" .. goal .. "_" .. state, slots, nil, preferred)
     end
     if result == "" and role then
         result = wom_dialogue_helper.pick_dialogue_variant(
-            "st_wom_ask_" .. role, slots, {"intent"})
+            "st_wom_ask_" .. role, slots, {"intent"}, preferred)
     end
     if result == "" then
         result = wom_dialogue_helper.pick_dialogue_variant(
-            "st_wom_ask_generic_" .. state, slots)
+            "st_wom_ask_generic_" .. state, slots, nil, preferred)
     end
     if result == "" then
         result = wom_dialogue_helper.pick_dialogue_variant("st_wom_ask_nogoal", slots)

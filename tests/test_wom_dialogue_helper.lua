@@ -333,6 +333,29 @@ suite("4. pick_dialogue_variant", function()
     check("all gated variants excluded → empty",
         pick_dialogue_variant("st_allgt", {}, { "clock", "Ago" }), "")
 
+    -- Preferred token: a variant naming the token wins over one that does not, even
+    -- though the plain variant comes first and pick_random_item takes the first entry.
+    mock_strings["st_pref_001"] = "Out looking around"
+    mock_strings["st_pref_002"] = "Out looking around #location#"
+    check("preferred token wins the pick",
+        pick_dialogue_variant("st_pref", { location = "the bus stop" }, nil, { "location" }),
+        "Out looking around the bus stop")
+
+    -- Preferred token absent from every variant → preference is dropped, pool still speaks
+    mock_strings["st_pref2_001"] = "Lying in wait. Don't ask"
+    mock_strings["st_pref2_002"] = "Eyes open here"
+    check("no variant has it → falls back to the whole pool",
+        pick_dialogue_variant("st_pref2", { location = "the bus stop" }, nil, { "location" }),
+        "Lying in wait. Don't ask")
+
+    -- Preference applies after gating: a gated-out variant cannot be preferred back in
+    mock_strings["st_pref3_001"] = "Holding #location#"
+    mock_strings["st_pref3_002"] = "Holding #location# since #clock#"
+    check("gating runs before preference",
+        pick_dialogue_variant("st_pref3", { location = "the base", clock = "" },
+                              { "clock" }, { "location" }),
+        "Holding the base")
+
     -- clean_output: double spaces collapsed (empty slot leaves gap)
     mock_strings["st_ws_001"] = "saw  two  spaces"
     check("double spaces collapsed",

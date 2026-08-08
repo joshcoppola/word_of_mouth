@@ -48,6 +48,13 @@
 --- which reads correctly to a player standing in that level. See notes/TODO.md for the
 --- one case this leaves unqualified.
 ---
+--- The answerer must not be an ENEMY of the asker. The MCM faction scope decides who is
+--- relevant to the PLAYER; this is a second, per-exchange test between the two speakers,
+--- because Duty answering Freedom's call for news reads as absurd whatever the scope says.
+--- Enemy communities are dropped from the answerer sample (see _non_hostile_factions), and
+--- an exchange with nothing left to answer is abandoned for the tick rather than redrawing
+--- an asker -- letting the answerer pool pick the asker inverts the feature's premise.
+---
 --- Squads are not filtered on combat state. is_in_combat needs a client object
 --- (npc:best_enemy()) and an offline squad simply has no observable combat state, so any
 --- offline squad may participate.
@@ -116,6 +123,10 @@ local _pending_reply = nil
 
 -- time_global() ms at which the next exchange may start; nil until the first pump.
 local _next_exchange_at = nil
+
+-- time_global() ms as of the previous pump; nil until the first one. Exists solely to
+-- detect the clock running backwards -- see _pump.
+local _last_pump_ms = nil
 
 -- ---- helpers ----------------------------------------------------------------
 
@@ -292,6 +303,40 @@ end
 
 -- ---- answerer selection -----------------------------------------------------
 
+-- Returns the subset of `allowed` that is not at war with the asker's faction.
+--
+-- The wire is one squad calling out and another answering, not an anonymous broadcast:
+-- a Duty outpost asking what is happening out there and Freedom obligingly reporting its
+-- movements reads as absurd however good the report is. Enemies of the asker are therefore
+-- excluded from answering that asker at all. This is a per-exchange test between the two
+-- speakers and is entirely separate from the MCM faction scope, which is about the player.
+--
+-- Precomputed against the ~11-entry `allowed` set rather than tested per squad, for the
+-- same reason wom_bark.allowed_factions exists: the scripted-squad walk visits hundreds of
+-- squads with only a handful of distinct answers, and is_factions_enemies is a luabind
+-- crossing. Every entry of `allowed` is a human faction, so no mutant community reaches it.
+--
+-- Fails OPEN -- with no game_relations, or no resolvable asker faction, every allowed
+-- faction stays eligible, because a silent wire is worse than an odd pairing. The result
+-- is never empty: the asker's own faction is in `allowed` (that is how the asker was
+-- sampled) and is never its own enemy.
+-- @param asker_faction string|nil  asker squad.player_id
+-- @param allowed       table       set of in-scope community strings
+-- @return table  set of community strings that may answer this asker
+local function _non_hostile_factions(asker_faction, allowed)
+    if not (asker_faction and game_relations and game_relations.is_factions_enemies) then
+        return allowed
+    end
+    local eligible = {}
+    for community in pairs(allowed) do
+        if community == asker_faction
+           or game_relations.is_factions_enemies(asker_faction, community) ~= true then
+            eligible[community] = true
+        end
+    end
+    return eligible
+end
+
 -- Single pass over the AP-scripted squad set, filling two reservoirs: squads in transit
 -- and squads sitting at their target. Returns the moving candidates first, then the parked
 -- ones, so the caller takes the first that passes its gates and a moving squad wins
@@ -300,7 +345,8 @@ end
 --
 -- Returning a LIST rather than one id is what makes the cooldown gate survivable. Sampling
 -- one candidate and aborting when it was cooled down is what took the feature off the air.
--- @param allowed    table   set of in-scope community strings
+-- @param allowed    table   set of communities that may answer this asker, already
+--                           narrowed to the asker's non-enemies by _non_hostile_factions
 -- @param scripted   table   ap_api.get_scripted_squads() result
 -- @param exclude_id number  the asker's squad ID
 -- @return table  array of squad IDs, moving first, at most 2*ANSWERER_CANDIDATES entries
@@ -430,7 +476,11 @@ local function _compose_reply(squad)
     -- be on the player's own map, where get_location_name would otherwise render it bare
     -- ("the bus stop"). That is fine for a stalker standing in front of you and wrong for a
     -- voice on the radio, who could be anywhere -- so the wire always names the region.
-    local action = wom_recap_npc.render_current_action(squad, nil, nil, nil, true)
+    -- prefer_location: on the wire the location is the whole point of the answer -- the
+    -- listener has no view of the speaker, so a variant that omits it ("Out looking for
+    -- artifacts.") is a wasted transmission. Preference, not a gate: pools with no
+    -- location-bearing variant still answer.
+    local action = wom_recap_npc.render_current_action(squad, nil, nil, nil, true, true)
     if action == "" then return "" end
 
     local plural = (squad.npc_count and squad:npc_count() or 0) > 1
@@ -457,10 +507,17 @@ end
 --   wiped       — the squad object outlives its last member briefly. npc_count() == 0
 --                 would render through the "alone" pool and have a dead squad announce
 --                 that it is on its own out there.
+--   commander gone — the picked commander died and command passed to another member. The
+--                 name lookup degrades through _commander_display's pcall, but the story
+--                 gate does not carry over, so it is re-tested on the CURRENT commander.
 --   online/offline flip — harmless by construction. The reply renders through the offline
 --                 path either way, which never touches db.storage[...].object and so
 --                 cannot trip the destroyed-object raise; a squad that came online since
 --                 the question simply renders without absent-member detail.
+--
+-- Not re-checked, deliberately: MCM faction scope. The claim already pins the answerer's
+-- faction, so the only way scope changes inside a few seconds is the player themselves
+-- swapping faction mid-delay, and it would cost a game_relations crossing to catch.
 -- @param claim table  { id, faction } captured when the question was sent
 local function _deliver_reply(claim)
     if not db.actor then
@@ -492,6 +549,21 @@ local function _deliver_reply(claim)
         return
     end
 
+    -- Command can change hands inside the delay: the commander picked at selection time
+    -- dies and the next member takes over. Selection tests the story gate on BOTH the squad
+    -- id and the commander id precisely because the two disagree in both directions, and
+    -- the commander half of that test is exactly the half the delay can invalidate -- a
+    -- smart terrain respawning a unique trader (smart_terrain_warfare.check_unique_npcs) can
+    -- put a story NPC in command of the unremarkable squad that was picked. The squad half
+    -- needs no re-check: story ids are a static map and the claim already pins the identity.
+    -- Costs 0 luabind past the commander_id crossing, which is paid below anyway.
+    local commander_id = squad.commander_id and squad:commander_id()
+    if wom_bark.is_story_character(commander_id) then
+        _trace("reply skipped: answerer squad " .. tostring(claim.id)
+               .. " is now commanded by a story character")
+        return
+    end
+
     local message = _compose_reply(squad)
     if message == "" then
         _trace("reply skipped: nothing rendered for squad " .. tostring(claim.id))
@@ -507,8 +579,8 @@ local function _deliver_reply(claim)
     wom_bark.send_news_pda(name, icon, message, "wom_chatter_pda")
 
     -- Marked against whoever leads the squad NOW, not who led it when asked: if the
-    -- original commander died, the replacement is the one who just spoke.
-    local commander_id = squad.commander_id and squad:commander_id()
+    -- original commander died, the replacement is the one who just spoke. (Resolved above,
+    -- for the story gate.)
     if commander_id then wom_bark.mark_spoke(commander_id, _now_sec()) end
 end
 
@@ -577,9 +649,15 @@ local function _run_exchange()
         return
     end
 
-    local answerer_ids = _sample_answerer_ids(allowed, scripted, asker_squad.id)
+    -- Narrowed per exchange, not per tick: who may answer depends on who asked. Abandoning
+    -- the tick when nothing non-hostile is left is deliberate -- re-drawing a fresh asker
+    -- here would let the answerer pool choose the asker, and the next tick redraws both
+    -- anyway.
+    local answerer_factions = _non_hostile_factions(asker_squad.player_id, allowed)
+
+    local answerer_ids = _sample_answerer_ids(answerer_factions, scripted, asker_squad.id)
     if #answerer_ids == 0 then
-        _trace("skipped: no AP-scripted squad in scope to answer")
+        _trace("skipped: no AP-scripted squad in scope to answer (non-hostile to the asker)")
         return
     end
 
@@ -626,6 +704,25 @@ local function _pump()
     end
     local now_ms = time_global()
 
+    -- time_global() is milliseconds since level load, so it jumps BACKWARDS on a load or a
+    -- level change -- the same asymmetry wom_bark's quiet window documents, and the safe
+    -- failure is the same one: redo the work rather than wait on a deadline in a clock that
+    -- no longer exists. Both deadlines here are absolute stamps in that clock, and a rewind
+    -- strands them in the far future. For _next_exchange_at that is a silent outage of up to
+    -- an interval; for _pending_reply it is a WEDGE, because an owed reply blocks every new
+    -- exchange, so the feature stays off until the deadline the clock will reach eventually.
+    -- Dropping the owed reply is the outcome _deliver_reply already treats as normal (the
+    -- answerer was released), and re-arming to FIRST_TICK_DELAY puts the wire back exactly
+    -- where a fresh load puts it. Costs one comparison per tick.
+    if _last_pump_ms and now_ms < _last_pump_ms then
+        _trace("clock jumped backwards; dropping any owed reply and re-arming")
+        _pending_reply    = nil
+        _next_exchange_at = now_ms + (FIRST_TICK_DELAY * 1000)
+        _last_pump_ms     = now_ms
+        return
+    end
+    _last_pump_ms = now_ms
+
     if _pending_reply then
         if now_ms < _pending_reply.due_at then return end
         local claim = _pending_reply.claim
@@ -660,6 +757,7 @@ end
 function on_game_start()
     _pending_reply    = nil
     _next_exchange_at = nil
+    _last_pump_ms     = nil
     wom_bark.reset_cooldowns()
     wom_bark.reset_quiet_window()
     -- The wire is the only reader of the quiet window, so it is also what installs the

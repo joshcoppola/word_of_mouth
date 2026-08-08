@@ -115,6 +115,31 @@ local function _filter_gated(pool, slots, gated_tokens)
     return filtered
 end
 
+-- Narrows a pool to the entries that reference every one of `preferred_tokens`, but only
+-- when at least one such entry exists. This is a preference, not a gate: a pool with no
+-- qualifying entry is returned unchanged, so a pool that was never authored with the token
+-- still speaks rather than falling silent. The inverse of _filter_gated, which removes
+-- entries needing a slot that is empty; this one keeps entries using a slot that is filled.
+-- @param pool             table     array of template strings
+-- @param preferred_tokens table|nil array of token name strings
+-- @return table  the narrowed array, or the original pool
+local function _prefer_tokens(pool, preferred_tokens)
+    if not (preferred_tokens and #preferred_tokens > 0) then return pool end
+    local preferred = {}
+    for i = 1, #pool do
+        local keep = true
+        for j = 1, #preferred_tokens do
+            if not string.find(pool[i], "#" .. preferred_tokens[j] .. "#", 1, true) then
+                keep = false
+                break
+            end
+        end
+        if keep then preferred[#preferred + 1] = pool[i] end
+    end
+    if #preferred == 0 then return pool end
+    return preferred
+end
+
 -- Overrides subject/other slots in `slots` when the NPC's own squad was directly involved
 -- in the event. Mutates `slots` in place; no-op when npc_squad_id is nil.
 -- @param slots             table        slot map to mutate
@@ -689,15 +714,22 @@ end
 -- "noclock fallback": pass { "clock", "Ago" } when building event stamps and the
 -- variants that need a clock/ago value are automatically excluded when unavailable.
 --
--- @param prefix        string    localisation key prefix, e.g. "st_wom_ask_recap_quiet"
--- @param slots         table     map of token names to replacement strings
--- @param gated_tokens  table|nil optional array of token names to gate on
+-- Optional fourth argument preferred_tokens: an array of token names the caller would
+-- rather the chosen line mention. Variants referencing all of them win the pick outright;
+-- when the pool has none, selection falls back to the whole (gated) pool, so this can never
+-- silence a line. Applied after gating, so a token can be both gated and preferred.
+--
+-- @param prefix           string    localisation key prefix, e.g. "st_wom_ask_recap_quiet"
+-- @param slots            table     map of token names to replacement strings
+-- @param gated_tokens     table|nil optional array of token names to gate on
+-- @param preferred_tokens table|nil optional array of token names to prefer
 -- @return string  substituted and cleaned result, or ""
-function pick_dialogue_variant(prefix, slots, gated_tokens)
+function pick_dialogue_variant(prefix, slots, gated_tokens, preferred_tokens)
     local variants = load_variants(prefix)
     if #variants == 0 then return "" end
     local filtered = _filter_gated(variants, slots, gated_tokens)
     if #filtered == 0 then return "" end
+    filtered = _prefer_tokens(filtered, preferred_tokens)
     return clean_output(substitute(wom_utils.pick_random_item(filtered), slots or {}))
 end
 

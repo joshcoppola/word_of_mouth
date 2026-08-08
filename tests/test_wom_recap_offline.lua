@@ -123,8 +123,11 @@ wom_dialogue_helper = {
     make_pronoun_slots = function(plural) return { plural = plural } end,
     -- Echoes the pool key plus the slots a test needs to see, so an assertion can tell
     -- exactly which rung of the cascade fired and what it was handed.
-    pick_dialogue_variant = function(prefix, slots)
+    pick_dialogue_variant = function(prefix, slots, _gated, preferred)
         local parts = { prefix }
+        if preferred then
+            for _, token in ipairs(preferred) do parts[#parts + 1] = "pref=" .. token end
+        end
         if slots then
             if slots.location    then parts[#parts + 1] = "loc=" .. tostring(slots.location) end
             if slots.squad_term  then parts[#parts + 1] = "term=" .. tostring(slots.squad_term) end
@@ -331,6 +334,30 @@ group("render_current_action: force_region is independent of the online path", f
     check("online caller can force it",
           render_current_action(squad, make_npc(100, 0), false, nil, true),
           "st_wom_ask_job_explore_moving|loc=SMART500+REGION")
+end)
+
+group("render_current_action: prefer_location steers the pick when a location resolved", function()
+    _record = { consequence_key = "consequence:job_explore", smart_id = 500 }
+    local squad = make_squad({ current_action = 0 })
+    -- The PDA wire's call shape: the listener cannot see the speaker, so a line that
+    -- names where they are beats one that does not.
+    check("preference reaches the pool pick",
+          render_current_action(squad, nil, nil, nil, true, true),
+          "st_wom_ask_job_explore_moving|pref=location|loc=SMART500+REGION")
+    check("face-to-face dialogue keeps the full pool",
+          render_current_action(squad, nil, nil, nil, true),
+          "st_wom_ask_job_explore_moving|loc=SMART500+REGION")
+end)
+
+group("render_current_action: prefer_location is dropped when no location resolved", function()
+    -- No smart on the record, nothing scripted, no assigned target: #location# is the
+    -- "a location" fallback, which is not worth steering the pick towards.
+    _record   = { consequence_key = "consequence:job_explore" }
+    _scripted = {}
+    local squad = make_squad({ current_action = 0 })
+    check("no preference passed",
+          render_current_action(squad, nil, nil, nil, true, true),
+          "st_wom_ask_job_explore_moving|loc=st_wom_term_location_fallback")
 end)
 
 group("render_current_action: nil squad and missing AP are safe", function()
