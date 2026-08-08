@@ -3,7 +3,11 @@
 --- Template loading and slot substitution patterns mirror ap_ext_news.script.
 --- Depends on: wom_utils.script, wom_terminology_helper.script
 
-local MAX_TEMPLATE_VARIANTS = 10
+-- Upper bound on the indexed scan in load_variants. Raising it is free for smaller pools:
+-- the scan breaks at the first missing key, so the cap only ever costs a lookup for a pool
+-- that actually authors that many variants. It was 10, which silently truncated
+-- st_wom_chatter_pda_ask (14 variants) and dropped exactly the #location# lines.
+local MAX_TEMPLATE_VARIANTS = 20
 
 -- Loads an indexed pool of template strings from localisation XML.
 -- Scans keys from prefix_001 to prefix_N until a key returns itself (not found).

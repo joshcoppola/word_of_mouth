@@ -67,7 +67,23 @@ end
 
 -- wom_bark's module body only builds local tables, but its other functions reference
 -- these at call time; stub them so dofile and any incidental access stay safe.
-db       = { actor = { position = function() return make_vector(0, 0) end }, OnlineStalkers = {} }
+-- give_game_news is what actually puts a line on the player's PDA, and both delivery
+-- functions stamp the shared quiet window immediately after calling it, so the window
+-- tests need a real (if inert) method here.
+-- Whether the actor is in dialogue. The vanilla task/item/money news funnels route to
+-- give_talk_message2 instead of the news feed while talking, so the external-news hooks
+-- must not stamp the quiet window then; see the hook tests at the bottom of this file.
+local _actor_talking = false
+
+db       = {
+    actor = {
+        position       = function() return make_vector(0, 0) end,
+        give_game_news = function() end,
+        id             = function() return 0 end,
+        is_talking     = function() return _actor_talking end,
+    },
+    OnlineStalkers = {},
+}
 xmath    = nil
 xr_sound = nil
 printf   = function() end
@@ -78,6 +94,7 @@ printf   = function() end
 -- routes through it and honours a nil.
 wom_utils = {
     get_live_online_npc = function(id) return _live_npcs[id] end,
+    play_hello_bark     = function() end,
 }
 
 -- ============================================================
@@ -190,6 +207,45 @@ group("faction_matches: partial game_relations degrades safely", function()
 end)
 
 -- ============================================================
+-- allowed_factions
+-- ============================================================
+
+-- allowed_factions is faction_matches precomputed, so its whole contract is that the two
+-- agree. They diverge exactly where faction_matches answers a question the precompute's
+-- iteration cannot reach: a community outside HUMAN_FACTIONS.
+group("allowed_factions: agrees with faction_matches", function()
+    set_standard_relations()
+    local allowed = allowed_factions("stalker", "allies")
+    check("own faction in scope", allowed["stalker"], true)
+    check("ally in scope",        allowed["dolg"],    true)
+    check("neutral out of scope", allowed["ecolog"],  nil)
+    check("enemy out of scope",   allowed["bandit"],  nil)
+
+    allowed = allowed_factions("stalker", "neutral")
+    check("neutral in scope at neutral", allowed["ecolog"], true)
+    check("enemy still out of scope",    allowed["bandit"], nil)
+end)
+
+group("allowed_factions: a player community outside HUMAN_FACTIONS", function()
+    set_standard_relations()
+    -- The regression: monolith is a real talking community and playable in GAMMA
+    -- (actor_monolith), but is not in HUMAN_FACTIONS, so iterating that table alone
+    -- returned an empty set for a Monolith player. Every sampling pass then matched
+    -- nothing and the faction wire never fired an exchange at any scope.
+    for _, scope in ipairs({ "faction", "allies", "neutral" }) do
+        local allowed = allowed_factions("monolith", scope)
+        check("own faction present at " .. scope .. " scope", allowed["monolith"], true)
+    end
+    check("still not offered to a stalker player", allowed_factions("stalker", "neutral")["monolith"], nil)
+end)
+
+group("allowed_factions: nil player community", function()
+    set_standard_relations()
+    local allowed = allowed_factions(nil, "neutral")
+    check("no nil key seeded", allowed[nil], nil)
+end)
+
+-- ============================================================
 -- pick_nearby_stalker
 -- ============================================================
 
@@ -272,6 +328,200 @@ group("pick_nearby_stalker: filter_fn", function()
 
     opts.filter_fn = function() return false end
     check("filter rejecting everyone → nil", pick_nearby_stalker(db.actor, opts), nil)
+end)
+
+-- ============================================================
+-- is_pda_quiet: the shared PDA quiet window
+-- ============================================================
+
+-- Drives time_global() for the window tests. The engine's time_global is milliseconds
+-- since level load, so it can only ever be moved forwards by the game — except across a
+-- load, which is the backwards case tested below.
+local _clock_ms = 0
+time_global = function() return _clock_ms end
+
+-- Clears the window and puts the clock at a nonzero point, so a test that expects
+-- "nothing sent yet" is not passing merely because the clock reads 0.
+local function reset_window()
+    reset_quiet_window()
+    _clock_ms = 500000
+end
+
+-- Sends one message through the real delivery path, so the tests assert the stamp
+-- the shipped call sites actually produce rather than poking module state.
+local function deliver()
+    send_news_pda("Sender", "icon", "message", "test")
+end
+
+group("is_pda_quiet: nothing sent yet", function()
+    reset_window()
+    check("quiet before any message", is_pda_quiet(20), true)
+end)
+
+group("is_pda_quiet: a delivered message closes the window", function()
+    reset_window()
+    deliver()
+    check("silent immediately after", is_pda_quiet(20), false)
+
+    _clock_ms = _clock_ms + 19000
+    check("still silent one second short", is_pda_quiet(20), false)
+
+    _clock_ms = _clock_ms + 1000
+    check("open exactly on the boundary", is_pda_quiet(20), true)
+end)
+
+group("is_pda_quiet: send_pda stamps the same window as send_news_pda", function()
+    reset_window()
+    -- This is the asymmetry the feature rests on: only wom_chatter_pda READS the window,
+    -- but every feature WRITES it, so a campfire bark (send_pda) has to close it just as
+    -- a news-wire message does. If this ever regresses, the wire stops yielding to the
+    -- proximity features and nothing else in the suite would notice.
+    --
+    -- The proximity path takes an NPC object and plays a bark; wom_utils is stubbed at
+    -- the top of this file, so only the give_game_news call actually runs.
+    send_pda({
+        character_name = function() return "Speaker" end,
+        character_icon = function() return "icon" end,
+        id             = function() return 1 end,
+    }, "message", "test")
+    check("proximity delivery closes the window too", is_pda_quiet(20), false)
+end)
+
+group("is_pda_quiet: zero disables the rule", function()
+    reset_window()
+    deliver()
+    check("gap of 0 is always quiet", is_pda_quiet(0), true)
+    check("nil gap is always quiet", is_pda_quiet(nil), true)
+end)
+
+group("is_pda_quiet: a backwards clock is treated as a fresh session", function()
+    reset_window()
+    deliver()
+    check("silent before the jump", is_pda_quiet(20), false)
+
+    -- time_global() restarts near 0 on a load or level change. Left unhandled this
+    -- produces a negative elapsed time, which reads as "not quiet" and would mute every
+    -- feature until the clock caught back up to the pre-load value.
+    _clock_ms = 100
+    check("quiet again after the clock rewinds", is_pda_quiet(20), true)
+    check("and the stale stamp is gone, not just skipped", is_pda_quiet(999999), true)
+end)
+
+group("is_pda_quiet: no delivery without an actor, no stamp either", function()
+    reset_window()
+    local saved_actor = db.actor
+    db.actor = nil
+    deliver()
+    check("window stays open when nothing reached the PDA", is_pda_quiet(20), true)
+    db.actor = saved_actor
+end)
+
+-- ============================================================
+-- hook_external_news: non-WoM PDA messages close the window too
+-- ============================================================
+
+-- The funnel stubs stand in for vanilla news_manager / dynamic_news_helper and xlibs'
+-- xpda. Each records the arguments it was handed and returns whatever the test asked
+-- for, so the tests can assert both halves of the wrapper's contract: that it stamps on
+-- a real delivery, and that it is transparent to the original's callers.
+local _funnel_calls = {}
+local _send_tip_result, _relocate_result = true, nil
+
+news_manager = {
+    send_tip = function(...)
+        _funnel_calls[#_funnel_calls + 1] = { name = "send_tip", args = { ... } }
+        return _send_tip_result
+    end,
+    relocate_item = function(...)
+        _funnel_calls[#_funnel_calls + 1] = { name = "relocate_item", args = { ... } }
+        return _relocate_result
+    end,
+    -- Returns two values, to prove the wrapper is not collapsing them to one.
+    send_sound = function() return true, "extra" end,
+}
+
+-- dynamic_news_helper is deliberately left undefined and xpda only half-defined: a funnel
+-- module that is absent, or present without one of the named functions, must be skipped
+-- rather than erroring. dynamic_news_helper is exactly the case that goes missing when the
+-- player has a stripped news setup.
+xpda = { send = function() return true end }   -- no npc_tip
+
+hook_external_news()
+
+group("hook_external_news: a vanilla tip closes the window", function()
+    reset_window()
+    _send_tip_result = true
+    news_manager.send_tip(db.actor, "st_something")
+    check("send_tip stamped the window", is_pda_quiet(20), false)
+end)
+
+group("hook_external_news: a funnel that bailed does not close the window", function()
+    reset_window()
+    -- send_tip returns false when its sender is dead or heavily wounded: nothing reached
+    -- the PDA, so muting the wire for it would be a phantom interruption.
+    _send_tip_result = false
+    news_manager.send_tip(db.actor, "st_something")
+    check("a false return leaves the window open", is_pda_quiet(20), true)
+end)
+
+group("hook_external_news: the not_false funnels stamp on a silent success", function()
+    reset_window()
+    -- relocate_item returns nothing at all when it displays a message, and false only on
+    -- a bail, so "truthy" would never stamp it and the player's loot notifications would
+    -- not count as PDA traffic.
+    _relocate_result = nil
+    news_manager.relocate_item(db.actor, "in", "wpn_ak74", 1)
+    check("no return value still counts as delivered", is_pda_quiet(20), false)
+
+    reset_window()
+    _relocate_result = false
+    news_manager.relocate_item(db.actor, "in", "bad_section", 1)
+    check("an explicit false does not", is_pda_quiet(20), true)
+end)
+
+group("hook_external_news: dialogue messages are not PDA messages", function()
+    reset_window()
+    -- While the actor is talking these funnels call give_talk_message2 instead, which puts
+    -- the line in the dialogue box and never touches the news feed.
+    _relocate_result = nil
+    _actor_talking = true
+    news_manager.relocate_item(db.actor, "in", "wpn_ak74", 1)
+    check("window stays open during dialogue", is_pda_quiet(20), true)
+    _actor_talking = false
+end)
+
+group("hook_external_news: the wrapper is transparent to the original's callers", function()
+    reset_window()
+    _funnel_calls = {}
+    _send_tip_result = true
+    local returned = news_manager.send_tip(db.actor, "st_something", 3, "dolg")
+    check("return value passed through", returned, true)
+    check("original was called once", #_funnel_calls, 1)
+    check("first argument passed through", _funnel_calls[1].args[1], db.actor)
+    check("last argument passed through",  _funnel_calls[1].args[4], "dolg")
+
+    local first, second = news_manager.send_sound()
+    check("multiple return values survive (1)", first, true)
+    check("multiple return values survive (2)", second, "extra")
+end)
+
+group("hook_external_news: hooking twice does not nest wrappers", function()
+    -- on_game_start runs on every save load. Without the guard each load would wrap the
+    -- previous session's wrapper, growing one call layer deeper per load for the rest of
+    -- the process.
+    local wrapped_before = news_manager.send_tip
+    hook_external_news()
+    check("send_tip still the same function", news_manager.send_tip == wrapped_before, true)
+end)
+
+group("hook_external_news: absent funnels are skipped, not errors", function()
+    reset_window()
+    -- xpda.send exists and was hooked; xpda.npc_tip and the whole of dynamic_news_helper
+    -- did not exist when hook_external_news ran.
+    check("dynamic_news_helper stayed absent", dynamic_news_helper, nil)
+    check("xpda.npc_tip stayed absent", xpda.npc_tip, nil)
+    xpda.send("Sender", "message")
+    check("the funnel that did exist is hooked", is_pda_quiet(20), false)
 end)
 
 -- ============================================================

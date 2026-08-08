@@ -320,8 +320,13 @@ local function _scan()
     if not sender_name or sender_name == "" then return end
 
     -- Render and deliver.
+    -- force_region: records are polled from every map, and the message arrives on the PDA
+    -- from a sender the player cannot see. An event on the player's own level would
+    -- otherwise render bare ("the bus stop"), reading as local news when the wire has no
+    -- way to say so -- so every reaction names its region.
     local event         = wom_recap_smart_terrain.record_to_event(best.record, best.category)
-    local location_name = wom_terminology_helper.get_location_name(best.record.smart_id)
+    local location_name = wom_terminology_helper.get_location_name(
+                              best.record.smart_id, nil, true)
     local message       = wom_dialogue_helper.render_reaction(
         event, location_name, affected_faction, nil)
 

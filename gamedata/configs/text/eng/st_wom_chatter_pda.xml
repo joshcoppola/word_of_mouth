@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+    <!-- Faction-wire question templates for wom_chatter_pda.script.
+         Delivered as an unquoted news-wire PDA message attributed to the commander of a
+         stationed squad somewhere in the simulation. A few seconds later a second squad,
+         one ALifePlus is actively driving, answers with a squad-status line followed by a
+         current-action line drawn from st_wom_current_action.xml.
+
+         Both speakers may be on any map, so these lines are radio traffic, not a
+         conversation happening in front of the player. Nothing here may assume the
+         listener can see the speaker or knows where they are.
+
+         Key format: st_wom_chatter_pda_ask_{NNN}
+         One is picked at random. Variants referencing a slot whose value is empty are
+         filtered out by pick_dialogue_variant's gated_tokens before selection, so the
+         pool must keep enough location-free lines to survive an unresolvable location.
+
+         Available slots:
+           #location#  — where the asker is holed up. The asker is always off the player's
+                         map, so this always carries its own region suffix ("the bar in
+                         Rostok"). Never add a region word around it.
+           #I_we_l#, #I_We_u#, #Im_Were_u#, #Ive_Weve_u#, #my_our_l#, #me_us_l#
+                       — pronoun tokens, plural when the asker's squad has 2+ members.
+    -->
+
+    <!-- Location-free: always safe, must stay the majority of the pool. -->
+    <string id="st_wom_chatter_pda_ask_001"><text>Anyone on this channel? What's going on out there?</text></string>
+    <string id="st_wom_chatter_pda_ask_002"><text>Anybody doing anything worth hearing?</text></string>
+    <string id="st_wom_chatter_pda_ask_003"><text>What's the word out there?</text></string>
+    <string id="st_wom_chatter_pda_ask_004"><text>Hey. Everyone still moving out there?</text></string>
+    <string id="st_wom_chatter_pda_ask_005"><text>Sitting on my hands here. What's everyone else doing?</text></string>
+    <string id="st_wom_chatter_pda_ask_006"><text>Anything happening?</text></string>
+    <string id="st_wom_chatter_pda_ask_007"><text>Anyone up to anything worth reporting?</text></string>
+    <string id="st_wom_chatter_pda_ask_008"><text>I'm bored. What's going on out there?</text></string>
+    <string id="st_wom_chatter_pda_ask_009"><text>Anyone out there care to say what they're up to?</text></string>
+    <string id="st_wom_chatter_pda_ask_010"><text>What's the word?</text></string>
+
+    <!-- Location-bearing: filtered out when the asker's position cannot be resolved. -->
+    <string id="st_wom_chatter_pda_ask_011"><text>Sitting here at #location#. What's going on?</text></string>
+    <string id="st_wom_chatter_pda_ask_012"><text>Taking it easy here at #location#. Anyone got anything?</text></string>
+    <string id="st_wom_chatter_pda_ask_013"><text>Currently taking a break at #location#. Anybody up to anything? </text></string>
+    <string id="st_wom_chatter_pda_ask_014"><text>Sitting here at #location#. What's going on out there?</text></string>
+
+    <!-- Answerer's opening acknowledgement, prepended as the first sentence of the reply
+         (squad-status line, then current-action line). Purely a radio hail: it carries no
+         news, so it must never reference a location, a faction or an event. Everything
+         concrete belongs to the two sentences that follow.
+
+         Key format: st_wom_chatter_pda_reply_open_{NNN}
+         Only the pronoun slots are available; a variant using anything else renders a
+         literal token, since _compose_reply builds no other slot for this pool. An empty
+         render is harmless: the reply simply starts with the status line, as it did
+         before this pool existed. -->
+    <string id="st_wom_chatter_pda_reply_open_001"><text>Reporting in.</text></string>
+    <string id="st_wom_chatter_pda_reply_open_002"><text>Hey hey.</text></string>
+    <string id="st_wom_chatter_pda_reply_open_003"><text>#Im_Were_u# here.</text></string>
+    <string id="st_wom_chatter_pda_reply_open_004"><text>Well, here's what's going on with me.</text></string>
+    <string id="st_wom_chatter_pda_reply_open_005"><text>If you really care, here's the latest from me.</text></string>
+    <string id="st_wom_chatter_pda_reply_open_006"><text>Here's what I got.</text></string>
+    <string id="st_wom_chatter_pda_reply_open_007"><text>Since you asked so nicely, here's the deal.</text></string>
+</string_table>

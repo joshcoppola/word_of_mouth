@@ -32,6 +32,19 @@
   <string id="ui_mcm_word_of_mouth_chatter_range"><text>Радиус обнаружения (метры)</text></string>
   <string id="ui_mcm_word_of_mouth_chatter_range_desc"><text>Насколько близко должен находиться член группировки, чтобы его разговор о смене цели донёсся до вас.</text></string>
 
+  <!-- faction wire chatter -->
+  <string id="ui_mcm_word_of_mouth_title_chatter_pda"><text>Переговоры по рации</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_enabled"><text>Включить переговоры по рации</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_enabled_desc"><text>Сталкер, засевший где-то в Зоне, спрашивает по рации, что происходит снаружи, а отряд в поле отвечает, чем он занят. Оба говорящих могут находиться на любой локации, так что это радиоперехват, а не разговор у вас на глазах.</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_interval"><text>Интервал между переговорами (секунды)</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_interval_desc"><text>Как часто делается попытка провести переговоры. Меньшие значения означают больше радиообмена. Попытка может ничем не закончиться, если подходящей пары отрядов не нашлось.</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_reply_delay"><text>Задержка ответа (секунды)</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_reply_delay_desc"><text>Сколько времени отвечающий отряд тратит на ответ после того, как прозвучал вопрос.</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_quiet_gap"><text>Требуемая тишина КПК (секунды)</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_quiet_gap_desc"><text>Сколько реальных секунд ваш КПК должен молчать, прежде чем эфир группировки начнёт новый разговор. Учитывается любое сообщение КПК — как сообщения самого Word of Mouth (болтовня у костра, переговоры отряда, реакции на события), так и сообщения игры и других аддонов, — чтобы фоновые переговоры не мешали, когда что-то действительно происходит. Ждёт только эфир, остальное не задерживается. Уже обещанный ответ всё равно будет отправлен, поэтому вопрос никогда не останется без ответа. Установите 0, чтобы отключить.</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_scope"><text>Чей радиообмен вы слышите</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_scope_desc"><text>Только группировка: вы слышите только рацию своей группировки. Группировка и союзники: также дружественные группировки. Группировка, союзники и нейтралы: любая группировка, с которой вы не враждуете.</text></string>
+
   <!-- MCM list content labels: MCM builds key as "ui_mcm_lst_" .. second_element (shared global prefix) -->
   <string id="ui_mcm_lst_wom_public"><text>Публично: сталкеры расскажут кому угодно</text></string>
   <string id="ui_mcm_lst_wom_faction"><text>Только своим: сталкеры расскажут только членам своей группировки</text></string>

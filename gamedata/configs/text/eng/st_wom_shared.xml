@@ -55,4 +55,54 @@
   <string id="st_wom_ask_recap_seq_same_time_002"><text>Meanwhile</text></string>
   <string id="st_wom_ask_recap_seq_same_time_003"><text>Right about then</text></string>
 
+  <!-- ========================================================================= -->
+  <!-- SQUAD STATUS (first line — wom_recap_npc.render_squad_status)              -->
+  <!-- SHARED: rendered both by the "What have you been up to?" daily recap and   -->
+  <!-- by the faction wire reply (wom_chatter_pda), which renders the same        -->
+  <!-- function for an offline squad. Only the leader/alone pools are reachable   -->
+  <!-- offline; the follower/member pools are online-only. Edit with both in mind.-->
+  <!-- No trailing period; Lua adds "." or ", <absent clause>."                   -->
+  <!-- ========================================================================= -->
+
+  <!-- Alone (npc_count <= 1) -->
+  <string id="st_wom_recap_status_alone_001"><text>I'm on my own at the moment</text></string>
+  <string id="st_wom_recap_status_alone_002"><text>Flying solo right now</text></string>
+  <string id="st_wom_recap_status_alone_003"><text>Just me out here today</text></string>
+
+  <!-- Leader, 2-member squad: #partner_name# = other member's first name -->
+  <string id="st_wom_recap_status_leader_pair_001"><text>Currently running with my companion #partner_name#</text></string>
+  <string id="st_wom_recap_status_leader_pair_002"><text>Running with my partner #partner_name# right now</text></string>
+  <string id="st_wom_recap_status_leader_pair_003"><text>On point with my comrade #partner_name#</text></string>
+  <string id="st_wom_recap_status_leader_pair_004"><text>Currently working with my partner #partner_name#</text></string>
+  <string id="st_wom_recap_status_leader_pair_005"><text>Working with my comrade #partner_name#</text></string>
+
+  <!-- Leader, 3+ squad: #squad_term# = faction collective noun, #squad_count# = number word -->
+  <string id="st_wom_recap_status_leader_squad_001"><text>Currently leading a #squad_term# of #squad_count#</text></string>
+  <string id="st_wom_recap_status_leader_squad_002"><text>Running a #squad_term# of #squad_count# right now</text></string>
+
+  <!-- Follower, 2-member squad: #leader_name# = commander's first name -->
+  <string id="st_wom_recap_status_follower_pair_001"><text>Currently paired up, #leader_name# is taking point</text></string>
+  <string id="st_wom_recap_status_follower_pair_002"><text>Working under #leader_name# right now, just the two of us</text></string>
+
+  <!-- Follower, 3+ squad: #leader_name#, #squad_term#, #squad_count# -->
+  <string id="st_wom_recap_status_follower_squad_001"><text>Following #leader_name#, #squad_count# in our #squad_term#</text></string>
+  <string id="st_wom_recap_status_follower_squad_002"><text>Running with #leader_name#'s #squad_term#, #squad_count# of us in total</text></string>
+
+  <!-- Follower, 2-member, no commander resolved: no leader name available -->
+  <string id="st_wom_recap_status_member_pair_001"><text>Running with one other right now</text></string>
+  <string id="st_wom_recap_status_member_pair_002"><text>Just two of us out here</text></string>
+
+  <!-- Follower, 3+ squad, no commander resolved: #squad_term#, #squad_count# -->
+  <string id="st_wom_recap_status_member_squad_001"><text>Part of a #squad_term# of #squad_count# right now</text></string>
+  <string id="st_wom_recap_status_member_squad_002"><text>Running with a #squad_term# of #squad_count#</text></string>
+
+  <!-- Absent-member appended clause (Lua lowercases first letter via decapitalize_clause) -->
+  <!-- Online-only: an offline squad is a single alife point, so nobody can be absent. -->
+  <!-- Singular: #absent_name# -->
+  <string id="st_wom_recap_status_absent_one_001"><text>although I don't know what #absent_name# is up to</text></string>
+  <string id="st_wom_recap_status_absent_one_002"><text>although I'm not sure where #absent_name# is at the moment</text></string>
+  <!-- Plural: #absent_names# = joined list of first names -->
+  <string id="st_wom_recap_status_absent_many_001"><text>although I don't know what #absent_names# are up to</text></string>
+  <string id="st_wom_recap_status_absent_many_002"><text>although I'm not sure where #absent_names# are at</text></string>
+
 </string_table>

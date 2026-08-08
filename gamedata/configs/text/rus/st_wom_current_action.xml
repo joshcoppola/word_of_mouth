@@ -255,13 +255,6 @@
   <string id="st_wom_ask_harvest_rob_moving_001"><text>Иду на «дело» в район точки #location#.</text></string>
   <string id="st_wom_ask_harvest_rob_moving_002"><text>Иду немного потрясти #some_members_other# возле объекта #location#.</text></string>
 
-  <!-- alpha_promote / alphakill_targeted: squad hierarchy -->
-  <string id="st_wom_ask_alpha_promote_arrived_001"><text>Навожу порядок с субординацией, а то распустились тут.</text></string>
-  <string id="st_wom_ask_alpha_promote_arrived_002"><text>Перетираем с пацанами, кто теперь в бригаде старшим будет.</text></string>
-  <string id="st_wom_ask_alphakill_targeted_arrived_001"><text>Решаю вопрос с главным. Пора навести порядок.</text></string>
-  <string id="st_wom_ask_alphakill_targeted_arrived_002"><text>Это наши внутренние тёрки. Не суй нос — цельнее будешь.</text></string>
-  <string id="st_wom_ask_alphakill_targeted_moving_001"><text>Выдвигаюсь. Есть одно личное дело, со своими посчитаться.</text></string>
-
   <!-- wounded_help: aiding an injured ally -->
   <string id="st_wom_ask_wounded_help_arrived_001"><text>В районе точки #location# бедолаге помошь нужна была. Успел вроде!</text></string>
   <string id="st_wom_ask_wounded_help_arrived_002"><text>Латаю подранка, перевязываю да колю обезбол.</text></string>
@@ -299,6 +292,21 @@
   <string id="st_wom_ask_supply_trader_offmap_arrived_002"><text>Только с рейса за хабаром притопал. Ноги аж отваливаются.</text></string>
   <string id="st_wom_ask_supply_trader_offmap_moving_001"><text>Иду в локацию #location# за полноценной закупкой.</text></string>
   <string id="st_wom_ask_supply_trader_offmap_moving_002"><text>Иду в локацию #location# разжиться припасами у местных барыг.</text></string>
+
+  <!-- barter: peer-to-peer swap with another stalker. The needs-driven counterpart of
+       supply_trader, routed to an occupied smart rather than a service NPC, so no trader
+       and no money are involved: surplus kit for kit. Keep the phrasing on the swap. -->
+  <string id="st_wom_ask_barter_arrived_001"><text>Ищу, с кем махнуться снарягой возле объекта #location#.</text></string>
+  <string id="st_wom_ask_barter_arrived_002"><text>Договариваюсь об обмене с местными сталкерами.</text></string>
+  <string id="st_wom_ask_barter_arrived_003"><text>Утрясаю с пацанами обмен припасами.</text></string>
+  <string id="st_wom_ask_barter_moving_001"><text>Иду в район точки #location# — может, найдётся с кем махнуться снарягой.</text></string>
+  <string id="st_wom_ask_barter_moving_002"><text>Иду в локацию #location#, надеюсь сторговаться там с кем-нибудь.</text></string>
+
+  <!-- barter_offmap: peer swap off the current map -->
+  <string id="st_wom_ask_barter_offmap_arrived_001"><text>После долгого перехода наконец нашёл, с кем обменяться снарягой.</text></string>
+  <string id="st_wom_ask_barter_offmap_arrived_002"><text>Только что обменялся лишними припасами с другой группой.</text></string>
+  <string id="st_wom_ask_barter_offmap_moving_001"><text>Иду в локацию #location# — гляну, не согласится ли кто махнуться снарягой.</text></string>
+  <string id="st_wom_ask_barter_offmap_moving_002"><text>Выдвигаюсь в локацию #location#, авось найду группу, готовую обменять лишнюю снарягу.</text></string>
 
   <!-- job_research: research or data-gathering assignment -->
   <string id="st_wom_ask_job_research_arrived_001"><text>Снимаю показатели с приборов возле объекта #location#.</text></string>

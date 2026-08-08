@@ -15,47 +15,8 @@
  <!-- Actor question for the "What have you been up to?" dialog topic -->
  <string id="st_wom_ask_recap"><text>Чем занимался последнее время?</text></string>
 
- <!-- ========================================================================= -->
- <!-- SQUAD STATUS (first line — render_squad_status)       -->
- <!-- No trailing period; Lua adds "." or ", <absent clause>."     -->
- <!-- ========================================================================= -->
-
- <!-- Alone (npc_count <= 1) -->
- <string id="st_wom_recap_status_alone_001"><text>Сейчас я один</text></string>
- <string id="st_wom_recap_status_alone_002"><text>Хожу сам по себе</text></string>
- <string id="st_wom_recap_status_alone_003"><text>Сегодня один тут кручусь</text></string>
-
- <!-- Leader, 2-member squad: #partner_name# = other member's first name -->
- <string id="st_wom_recap_status_leader_pair_001"><text>Сейчас хожу в паре с #partner_name#</text></string>
- <string id="st_wom_recap_status_leader_pair_002"><text>Хожу с #partner_name#, командую я</text></string>
-
- <!-- Leader, 3+ squad: #squad_term# = faction collective noun, #squad_count# = number word -->
- <string id="st_wom_recap_status_leader_squad_001"><text>Сейчас веду людей, нас тут #squad_term# в составе #squad_count# человек</text></string>
- <string id="st_wom_recap_status_leader_squad_002"><text>Командую тут ребятам, уже набралась #squad_term#, в группе из #squad_count# человек</text></string>
-
- <!-- Follower, 2-member squad: #leader_name# = commander's first name -->
- <string id="st_wom_recap_status_follower_pair_001"><text>Сейчас хожу в паре, #leader_name# ведёт</text></string>
- <string id="st_wom_recap_status_follower_pair_002"><text>Работаю под началом #leader_name#, нас всего двое</text></string>
-
- <!-- Follower, 3+ squad: #leader_name#, #squad_term#, #squad_count# -->
- <string id="st_wom_recap_status_follower_squad_001"><text>Иду за #leader_name#, нас отряд из #squad_count# в группе — #squad_term#</text></string>
- <string id="st_wom_recap_status_follower_squad_002"><text>Хожу с группой под началом #leader_name#, в отряде из #squad_count# человек</text></string>
-
- <!-- Follower, 2-member, no commander resolved: no leader name available -->
- <string id="st_wom_recap_status_member_pair_001"><text>Сейчас хожу ещё с одним</text></string>
- <string id="st_wom_recap_status_member_pair_002"><text>Нас тут двое</text></string>
-
- <!-- Follower, 3+ squad, no commander resolved: #squad_term#, #squad_count# -->
- <string id="st_wom_recap_status_member_squad_001"><text>Сейчас в составе группы — #squad_term# нас из #squad_count# человек</text></string>
- <string id="st_wom_recap_status_member_squad_002"><text>Хожу в отряде из #squad_count# человек</text></string>
-
- <!-- Absent-member appended clause (Lua lowercases first letter via decapitalize_clause) -->
- <!-- Singular: #absent_name# -->
- <string id="st_wom_recap_status_absent_one_001"><text>хотя не знаю, чем сейчас занят #absent_name#</text></string>
- <string id="st_wom_recap_status_absent_one_002"><text>хотя не уверен, где сейчас #absent_name#</text></string>
- <!-- Plural: #absent_names# = joined list of first names -->
- <string id="st_wom_recap_status_absent_many_001"><text>хотя не знаю, чем заняты #absent_names#</text></string>
- <string id="st_wom_recap_status_absent_many_002"><text>хотя не уверен, где сейчас #absent_names#</text></string>
+  <!-- SQUAD STATUS (first line - render_squad_status) lives in st_wom_shared.xml, -->
+  <!-- shared with the faction wire (wom_chatter_pda).                             -->
 
  <!-- ========================================================================= -->
  <!-- RANK-FLAVORED OPENERS              -->

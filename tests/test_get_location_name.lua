@@ -17,6 +17,7 @@ local L_CORDON  = 2
 local L_DV      = 3   -- Dark Valley
 local L_YANTAR  = 4
 local L_GS      = 5   -- Great Swamp (internal name: "marsh")
+local L_JUPITER = 6
 
 -- ============================================================
 -- Mutable test context (reset per test)
@@ -255,6 +256,88 @@ suite("15. On-map Great Swamp — plural/singular strip, no suffix [THE REPORTED
     local id = make_smart("Great Swamp Eerie Bonfire", L_GS)
     check("strips plural-vs-singular prefix, returns plain location on-map",
         get_location_name(id), "the eerie bonfire")
+end)
+
+suite("16. force_region — on-map terrain names its region anyway", function()
+    -- The PDA-wire case: the listener cannot see the speaker, so the region is named even
+    -- though the terrain is on the level the player is standing in (suite 1 without the flag).
+    _actor_level = L_GARBAGE
+    _level_name_map[L_GARBAGE] = "Garbage"
+    local id = make_smart("Garbage. Bus Stop", L_GARBAGE)
+    check("on-map early return is skipped, suffix appended",
+        get_location_name(id, nil, true), "the bus stop in Garbage")
+end)
+
+suite("17. force_region — off-map is unchanged", function()
+    _actor_level = L_GARBAGE
+    _level_name_map[L_CORDON] = "Cordon"
+    local id = make_smart("Cordon. Bus Stop", L_CORDON)
+    check("same as without the flag", get_location_name(id, nil, true), "the bus stop in Cordon")
+end)
+
+suite("18. force_region — redundancy guard still wins", function()
+    -- force_region overrides only the level comparison. When the location part already
+    -- begins with the level name the suffix is still skipped, so this must not become
+    -- "the great swamp clear sky base in Great Swamp".
+    _actor_level = L_GS
+    _level_name_map[L_GS] = "Great Swamp"
+    local id = make_smart("Great Swamp Clear Sky Base", L_GS)
+    -- The prefix strips cleanly here, so the guard is not what fires -- assert the
+    -- outcome the guard exists to protect either way.
+    check("no doubled region name", get_location_name(id, nil, true),
+        "the clear sky base in Great Swamp")
+end)
+
+suite("19. force_region — unresolvable level still yields no region", function()
+    -- level_display resolves to "" when the level has no name, so there is nothing to
+    -- append. A forced region is not a guaranteed one.
+    _actor_level = L_GARBAGE
+    _level_name_map[L_CORDON] = nil
+    local id = make_smart("Bus Stop", L_CORDON)
+    check("bare spoken form", get_location_name(id, nil, true), "the bus stop")
+end)
+
+suite("20. force_region — explicit current_level_id is overridden", function()
+    -- A caller passing both gets the region: force_region is the stronger statement.
+    _level_name_map[L_CORDON] = "Cordon"
+    local id = make_smart("Cordon. Bus Stop", L_CORDON)
+    check("matching compare level does not suppress the suffix",
+        get_location_name(id, L_CORDON, true), "the bus stop in Cordon")
+end)
+
+suite("21. Dash separator — orphaned dash is stripped [REPORTED BUG]", function()
+    -- Seen in play: "On our way to the - Yanov station in Jupiter". The level name strips
+    -- off as a space-only prefix, leaving "- Yanov Station"; to_spoken_location tokenises
+    -- on whitespace, so the dash survived as a word.
+    _actor_level = L_GARBAGE
+    _level_name_map[L_JUPITER] = "Jupiter"
+    local id = make_smart("Jupiter - Yanov Station", L_JUPITER)
+    check("no orphaned dash in the spoken form",
+        get_location_name(id), "the Yanov station in Jupiter")
+end)
+
+suite("22. Dash separator — on-map form", function()
+    _actor_level = L_JUPITER
+    _level_name_map[L_JUPITER] = "Jupiter"
+    local id = make_smart("Jupiter - Yanov Station", L_JUPITER)
+    check("bare spoken form, no dash", get_location_name(id), "the Yanov station")
+end)
+
+suite("23. Dash separator — padded and doubled dashes collapse", function()
+    _actor_level = L_JUPITER
+    _level_name_map[L_JUPITER] = "Jupiter"
+    local a = make_smart("Jupiter  --  Yanov Station", L_JUPITER)
+    check("doubled dash and extra padding", get_location_name(a), "the Yanov station")
+    local b = make_smart("Jupiter \xe2\x80\x94 Yanov Station", L_JUPITER)
+    check("em dash", get_location_name(b), "the Yanov station")
+end)
+
+suite("24. Internal hyphens are preserved", function()
+    -- Only a leading dash is a separator artefact; one inside the name belongs to it.
+    _actor_level = L_GARBAGE
+    _level_name_map[L_GARBAGE] = "Garbage"
+    local id = make_smart("Garbage X-16 Bunker", L_GARBAGE)
+    check("hyphen inside a word survives", get_location_name(id), "the X-16 bunker")
 end)
 
 -- ============================================================

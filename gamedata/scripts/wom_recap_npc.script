@@ -71,9 +71,13 @@ end
 
 -- Collects all squad member IDs and identifies online non-self members and which of
 -- those are beyond the absent-distance threshold.
--- @param squad        userdata  squad server object
--- @param npc_id       number    client ID of the speaking NPC
--- @param npc_position userdata  position of the speaking NPC
+-- npc_position is nil when the speaker is offline (news-wire callers). An offline squad
+-- occupies a single alife point, so no member can be "absent" from it: the online-member
+-- scan is skipped entirely and both absent tables come back empty, which makes
+-- _build_absent_suffix return a bare ".".
+-- @param squad        userdata      squad server object
+-- @param npc_id       number        server ID of the speaking NPC
+-- @param npc_position userdata|nil  position of the speaking NPC, nil when offline
 -- @return table  member_ids     array of all squad member IDs
 -- @return table  online_others  array of { id, object } for alive online non-self members
 -- @return table  absent_ids     set (keyed by id) of members beyond SQUAD_STATUS_ABSENT_DISTANCE
@@ -83,7 +87,7 @@ local function _collect_members_and_absences(squad, npc_id, npc_position)
     local online_others = {}
     for member_id in xsquad.iter_member_ids(squad) do
         member_ids[#member_ids + 1] = member_id
-        if member_id ~= npc_id then
+        if npc_position and member_id ~= npc_id then
             local member_npc = wom_utils.get_live_online_npc(member_id)
             if member_npc then
                 online_others[#online_others + 1] = { id = member_id, object = member_npc }
@@ -194,14 +198,22 @@ end
 -- When any online squad member (other than the speaker) is more than
 -- SQUAD_STATUS_ABSENT_DISTANCE metres away, appends an absent-member clause.
 -- Returns "" when xsquad is unavailable or no status line can be composed.
--- @param npc   userdata  NPC client game object (the speaker)
--- @param squad userdata  squad server object
+--
+-- Squad-first with an optional npc so news-wire callers (wom_chatter_pda) can render a
+-- line for an offline squad anywhere in the simulation. With npc omitted the speaker is
+-- taken to be the squad commander, faction comes off squad.player_id rather than the
+-- client object, and absent-member detection is skipped (see _collect_members_and_absences).
+-- Note this means is_leader is always true for offline callers, so only the alone /
+-- leader_pair / leader_squad pools are reachable — correct, since the speaker IS the leader.
+-- @param squad userdata      squad server object
+-- @param npc   userdata|nil  NPC client game object (the speaker); nil for an offline squad
 -- @return string  complete status sentence with trailing punctuation, or ""
-local function render_squad_status(npc, squad)
+function render_squad_status(squad, npc)
     if not (xsquad and xsquad.iter_member_ids) then return "" end
+    if not squad then return "" end
 
-    local npc_id       = npc:id()
-    local npc_position = npc:position()
+    local npc_id       = npc and npc:id() or (squad.commander_id and squad:commander_id())
+    local npc_position = npc and npc:position() or nil
     local total_count  = squad:npc_count()
 
     local member_ids, _, absent_ids, absent_names =
@@ -209,7 +221,7 @@ local function render_squad_status(npc, squad)
 
     local commander_id = squad.commander_id and squad:commander_id()
     local is_leader    = commander_id ~= nil and commander_id == npc_id
-    local npc_faction  = npc:character_community()
+    local npc_faction  = npc and npc:character_community() or squad.player_id
     local squad_term   = wom_terminology_helper.get_faction_squad_term(npc_faction)
     local squad_count_word = wom_terminology_helper.number_word(total_count)
     if squad_count_word == "" then squad_count_word = tostring(total_count) end
@@ -591,12 +603,26 @@ end
 -- Queries the NPC's live AP goal and current scheme role, then picks a template
 -- via a goal+role → goal+state → role-frame → generic → no-goal cascade.
 -- Returns "" when nothing can be composed (AP absent, no squad, no template match).
--- @param npc             userdata      NPC client game object
+-- Squad-first with an optional npc so news-wire callers (wom_chatter_pda) can render the
+-- line for an offline squad anywhere in the simulation. With npc omitted there is no
+-- scheme to read, so the role rungs of the cascade are skipped and the answer lands on
+-- st_wom_ask_<goal>_<state>; state then comes from squad.current_action, which is the
+-- direct gulag signal (1 = stationed at its target) rather than a scheme-derived proxy.
 -- @param squad           userdata|nil  squad server object
--- @param plural          boolean       true when 2+ squad members are online
+-- @param npc             userdata|nil  NPC client game object; nil for an offline squad
+-- @param plural          boolean|nil   true when 2+ squad members are online; derived from
+--                                      npc_count() when nil (offline callers)
 -- @param current_smart_id number|nil   smart terrain id of NPC's current post (nil = travelling)
+-- @param force_region     boolean|nil  true to name the region even when the target smart is
+--                                      on the player's level; for PDA-wire callers, whose
+--                                      listener has no view of the speaker (see
+--                                      wom_terminology_helper.get_location_name). Deliberately
+--                                      an explicit parameter rather than being derived from
+--                                      npc == nil: rendering off a server object and wanting
+--                                      the region named are two different questions that
+--                                      happen to have the same answer for today's one caller.
 -- @return string
-local function render_current_action(npc, squad, plural, current_smart_id)
+function render_current_action(squad, npc, plural, current_smart_id, force_region)
     if not squad then return "" end
     local squad_id = squad.id
     if not (ap_api and ap_api.get_record) then return "" end
@@ -604,8 +630,16 @@ local function render_current_action(npc, squad, plural, current_smart_id)
     local record = ap_api.get_record({ squad_id = squad_id, assigned = true })
     local goal   = record and record.consequence_key
                            and record.consequence_key:match("^consequence:(.+)")
-    local role   = wom_npc_role.scheme_role(npc)
-    local state  = current_smart_id and "arrived" or "moving"
+    local role   = npc and wom_npc_role.scheme_role(npc) or nil
+    local state
+    if npc then
+        state = current_smart_id and "arrived" or "moving"
+    else
+        state = (squad.current_action == 1) and "arrived" or "moving"
+    end
+    if plural == nil then
+        plural = (squad.npc_count and squad:npc_count() or 0) > 1
+    end
 
     -- Target location: current smart when arrived, or AP-assigned destination when moving.
     local target_smart_id = current_smart_id
@@ -619,13 +653,14 @@ local function render_current_action(npc, squad, plural, current_smart_id)
 
     local slots = wom_dialogue_helper.make_pronoun_slots(plural)
     local location_name = target_smart_id
-                          and wom_terminology_helper.get_location_name(target_smart_id)
+                          and wom_terminology_helper.get_location_name(
+                                  target_smart_id, nil, force_region)
                           or ""
     slots.location = location_name ~= "" and location_name or game.translate_string("st_wom_term_location_fallback")
 
     -- Other-faction slots: populated from the AP record when a second party is present.
     -- Falls back to "someone" so templates using #some_members_other# or #a_member_other# are always safe.
-    local npc_faction = npc:character_community()
+    local npc_faction = npc and npc:character_community() or squad.player_id
     local other_fk = record and record.other_faction_key
     local other_sk = record and record.other_species_key
     wom_dialogue_helper.fill_other_community_slots(slots, other_fk, other_sk, npc_faction, nil)
@@ -891,7 +926,7 @@ function render_recap(npc)
     -- Assemble: squad status first, then opener, then body paragraphs, separated by blank lines.
     local result_parts = {}
     if not is_companion_squad(squad.id) then
-        local squad_status_line = render_squad_status(npc, squad)
+        local squad_status_line = render_squad_status(squad, npc)
         if squad_status_line ~= "" then result_parts[#result_parts + 1] = squad_status_line end
     end
     if opener ~= "" then result_parts[#result_parts + 1] = opener end
@@ -904,7 +939,7 @@ function render_recap(npc)
     -- discloses their current goal.
     if not is_settled then
         local now_lead = wom_dialogue_helper.pick_dialogue_variant("st_wom_ask_recap_now_lead", base_slots)
-        local now_text = render_current_action(npc, squad, plural, nil)
+        local now_text = render_current_action(squad, npc, plural, nil)
         if now_lead ~= "" and now_text ~= "" then
             result_parts[#result_parts + 1] = now_lead .. " " .. now_text
         end

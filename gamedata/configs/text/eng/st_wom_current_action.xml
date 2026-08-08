@@ -143,7 +143,7 @@
   <string id="st_wom_ask_shelter_indoor_moving_002"><text>Heading to #location# to find a spot indoors.</text></string>
 
   <!-- shelter_outdoor: taking shelter outside -->
-  <string id="st_wom_ask_shelter_outdoor_arrived_001"><text>Taking cover out here.</text></string>
+  <string id="st_wom_ask_shelter_outdoor_arrived_001"><text>Just posted up for a bit.</text></string>
   <string id="st_wom_ask_shelter_outdoor_arrived_002"><text>Sheltering near #location#.</text></string>
   <string id="st_wom_ask_shelter_outdoor_moving_001"><text>Hoping to find somewhere at #location# to post up.</text></string>
   <string id="st_wom_ask_shelter_outdoor_moving_002"><text>Hoping to find some kind of shelter at #location#.</text></string>
@@ -255,13 +255,6 @@
   <string id="st_wom_ask_harvest_rob_moving_001"><text>Moving on a target near #location#.</text></string>
   <string id="st_wom_ask_harvest_rob_moving_002"><text>Moving to shake down #some_members_other# at #location#.</text></string>
 
-  <!-- alpha_promote / alphakill_targeted: squad hierarchy -->
-  <string id="st_wom_ask_alpha_promote_arrived_001"><text>#Im_Were_u# asserting the chain of command.</text></string>
-  <string id="st_wom_ask_alpha_promote_arrived_002"><text>Sorting out who's in charge around here.</text></string>
-  <string id="st_wom_ask_alphakill_targeted_arrived_001"><text>#Im_Were_u# settling a leadership matter.</text></string>
-  <string id="st_wom_ask_alphakill_targeted_arrived_002"><text>Internal matter. Nothing to worry about.</text></string>
-  <string id="st_wom_ask_alphakill_targeted_moving_001"><text>Moving out. Internal matter to deal with.</text></string>
-
   <!-- wounded_help: aiding an injured ally -->
   <string id="st_wom_ask_wounded_help_arrived_001"><text>Someone needed help at #location#. #Im_Were_u# here now.</text></string>
   <string id="st_wom_ask_wounded_help_arrived_002"><text>Helping out a wounded stalker.</text></string>
@@ -289,16 +282,31 @@
 
   <!-- supply_trader: heading to a trader -->
   <string id="st_wom_ask_supply_trader_arrived_001"><text>Resupplying at #location#.</text></string>
-  <string id="st_wom_ask_supply_trader_arrived_002"><text>Picking up supplies, #location# has what #I_we_l# need.</text></string>
+  <string id="st_wom_ask_supply_trader_arrived_002"><text>Picking up supplies at #location#.</text></string>
   <string id="st_wom_ask_supply_trader_arrived_003"><text>Getting restocked.</text></string>
-  <string id="st_wom_ask_supply_trader_moving_001"><text>On #my_our_l# way to resupply the trader at #location#.</text></string>
-  <string id="st_wom_ask_supply_trader_moving_002"><text>Hauling some goods to the trader at #location#.</text></string>
+  <string id="st_wom_ask_supply_trader_moving_001"><text>On #my_our_l# way to top off on gear at #location#.</text></string>
+  <string id="st_wom_ask_supply_trader_moving_002"><text>Heading to #location# to visit the trader.</text></string>
 
   <!-- supply_trader_offmap: trading run off the current map -->
-  <string id="st_wom_ask_supply_trader_offmap_arrived_001"><text>Back from a supply run. Took a while.</text></string>
-  <string id="st_wom_ask_supply_trader_offmap_arrived_002"><text>Just finished a resupply trip.</text></string>
-  <string id="st_wom_ask_supply_trader_offmap_moving_001"><text>Off to #location# on a supply run.</text></string>
-  <string id="st_wom_ask_supply_trader_offmap_moving_002"><text>Headed out to #location# to resupply the trader.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_arrived_001"><text>Just finished a supply run.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_arrived_002"><text>Just made a long haul to a trader and topped off on gear.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_moving_001"><text>On #my_our_l# way to #location#, looking to trade.</text></string>
+  <string id="st_wom_ask_supply_trader_offmap_moving_002"><text>Headed out to #location# to pick up some gear.</text></string>
+
+  <!-- barter: peer-to-peer swap with another stalker. The needs-driven counterpart of
+       supply_trader, routed to an occupied smart rather than a service NPC, so no trader
+       and no money are involved: surplus kit for kit. Keep the phrasing on the swap. -->
+  <string id="st_wom_ask_barter_arrived_001"><text>Looking to swap gear here at #location#.</text></string>
+  <string id="st_wom_ask_barter_arrived_002"><text>#Im_Were_u# working out a trade with some fellow stalkers.</text></string>
+  <string id="st_wom_ask_barter_arrived_003"><text>Sorting out a supply swap with the lads here.</text></string>
+  <string id="st_wom_ask_barter_moving_001"><text>Heading to #location# hoping to swap some gear with anyone out there.</text></string>
+  <string id="st_wom_ask_barter_moving_002"><text>On #my_our_l# way to #location# hoping to strike some deals.</text></string>
+
+  <!-- barter_offmap: peer swap off the current map -->
+  <string id="st_wom_ask_barter_offmap_arrived_001"><text>Just found someone to swap gear with after a long trek.</text></string>
+  <string id="st_wom_ask_barter_offmap_arrived_002"><text>#Ive_Weve_u# just exchanged some spare supplies with another crew.</text></string>
+  <string id="st_wom_ask_barter_offmap_moving_001"><text>Off to #location# to see if anyone out there will swap gear.</text></string>
+  <string id="st_wom_ask_barter_offmap_moving_002"><text>Headed out to #location# in the hopes of finding a crew willing to trade spare gear.</text></string>
 
   <!-- job_research: research or data-gathering assignment -->
   <string id="st_wom_ask_job_research_arrived_001"><text>#Im_Were_u# gathering data at #location#.</text></string>
@@ -318,8 +326,8 @@
   <string id="st_wom_ask_social_offmap_moving_002"><text>Meeting up with some people at #location#.</text></string>
 
   <!-- harvest_haunt: lurking near artifact zones to prey on hunters -->
-  <string id="st_wom_ask_harvest_haunt_arrived_001"><text>Waiting near #location#. Someone will come looking for artifacts.</text></string>
-  <string id="st_wom_ask_harvest_haunt_arrived_002"><text>Keeping watch near an anomaly zone. Hunters always show up eventually.</text></string>
+  <string id="st_wom_ask_harvest_haunt_arrived_001"><text>Waiting near #location# hoping to surprise artifact hunters.</text></string>
+  <string id="st_wom_ask_harvest_haunt_arrived_002"><text>Keeping watch near an anomaly, waiting for an unsuspecting crew to do the hard work so #I_we_l# can reap the rewards.</text></string>
   <string id="st_wom_ask_harvest_haunt_moving_001"><text>Moving to #location# to wait for artifact hunters.</text></string>
   <string id="st_wom_ask_harvest_haunt_moving_002"><text>Going to lurk near the anomaly fields near #location#.</text></string>
 

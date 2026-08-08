@@ -36,6 +36,11 @@ local _campfire_enabled = true
 local _dev_mode         = false
 local _campfire_range   = 15
 
+-- This harness loads the real wom_bark, whose delivery functions stamp the PDA quiet
+-- window with time_global(). Campfire itself never reads that window (only the faction
+-- wire does), so the clock only has to exist, not advance.
+time_global = function() return 0 end
+
 -- math.random override (nil = use real random)
 local _forced_roll         = nil
 local _math_random_original = math.random

@@ -402,6 +402,34 @@ local function to_spoken_location(title_case_name)
     return "the " .. phrase
 end
 
+-- Trims surrounding whitespace and any leading separator dash left behind by a prefix
+-- strip. Some GAMMA smart names use a "Region - Location" form ("Jupiter - Yanov Station");
+-- the region strips off by its own name via strategy 3/4, which leaves "- Yanov Station",
+-- and to_spoken_location tokenises on whitespace so the dash survives as a word and renders
+-- literally: "the - Yanov station in Jupiter". Applied to the result of every strategy, so
+-- the dash reaches neither the spoken form nor the level-redundancy check.
+--
+-- Only a *leading* dash is stripped -- an internal one is part of the name ("X-16",
+-- "Agroprom Research Institute - Wing B"). The loop repeats so a padded or doubled
+-- separator (" -- Yanov", " - - Yanov") collapses in one pass. The UTF-8 en/em dashes are
+-- matched as whole byte sequences rather than folded into the character class, since a
+-- byte class would also match the lead byte of unrelated multi-byte characters.
+-- @param text string|nil  location part, possibly with a leading separator and padding
+-- @return string|nil  trimmed location part; nil in, nil out
+local function _trim_location_part(text)
+    if not text then return text end
+    local previous
+    repeat
+        previous = text
+        text = string.gsub(text, "^%s+", "")
+        text = string.gsub(text, "%s+$", "")
+        text = string.gsub(text, "^%-+", "")
+        text = string.gsub(text, "^\xe2\x80\x93", "")   -- en dash
+        text = string.gsub(text, "^\xe2\x80\x94", "")   -- em dash
+    until text == previous
+    return text
+end
+
 -- Strips the level prefix from a raw smart-terrain display name using six strategies
 -- tried in order, stopping at the first match. Returns the bare location part and the
 -- (possibly updated) level_display. level_display may be shortened to its singular form
@@ -465,7 +493,7 @@ local function _strip_level_prefix(name, level_display, terrain_level)
         end
     end
 
-    return location_part or name, level_display
+    return _trim_location_part(location_part or name), level_display
 end
 
 -- Returns a natural spoken location phrase for a smart terrain, resolved from its
@@ -474,15 +502,28 @@ end
 -- On-map (same level as current_level_id): returns only the spoken location, e.g.
 --   "the bus stop", "the Pripyat Hotel", "Sakharov's bunker".
 -- Off-map (different level): appends the level name, e.g. "the bus stop in Garbage".
--- Handles three prefix-separator formats in the raw smart name:
---   "Garbage. Bus Stop"   (period-space, vanilla Anomaly)
---   "Garbage, Bus Stop"   (comma-space)
---   "Garbage Bus Stop"    (space-only, GAMMA — stripped via level display name)
+-- Handles four prefix-separator formats in the raw smart name:
+--   "Garbage. Bus Stop"    (period-space, vanilla Anomaly)
+--   "Garbage, Bus Stop"    (comma-space)
+--   "Garbage Bus Stop"     (space-only, GAMMA — stripped via level display name)
+--   "Jupiter - Yanov Station"  (dash — the level name strips as space-only, and the
+--                               orphaned dash is removed by _trim_location_part)
 -- current_level_id defaults to xlevel.get_actor_level_id() when nil.
--- @param smart_id         number      ALifePlus record smart_id
--- @param current_level_id number|nil  level to compare against; defaults to actor's level
+--
+-- force_region suppresses the on-map early return, so the region is named even when the
+-- terrain sits on the level the player is standing in. It is for delivery channels where
+-- the listener cannot see the speaker and has no map context to fill in -- the PDA news
+-- wire (wom_chatter_pda, wom_reaction) -- and should not be set for spoken face-to-face
+-- dialogue, where a stalker naming the region he is standing in reads as strange.
+-- It overrides only the level comparison: the redundancy guard ("the great swamp clear
+-- sky base in Great Swamp") and the requirement that a level display name resolved at all
+-- both still apply, so a forced region is not a guaranteed one.
+--
+-- @param smart_id         number       ALifePlus record smart_id
+-- @param current_level_id number|nil   level to compare against; defaults to actor's level
+-- @param force_region     boolean|nil  true to append the region regardless of level
 -- @return string  spoken location phrase, or "" if unresolvable
-function get_location_name(smart_id, current_level_id)
+function get_location_name(smart_id, current_level_id, force_region)
     if not smart_id then return "" end
     if not (xobject and xobject.se) then return "" end
     local smart = xobject.se(smart_id)
@@ -504,8 +545,11 @@ function get_location_name(smart_id, current_level_id)
         if ok then terrain_level = level_id end
     end
 
+    -- Skipped entirely under force_region: there is nothing left to compare against, and
+    -- get_actor_level_id is a luabind crossing this path would otherwise pay for nothing.
     local compare_level = current_level_id
-    if not compare_level and xlevel and xlevel.get_actor_level_id then
+    if not force_region and not compare_level
+       and xlevel and xlevel.get_actor_level_id then
         compare_level = xlevel.get_actor_level_id()
     end
 
@@ -521,8 +565,9 @@ function get_location_name(smart_id, current_level_id)
     local spoken = to_spoken_location(location_part)
     if spoken == "" then return "" end
 
-    -- On-map: return the spoken form without a region suffix.
-    if terrain_level and compare_level and terrain_level == compare_level then
+    -- On-map: return the spoken form without a region suffix, unless the caller forced it.
+    if not force_region
+       and terrain_level and compare_level and terrain_level == compare_level then
         return spoken
     end
 
