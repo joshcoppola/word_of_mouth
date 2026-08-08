@@ -33,17 +33,17 @@
   <string id="ui_mcm_word_of_mouth_chatter_range_desc"><text>How close a squad member needs to be for their goal change chatter to reach you.</text></string>
 
   <!-- faction wire chatter -->
-  <string id="ui_mcm_word_of_mouth_title_chatter_pda"><text>Faction Wire Chatter</text></string>
-  <string id="ui_mcm_word_of_mouth_chatter_pda_enabled"><text>Enable faction wire chatter</text></string>
-  <string id="ui_mcm_word_of_mouth_chatter_pda_enabled_desc"><text>A stalker holed up somewhere in the Zone asks the faction wire what is going on out there, and a squad out in the field answers with what they are doing. Both speakers can be on any map, so this is idle radio traffic you overhear rather than a conversation happening in front of you.</text></string>
-  <string id="ui_mcm_word_of_mouth_chatter_pda_interval"><text>Exchange interval (seconds)</text></string>
-  <string id="ui_mcm_word_of_mouth_chatter_pda_interval_desc"><text>How often an exchange is attempted. Lower values mean more radio traffic. An attempt can still come up empty when no suitable pair of squads exists.</text></string>
+  <string id="ui_mcm_word_of_mouth_title_chatter_pda"><text>PDA Chatter</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_enabled"><text>Enable PDA chatter</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_enabled_desc"><text>NPCs will occasionally ask if anyone is up to anything, and another squad answers with what they are doing.</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_interval"><text>PDA chatter attempt interval (seconds)</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_interval_desc"><text>How often an exchange is attempted (lower values mean more frequent messages). An attempt can still come up empty when no suitable pair of squads exists.</text></string>
   <string id="ui_mcm_word_of_mouth_chatter_pda_reply_delay"><text>Reply delay (seconds)</text></string>
   <string id="ui_mcm_word_of_mouth_chatter_pda_reply_delay_desc"><text>How long the answering squad takes to respond after the question goes out.</text></string>
   <string id="ui_mcm_word_of_mouth_chatter_pda_quiet_gap"><text>Required PDA quiet period (seconds)</text></string>
-  <string id="ui_mcm_word_of_mouth_chatter_pda_quiet_gap_desc"><text>How many real seconds your PDA must have been silent before the faction wire starts a new exchange. Any PDA message counts — Word of Mouth's own campfire chatter, squad chatter and event reactions, and also messages from the base game and other addons — so idle radio traffic stays out of the way when something is actually happening. Only the wire waits like this; nothing else is delayed. A reply already owed still goes out, so a question is never left unanswered. Set to 0 to disable.</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_quiet_gap_desc"><text>How many real seconds your PDA must have been silent before the faction wire starts a new exchange. Any PDA message counts, so idle radio traffic stays out of the way when something is actually happening. Set to 0 to disable.</text></string>
   <string id="ui_mcm_word_of_mouth_chatter_pda_scope"><text>Whose traffic you hear</text></string>
-  <string id="ui_mcm_word_of_mouth_chatter_pda_scope_desc"><text>Faction only: you only hear your own faction's wire. Faction and allies: friendly factions too. Faction, allies and neutral: any faction you are not hostile to.</text></string>
+  <string id="ui_mcm_word_of_mouth_chatter_pda_scope_desc"><text>Faction only: you only hear your own faction's messaging. Faction and allies: friendly factions too. Faction, allies and neutral: any faction you are not hostile to.</text></string>
 
   <!-- MCM list content labels: MCM builds key as "ui_mcm_lst_" .. second_element (shared global prefix) -->
   <string id="ui_mcm_lst_wom_public"><text>Public: Stalkers will tell anybody</text></string>

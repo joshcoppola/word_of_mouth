@@ -15,9 +15,10 @@ local DEFAULTS = {
     chatter_range        = 25,
     chatter_pda_enabled     = true,
     chatter_pda_interval    = 60,
-    chatter_pda_reply_delay = 4,
+    -- Hardcoded to CHATTER_PDA_REPLY_DELAY below; no longer MCM-configurable.
+    -- chatter_pda_reply_delay = 4,
     chatter_pda_scope       = "faction",
-    chatter_pda_quiet_gap   = 20,
+    chatter_pda_quiet_gap   = 10,
     reaction_enabled     = true,
     reaction_scope       = "allies",
     outpost_enabled            = true,
@@ -102,9 +103,13 @@ function chatter_pda_interval()
 end
 
 -- Real seconds between the asker's question and the answerer's reply.
+-- Hardcoded: the MCM slider and its default were commented out in favour of a fixed
+-- value, since the exchange only reads naturally within a narrow band anyway.
+local CHATTER_PDA_REPLY_DELAY = 3
+
 -- @return number
 function chatter_pda_reply_delay()
-    return _get("chatter_pda_reply_delay")
+    return CHATTER_PDA_REPLY_DELAY
 end
 
 -- Real seconds the player's PDA must have been silent before the faction wire may start
@@ -283,8 +288,9 @@ function on_mcm_load()
             { id = "title_chatter_pda",       type = "title" },
             { id = "chatter_pda_enabled",     type = "check", val = 1, def = DEFAULTS.chatter_pda_enabled },
             { id = "chatter_pda_interval",    type = "track", val = 2, def = DEFAULTS.chatter_pda_interval,    min = 15, max = 180, step = 5 },
-            { id = "chatter_pda_reply_delay", type = "track", val = 2, def = DEFAULTS.chatter_pda_reply_delay, min = 2,  max = 15,  step = 1 },
-            { id = "chatter_pda_quiet_gap",   type = "track", val = 2, def = DEFAULTS.chatter_pda_quiet_gap,   min = 0,  max = 120, step = 5 },
+            -- Reply delay is hardcoded to 3s in chatter_pda_reply_delay(); slider removed.
+            -- { id = "chatter_pda_reply_delay", type = "track", val = 2, def = DEFAULTS.chatter_pda_reply_delay, min = 2,  max = 15,  step = 1 },
+            { id = "chatter_pda_quiet_gap",   type = "track", val = 2, def = DEFAULTS.chatter_pda_quiet_gap,   min = 0,  max = 30,  step = 1 },
             { id = "chatter_pda_scope",       type = "list",  val = 0, def = DEFAULTS.chatter_pda_scope, content = wide_scope_options },
 
             { id = "title_reaction",   type = "title" },

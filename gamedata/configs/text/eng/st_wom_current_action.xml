@@ -17,7 +17,13 @@
   <!--   #intent#     short goal fragment for role frames, "" when no template (gated)         -->
   <!--   #some_members_other# faction that triggered this goal, e.g. "some Bandits"; "someone" when   -->
   <!--                the AP record has no second party                                        -->
-  <!--   #a_member_other#    "a [Bandit]" / "someone" — singular form of the above                   -->
+  <!--                                                                                          -->
+  <!-- Only consequences an ALifePlus handler can assign to a HUMAN squad appear here. The      -->
+  <!-- speaker of a current-action line is always a human stalker (wom_bark.is_human_faction),  -->
+  <!-- so mutant-gated consequences — area_infest, area_swarm, massacre_scavenge,               -->
+  <!-- harvest_haunt, wounded_hunt, alphakill_targeted, alpha_promote, and the instinct set     -->
+  <!-- (feed / slumber_* / roam / pack / scatter) — are unreachable and deliberately absent.    -->
+  <!-- Check the acting squad's alignment gate in ALifePlus before adding a new pool.           -->
 
 
   <!-- ============================================================ -->
@@ -25,7 +31,7 @@
   <!-- Used when no AP record exists for the squad.                 -->
   <!-- ============================================================ -->
 
-  <string id="st_wom_ask_nogoal_001"><text>Not sure what's next. Just keeping #my_our_l# head down for now.</text></string>
+  <string id="st_wom_ask_nogoal_001"><text>Not sure what's next. Just keeping quiet for now.</text></string>
   <string id="st_wom_ask_nogoal_002"><text>#Im_Were_u# just waiting to see what comes next.</text></string>
   <string id="st_wom_ask_nogoal_003"><text>Nothing lined up at the moment.</text></string>
 
@@ -75,12 +81,9 @@
 
   <string id="st_wom_ask_intent_area_conquer_001"><text>Keeping an eye on who comes through.</text></string>
   <string id="st_wom_ask_intent_area_conquer_002"><text>Making sure nobody reclaims the place.</text></string>
-  <string id="st_wom_ask_intent_area_infest_001"><text>Watching for trouble from those creatures.</text></string>
-  <string id="st_wom_ask_intent_area_swarm_001"><text>Keeping watch after that swarm came through.</text></string>
   <string id="st_wom_ask_intent_massacre_investigate_001"><text>Still watching for whoever hit them.</text></string>
   <string id="st_wom_ask_intent_massacre_loot_001"><text>Might as well pick over what's left.</text></string>
-  <string id="st_wom_ask_intent_massacre_scavenge_001"><text>There's salvage worth taking.</text></string>
-  <string id="st_wom_ask_intent_job_explore_001"><text>Good a time as any to check the area out.</text></string>
+  <string id="st_wom_ask_intent_job_explore_001"><text>As good a time as any to check the area out.</text></string>
   <string id="st_wom_ask_intent_job_outpost_001"><text>Keeping the position manned.</text></string>
   <string id="st_wom_ask_intent_stash_loot_001"><text>There was a stash worth checking.</text></string>
   <string id="st_wom_ask_intent_squadkill_revenge_001"><text>Someone had to answer for it.</text></string>
@@ -111,7 +114,7 @@
   <!-- rest_campfire: resting -->
   <string id="st_wom_ask_rest_campfire_arrived_001"><text>Taking a rest.</text></string>
   <string id="st_wom_ask_rest_campfire_arrived_002"><text>Resting up at #location#.</text></string>
-  <string id="st_wom_ask_rest_campfire_arrived_003"><text>#Im_Were_u# by the fire at #location#.</text></string>
+  <string id="st_wom_ask_rest_campfire_arrived_003"><text>#Im_Were_u# taking a breather at #location#.</text></string>
   <string id="st_wom_ask_rest_campfire_moving_001"><text>Heading to #location# to take a breather.</text></string>
   <string id="st_wom_ask_rest_campfire_moving_002"><text>On #my_our_l# way to #location# to take it easy for a bit.</text></string>
 
@@ -157,23 +160,13 @@
   <!-- #some_members_other# = the faction being displaced, e.g. "some Duty soldiers"; "someone" when unknown -->
   <string id="st_wom_ask_area_conquer_arrived_001"><text>#I_We_u# took the place. #Im_Were_u# making sure it stays ours.</text></string>
   <string id="st_wom_ask_area_conquer_arrived_002"><text>#Im_Were_u# holding #location#.</text></string>
-  <string id="st_wom_ask_area_conquer_arrived_003"><text>Pushed #some_members_other# out of here. Now holding it.</text></string>
+  <string id="st_wom_ask_area_conquer_arrived_003"><text>Holding the area after pushing #some_members_other# out.</text></string>
   <string id="st_wom_ask_area_conquer_moving_001"><text>Moving out to secure #location#.</text></string>
   <string id="st_wom_ask_area_conquer_moving_002"><text>On #my_our_l# way to stake a claim to #location#.</text></string>
 
-  <!-- area_infest: mutants moving in on a location -->
-  <!-- #some_members_other# = the infesting species, e.g. "some Pseudodogs"; "someone" when unknown -->
-  <string id="st_wom_ask_area_infest_arrived_001"><text>Watching the area. #some_members_other# moved in.</text></string>
-  <string id="st_wom_ask_area_infest_arrived_002"><text>Keeping watch at #location# after #some_members_other# showed up.</text></string>
-  <string id="st_wom_ask_area_infest_moving_001"><text>Heading out to check what's moved in at #location#.</text></string>
-  <string id="st_wom_ask_area_infest_moving_002"><text>Moving to deal with #some_members_other# near #location#.</text></string>
-
-  <!-- area_swarm: mutant swarm -->
-  <!-- #some_members_other# = the swarming species, e.g. "some Snorks"; "someone" when unknown -->
-  <string id="st_wom_ask_area_swarm_arrived_001"><text>#Im_Were_u# keeping an eye out after that swarm.</text></string>
-  <string id="st_wom_ask_area_swarm_arrived_002"><text>Watching #location# after #some_members_other# came through.</text></string>
-  <string id="st_wom_ask_area_swarm_moving_001"><text>Moving out to deal with that swarm near #location#.</text></string>
-  <string id="st_wom_ask_area_swarm_moving_002"><text>Going to deal with #some_members_other#.</text></string>
+  <!-- area_infest / area_swarm are mutant-only: ap_ext_causes_area gates both branches on
+       alignment_mutant, so the acting squad is always the infesting/swarming mutants and a
+       human speaker can never carry the goal. No pools here by design. -->
 
   <!-- job_explore: scouting / exploring -->
   <string id="st_wom_ask_job_explore_arrived_001"><text>Checking out #location#.</text></string>
@@ -193,7 +186,7 @@
   <!-- #some_members_other# = the perpetrating faction, e.g. "some Mercs"; "someone" when unknown -->
   <string id="st_wom_ask_massacre_investigate_arrived_001"><text>#Im_Were_u# checking what happened at #location#.</text></string>
   <string id="st_wom_ask_massacre_investigate_arrived_002"><text>Looking into what #some_members_other# did at #location#.</text></string>
-  <string id="st_wom_ask_massacre_investigate_arrived_003"><text>Someone hit this place hard. Seeing what #some_members_other# left behind.</text></string>
+  <string id="st_wom_ask_massacre_investigate_arrived_003"><text>#some_members_other# hit this place hard, seeing what they left behind.</text></string>
   <string id="st_wom_ask_massacre_investigate_moving_001"><text>Heading to #location# to investigate some missing stalkers.</text></string>
   <string id="st_wom_ask_massacre_investigate_moving_002"><text>Going to find out what #some_members_other# did at #location#.</text></string>
 
@@ -202,17 +195,16 @@
   <string id="st_wom_ask_massacre_loot_arrived_002"><text>#Im_Were_u# going through whatever's left behind.</text></string>
   <string id="st_wom_ask_massacre_loot_moving_001"><text>Heading to #location#. There's salvage from that firefight.</text></string>
 
-  <!-- massacre_scavenge: scavenging massacre site -->
-  <string id="st_wom_ask_massacre_scavenge_arrived_001"><text>Scavenging what #I_we_l# can from #location#.</text></string>
-  <string id="st_wom_ask_massacre_scavenge_arrived_002"><text>Going through the leftovers here.</text></string>
-  <string id="st_wom_ask_massacre_scavenge_moving_001"><text>On #my_our_l# way to #location# for some scavenging.</text></string>
+  <!-- massacre_scavenge is mutant-only (alignment_mutant + alignment_mutant_cowardly in
+       ap_ext_consequences_massacre) — carrion feeders, not human looters. massacre_loot is
+       the human counterpart. No pool here by design. -->
 
   <!-- squadkill_revenge: pursuing those who attacked the squad -->
   <!-- #some_members_other# = the attacking faction, e.g. "some Bandits"; "someone" when unknown -->
   <string id="st_wom_ask_squadkill_revenge_arrived_001"><text>Came to settle a score at #location#.</text></string>
   <string id="st_wom_ask_squadkill_revenge_arrived_002"><text>#Im_Were_u# hunting #some_members_other# who hit #me_us_l#.</text></string>
   <string id="st_wom_ask_squadkill_revenge_arrived_003"><text>Came to settle accounts with #some_members_other#.</text></string>
-  <string id="st_wom_ask_squadkill_revenge_arrived_004"><text>#some_members_other# owe #me_us_l#. #Im_Were_u# here to collect.</text></string>
+  <string id="st_wom_ask_squadkill_revenge_arrived_004"><text>Here at #location# to settle a score with #some_members_other#.</text></string>
   <string id="st_wom_ask_squadkill_revenge_moving_001"><text>Moving to #location# to get some revenge on #some_members_other#.</text></string>
   <string id="st_wom_ask_squadkill_revenge_moving_002"><text>On #my_our_l# way to track down #some_members_other# who attacked #me_us_l#.</text></string>
   <string id="st_wom_ask_squadkill_revenge_moving_003"><text>Moving to #location# to dispense some payback against #some_members_other#.</text></string>
@@ -261,12 +253,9 @@
   <string id="st_wom_ask_wounded_help_moving_001"><text>On #my_our_l# way to help someone who got hurt near #location#.</text></string>
   <string id="st_wom_ask_wounded_help_moving_002"><text>Moving out. Someone needs help at #location#.</text></string>
 
-  <!-- wounded_hunt: targeting an injured enemy -->
-  <!-- #a_member_other# = the wounded target (singular), e.g. "a Duty soldier"; "someone" when unknown -->
-  <string id="st_wom_ask_wounded_hunt_arrived_001"><text>Following up on a weakened #a_member_other# at #location#.</text></string>
-  <string id="st_wom_ask_wounded_hunt_arrived_002"><text>Finishing what someone else started.</text></string>
-  <string id="st_wom_ask_wounded_hunt_moving_001"><text>Moving on a weakened #a_member_other# near #location#.</text></string>
-  <string id="st_wom_ask_wounded_hunt_moving_002"><text>Heading to finish off #a_member_other# at #location#.</text></string>
+  <!-- wounded_hunt is mutant-only (alignment_mutant, then predator+aberrant species in
+       ap_ext_consequences_wounded) — predators converging on the wounded. wounded_help above
+       is the human counterpart. No pool here by design. -->
 
   <!-- stash_fill: hiding / stocking a stash -->
   <string id="st_wom_ask_stash_fill_arrived_001"><text>Dropping some gear at a stash near #location#.</text></string>
@@ -316,20 +305,19 @@
   <string id="st_wom_ask_job_research_moving_002"><text>Headed to #location# to do some survey work.</text></string>
 
   <!-- job_explore_offmap: scouting run off the current map -->
-  <string id="st_wom_ask_job_explore_offmap_arrived_001"><text>Just got back from a sweep outside the area.</text></string>
-  <string id="st_wom_ask_job_explore_offmap_moving_001"><text>Headed to #location# for a sweep.</text></string>
-  <string id="st_wom_ask_job_explore_offmap_moving_002"><text>Doing some scouting at #location#.</text></string>
+  <string id="st_wom_ask_job_explore_offmap_arrived_001"><text>Doing some recon at #location#.</text></string>
+  <string id="st_wom_ask_job_explore_offmap_arrived_002"><text>Doing a sweep at #location#.</text></string>
+  <string id="st_wom_ask_job_explore_offmap_moving_001"><text>Headed over to #location# for a sweep.</text></string>
+  <string id="st_wom_ask_job_explore_offmap_moving_002"><text>On #my_our_l# way to scout at #location#.</text></string>
 
   <!-- social_offmap: travelling to meet up off the current map -->
   <string id="st_wom_ask_social_offmap_arrived_001"><text>Back from a meetup outside the area.</text></string>
   <string id="st_wom_ask_social_offmap_moving_001"><text>Heading out of the area for a meetup.</text></string>
   <string id="st_wom_ask_social_offmap_moving_002"><text>Meeting up with some people at #location#.</text></string>
 
-  <!-- harvest_haunt: lurking near artifact zones to prey on hunters -->
-  <string id="st_wom_ask_harvest_haunt_arrived_001"><text>Waiting near #location# hoping to surprise artifact hunters.</text></string>
-  <string id="st_wom_ask_harvest_haunt_arrived_002"><text>Keeping watch near an anomaly, waiting for an unsuspecting crew to do the hard work so #I_we_l# can reap the rewards.</text></string>
-  <string id="st_wom_ask_harvest_haunt_moving_001"><text>Moving to #location# to wait for artifact hunters.</text></string>
-  <string id="st_wom_ask_harvest_haunt_moving_002"><text>Going to lurk near the anomaly fields near #location#.</text></string>
+  <!-- harvest_haunt is mutant-only (alignment_mutant + alignment_mutant_aberrant in
+       ap_ext_consequences_harvest) — aberrants haunting the anomaly fields, not human
+       ambushers. harvest_rob above is the human (outlaw) counterpart. No pool here by design. -->
 
   <!-- SECRETIVE: deflecting answer when the NPC's current goal is secret and the player
        is from a different faction. All secret goals share this one pool.

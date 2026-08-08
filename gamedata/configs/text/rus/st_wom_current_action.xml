@@ -17,7 +17,13 @@
   <!--   #intent#     short goal fragment for role frames, "" when no template (gated)         -->
   <!--   #some_members_other# faction that triggered this goal, e.g. "some Bandits"; "someone" when   -->
   <!--                the AP record has no second party                                        -->
-  <!--   #a_member_other#    "a [Bandit]" / "someone" — singular form of the above                   -->
+  <!--                                                                                          -->
+  <!-- Only consequences an ALifePlus handler can assign to a HUMAN squad appear here. The      -->
+  <!-- speaker of a current-action line is always a human stalker (wom_bark.is_human_faction),  -->
+  <!-- so mutant-gated consequences - area_infest, area_swarm, massacre_scavenge,               -->
+  <!-- harvest_haunt, wounded_hunt, alphakill_targeted, alpha_promote, and the instinct set     -->
+  <!-- (feed / slumber_* / roam / pack / scatter) - are unreachable and deliberately absent.    -->
+  <!-- Check the acting squad's alignment gate in ALifePlus before adding a new pool.           -->
 
 
   <!-- ============================================================ -->
@@ -75,11 +81,8 @@
 
  <string id="st_wom_ask_intent_area_conquer_001"><text>Пасу, кто в нашу сторону дышит. Нефиг тут шастать.</text></string>
   <string id="st_wom_ask_intent_area_conquer_002"><text>Держим точку. Попробует кто отжать — быстро свинцом накормим.</text></string>
-  <string id="st_wom_ask_intent_area_infest_001"><text>Смотрю в оба, чтоб мутанты снова из всех щелей не поперли.</text></string>
-  <string id="st_wom_ask_intent_area_swarm_001"><text>Присматриваю тут за обстановкой... После той орды до сих пор поджилки трясутся.</text></string>
   <string id="st_wom_ask_intent_massacre_investigate_001"><text>Ищу, чьих рук дело. Пацанов в мясо раскатали, так просто это не оставим.</text></string>
   <string id="st_wom_ask_intent_massacre_loot_001"><text>Жду, пока утихнет. В жмуриках порыться — хабара поснимать, добру не пропадать же.</text></string>
-  <string id="st_wom_ask_intent_massacre_scavenge_001"><text>Тут после замеса есть чем поживиться, если руки не из жопы.</text></string>
   <string id="st_wom_ask_intent_job_explore_001"><text>Да вот, решил тропки протоптать, местность разведкой прощупать.</text></string>
   <string id="st_wom_ask_intent_job_outpost_001"><text>На посту торчу, точку караулю. Приказ есть приказ.</text></string>
   <string id="st_wom_ask_intent_stash_loot_001"><text>Нырнул за нычкой — наводка была, грех не пощупать тайничок.</text></string>
@@ -161,19 +164,9 @@
   <string id="st_wom_ask_area_conquer_moving_001"><text>Выдвигаюсь, чтобы закрепиться на объекте #location#.</text></string>
   <string id="st_wom_ask_area_conquer_moving_002"><text>Рву когти, чтоб застолбить объект #location# за нашими.</text></string>
 
-  <!-- area_infest: mutants moving in on a location -->
-  <!-- #some_members_other# = the infesting species, e.g. "some Pseudodogs"; "someone" when unknown -->
-  <string id="st_wom_ask_area_infest_arrived_001"><text>Слежу за округой. #some_members_other# тут логово устроили, мудачье зубастое.</text></string>
-  <string id="st_wom_ask_area_infest_arrived_002"><text>Дежурю возле объекта #location# после того, как там разжились #some_members_other#.</text></string>
-  <string id="st_wom_ask_area_infest_moving_001"><text>Иду проверить, кто там из тварей гнездо свил на объекте #location#.</text></string>
-  <string id="st_wom_ask_area_infest_moving_002"><text>Двигаюсь нашпиговать свинцом #some_members_other# в районе точки #location#.</text></string>
-
-  <!-- area_swarm: mutant swarm -->
-  <!-- #some_members_other# = the swarming species, e.g. "some Snorks"; "someone" when unknown -->
-  <string id="st_wom_ask_area_swarm_arrived_001"><text>Присматриваю за обстановкой. После того набега мутантов до сих пор не по себе.</text></string>
-  <string id="st_wom_ask_area_swarm_arrived_002"><text>Пасу объект #location# после того, как там саранчой прошли #some_members_other#.</text></string>
-  <string id="st_wom_ask_area_swarm_moving_001"><text>Иду дать отпор той стае уродов в районе точки #location#.</text></string>
-  <string id="st_wom_ask_area_swarm_moving_002"><text>Иду навести порядок и проредить #some_members_other#.</text></string>
+  <!-- area_infest / area_swarm are mutant-only: ap_ext_causes_area gates both branches on
+       alignment_mutant, so the acting squad is always the infesting/swarming mutants and a
+       human speaker can never carry the goal. No pools here by design. -->
 
   <!-- job_explore: scouting / exploring -->
   <string id="st_wom_ask_job_explore_arrived_001"><text>Проламываюсь сквозь кусты, осматриваю объект #location#.</text></string>
@@ -202,10 +195,9 @@
   <string id="st_wom_ask_massacre_loot_arrived_002"><text>Шмонаю жмуриков. Мёртвым-то оно без надобности, а мне сгодится.</text></string>
   <string id="st_wom_ask_massacre_loot_moving_001"><text>Двигаю на объект #location#. Говорят, там после бойни куча добра без дела лежит.</text></string>
 
-  <!-- massacre_scavenge: scavenging massacre site -->
-  <string id="st_wom_ask_massacre_scavenge_arrived_001"><text>Собираю крохи да маслины в районе точки #location#.</text></string>
-  <string id="st_wom_ask_massacre_scavenge_arrived_002"><text>Потрошу гильзы да рюкзаки. Чем богаты, тем и рады.</text></string>
-  <string id="st_wom_ask_massacre_scavenge_moving_001"><text>Иду на объект #location# на разграбление. Авось хоть пару рожков наскребу.</text></string>
+  <!-- massacre_scavenge is mutant-only (alignment_mutant + alignment_mutant_cowardly in
+       ap_ext_consequences_massacre) - carrion feeders, not human looters. massacre_loot is
+       the human counterpart. No pool here by design. -->
 
   <!-- squadkill_revenge: pursuing those who attacked the squad -->
   <!-- #some_members_other# = the attacking faction, e.g. "some Bandits"; "someone" when unknown -->
@@ -261,12 +253,9 @@
   <string id="st_wom_ask_wounded_help_moving_001"><text>Бегу на всех парах вытаскивать того, кого зацепило возле объекта #location#.</text></string>
   <string id="st_wom_ask_wounded_help_moving_002"><text>Выдвигаюсь. В районе точки #location# братка гибает, спасать надо!</text></string>
 
-  <!-- wounded_hunt: targeting an injured enemy -->
-  <!-- #a_member_other# = the wounded target (singular), e.g. "a Duty soldier"; "someone" when unknown -->
-  <string id="st_wom_ask_wounded_hunt_arrived_001"><text>Кончаю недобитка — #a_member_other# в районе точки #location#.</text></string>
-  <string id="st_wom_ask_wounded_hunt_arrived_002"><text>Доделываю работу. Мучить не буду — пулю в лоб и готово.</text></string>
-  <string id="st_wom_ask_wounded_hunt_moving_001"><text>Иду по кровавому следу, выслеживаю раненого #a_member_other# возле объекта #location#.</text></string>
-  <string id="st_wom_ask_wounded_hunt_moving_002"><text>Иду пустить под откос #a_member_other# в районе точки #location#.</text></string>
+  <!-- wounded_hunt is mutant-only (alignment_mutant, then predator+aberrant species in
+       ap_ext_consequences_wounded) - predators converging on the wounded. wounded_help above
+       is the human counterpart. No pool here by design. -->
 
   <!-- stash_fill: hiding / stocking a stash -->
   <string id="st_wom_ask_stash_fill_arrived_001"><text>Прячу хабар в нычку возле объекта #location#, чтоб плечи не ломило.</text></string>
@@ -325,11 +314,9 @@
   <string id="st_wom_ask_social_offmap_moving_001"><text>Ухожу с сектора на важную встречу.</text></string>
   <string id="st_wom_ask_social_offmap_moving_002"><text>Иду перетереть за жизнь с пацанами возле объекта #location#.</text></string>
 
-  <!-- harvest_haunt: lurking near artifact zones to prey on hunters -->
-  <string id="st_wom_ask_harvest_haunt_arrived_001"><text>Сижу в кустах возле объекта #location#. Лох не мамонт, обязательно за артами притопает.</text></string>
-  <string id="st_wom_ask_harvest_haunt_arrived_002"><text>Пасу аномальное поле. Охотники со своими детекторами рано или поздно объявятся.</text></string>
-  <string id="st_wom_ask_harvest_haunt_moving_001"><text>Иду в район точки #location# караулить зевак с артефактами.</text></string>
-  <string id="st_wom_ask_harvest_haunt_moving_002"><text>Иду затаиться у аномальной плеши возле объекта #location#.</text></string>
+  <!-- harvest_haunt is mutant-only (alignment_mutant + alignment_mutant_aberrant in
+       ap_ext_consequences_harvest) - aberrants haunting the anomaly fields, not human
+       ambushers. harvest_rob above is the human (outlaw) counterpart. No pool here by design. -->
 
   <!-- SECRETIVE: deflecting answer when the NPC's current goal is secret and the player
        is from a different faction. All secret goals share this one pool.
