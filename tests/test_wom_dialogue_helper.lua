@@ -13,7 +13,27 @@
 -- Mutable mock string table (reset between suites)
 -- ============================================================
 
-local mock_strings = {}
+-- The module under test memoizes its localisation lookups for the life of the
+-- process. That is sound in game — the engine parses the string table once at load
+-- and there is no runtime locale switch — but this harness deliberately violates it:
+-- suites swap the whole table, and several tests register a key mid-suite after
+-- asserting that its pool reads as empty. So the mock table is a write-through proxy
+-- that drops the module's caches on every assignment, keeping every existing
+-- `mock_strings[key] = value` call site unchanged.
+local function new_mock_strings()
+    local store = {}
+    return setmetatable({}, {
+        __index = store,
+        __newindex = function(_, key, value)
+            store[key] = value
+            -- Guarded: the module is dofile'd below this point, so the very first
+            -- table may be built before reset_template_cache exists.
+            if reset_template_cache then reset_template_cache() end
+        end,
+    })
+end
+
+local mock_strings = new_mock_strings()
 
 -- ============================================================
 -- STALKER global stubs
@@ -123,7 +143,10 @@ end
 
 local function suite(title, fn)
     io.write(string.format("[%s]\n", title))
-    mock_strings = {}   -- fresh mock table for each suite
+    mock_strings = new_mock_strings()   -- fresh mock table for each suite
+    -- dofile loads the module into the global env, so its functions are bare globals
+    -- here rather than namespaced under wom_dialogue_helper as they are in game.
+    reset_template_cache()
     fn()
     io.write("\n")
 end

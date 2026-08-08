@@ -9,11 +9,41 @@
 -- st_wom_chatter_pda_ask (14 variants) and dropped exactly the #location# lines.
 local MAX_TEMPLATE_VARIANTS = 20
 
+-- Memo of prefix → variant array, including empty arrays for prefixes that author
+-- nothing (a miss is as worth caching as a hit — the fallback cascades in
+-- wom_chatter and wom_territory try several dead prefixes on every single render).
+--
+-- The string table is immutable for the life of the process: it is parsed from XML
+-- at load and there is no runtime locale switch, so a key that resolved once resolves
+-- to the same text forever. Without this, every render re-walked the whole pool
+-- through game.translate_string — up to 20 lookups per prefix, and callers try
+-- prefix cascades (wom_chatter._compose_message tries five, wom_territory's
+-- _live_pool_prefixes six), so a single bark cost up to a hundred lookups and a
+-- day's recap paid that per event.
+--
+-- Cached arrays are handed out by reference and MUST be treated as read-only by
+-- callers. Every current call site only reads (#pool, indexing, and _filter_gated,
+-- which builds a new table rather than filtering in place). If a future caller needs
+-- to mutate a pool, it must copy first.
+local _variant_cache = {}
+
+-- Sub-variant letter suffixes for the occurrence-indexed pools, plus their two memos:
+-- prefix → highest authored occurrence (0 is a valid cached answer, and 0 is truthy in
+-- Lua, so the `not cached` test correctly distinguishes it from "never scanned"), and
+-- base key (prefix_NNN) → its lettered variant array. See pick_indexed_dialogue_variant.
+local LETTERS = "abcdefghijklmnopqrstuvwxyz"
+local _max_occurrence_cache = {}
+local _lettered_cache = {}
+
 -- Loads an indexed pool of template strings from localisation XML.
 -- Scans keys from prefix_001 to prefix_N until a key returns itself (not found).
+-- Result is memoized per prefix; see _variant_cache for why that is safe and for
+-- the read-only contract on the returned table.
 -- @param prefix string  localisation key prefix e.g. "st_wom_event_massacre"
--- @return table  indexed array of template strings (may be empty)
+-- @return table  indexed array of template strings (may be empty; do not mutate)
 local function load_variants(prefix)
+    local cached = _variant_cache[prefix]
+    if cached then return cached end
     local variants = {}
     for index = 1, MAX_TEMPLATE_VARIANTS do
         local key  = string.format("%s_%03d", prefix, index)
@@ -21,6 +51,7 @@ local function load_variants(prefix)
         if text == key or text == nil or text == "" then break end
         variants[#variants + 1] = text
     end
+    _variant_cache[prefix] = variants
     return variants
 end
 
@@ -670,6 +701,18 @@ function pick_dialogue_variant(prefix, slots, gated_tokens)
     return clean_output(substitute(wom_utils.pick_random_item(filtered), slots or {}))
 end
 
+-- Clears every localisation memo (load_variants, and both caches behind
+-- pick_indexed_dialogue_variant). Exists for the test harness, which swaps its mock
+-- string table between suites and so violates the immutability the caches assume.
+-- Nothing in the running game should ever need to call this: the engine's string
+-- table is parsed once at load and there is no runtime locale switch.
+-- @return nil
+function reset_template_cache()
+    _variant_cache        = {}
+    _max_occurrence_cache = {}
+    _lettered_cache       = {}
+end
+
 -- Picks one line from an occurrence-indexed, lettered sub-pool.
 -- Pool naming: prefix_001a/b/c... for the first occurrence of the goal, prefix_002a/b/c...
 -- for the second, and so on. The highest authored occurrence is reused for any excess
@@ -682,14 +725,21 @@ end
 -- @param gated_tokens table|nil slot names to gate on (see pick_dialogue_variant)
 -- @return string  substituted and cleaned result, or ""
 function pick_indexed_dialogue_variant(prefix, occurrence, slots, gated_tokens)
-    local LETTERS = "abcdefghijklmnopqrstuvwxyz"
     -- Find the highest authored occurrence (scan until the 'a' sub-variant is missing).
-    local max_occurrence = 0
-    for k = 1, MAX_TEMPLATE_VARIANTS do
-        local id = string.format("%s_%03da", prefix, k)
-        local text = game.translate_string(id)
-        if text == id or text == nil or text == "" then break end
-        max_occurrence = k
+    -- Memoized alongside the lettered sub-pools below: the daily recap calls this once
+    -- per event, and without the cache each call re-ran both scans (up to 20 + 26
+    -- lookups) over a string table that cannot change. Same immutability argument and
+    -- same read-only contract as _variant_cache.
+    local max_occurrence = _max_occurrence_cache[prefix]
+    if not max_occurrence then
+        max_occurrence = 0
+        for k = 1, MAX_TEMPLATE_VARIANTS do
+            local id = string.format("%s_%03da", prefix, k)
+            local text = game.translate_string(id)
+            if text == id or text == nil or text == "" then break end
+            max_occurrence = k
+        end
+        _max_occurrence_cache[prefix] = max_occurrence
     end
     if max_occurrence == 0 then return "" end
     -- Clamp the requested occurrence to the authored range.
@@ -697,12 +747,16 @@ function pick_indexed_dialogue_variant(prefix, occurrence, slots, gated_tokens)
     if index < 1 then index = 1 elseif index > max_occurrence then index = max_occurrence end
     local base = string.format("%s_%03d", prefix, index)
     -- Gather lettered sub-variants for this occurrence (a, b, c, ...).
-    local candidates = {}
-    for i = 1, #LETTERS do
-        local id = base .. LETTERS:sub(i, i)
-        local text = game.translate_string(id)
-        if text == id or text == nil or text == "" then break end
-        candidates[#candidates + 1] = text
+    local candidates = _lettered_cache[base]
+    if not candidates then
+        candidates = {}
+        for i = 1, #LETTERS do
+            local id = base .. LETTERS:sub(i, i)
+            local text = game.translate_string(id)
+            if text == id or text == nil or text == "" then break end
+            candidates[#candidates + 1] = text
+        end
+        _lettered_cache[base] = candidates
     end
     if #candidates == 0 then return "" end
     local filtered = _filter_gated(candidates, slots, gated_tokens)

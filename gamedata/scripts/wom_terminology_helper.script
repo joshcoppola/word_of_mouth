@@ -37,6 +37,32 @@ local function translate_term(key)
     return result ~= key and result or ""
 end
 
+-- Memos for the numbered-pool scans below, both keyed on the thing that varies
+-- (community string / key prefix) and both holding arrays that are picked from but
+-- never mutated. The string table is parsed at load and there is no runtime locale
+-- switch, so a pool that scanned once scans to the same contents forever; an empty
+-- result is cached too, since an unknown community is scanned just as often as a
+-- known one. Without these, every rendered sentence re-walked each pool through
+-- game.translate_string, and a recap renders many sentences in a row.
+local _squad_term_cache = {}
+local _term_pool_cache  = {}
+
+-- Cached "is the active locale English?" answer; nil until first use so ini_sys is
+-- only touched once the engine is up. The language cannot change without a restart,
+-- but get_location_name asked for it on EVERY call, and locations render once per
+-- event throughout every recap.
+local _cached_is_english = nil
+
+-- Returns true when the game's text language is English.
+-- @return boolean
+local function is_english_locale()
+    if _cached_is_english == nil then
+        local lang = ini_sys and ini_sys:r_string_ex("string_table", "language") or "eng"
+        _cached_is_english = (lang == "eng")
+    end
+    return _cached_is_english
+end
+
 -- Substitutes a single #token# placeholder in a translated template.
 -- Returns fallback when the key resolves to "".
 -- @param key      string  XML string id
@@ -57,15 +83,19 @@ end
 -- @return string  singular collective noun e.g. "fireteam", or "" if unknown
 -- @return string  plural collective noun e.g. "fireteams", or "" if unknown
 local function pick_squad_term_pair(community_string)
-    local list = {}
-    local i = 1
-    while true do
-        local singular = translate_term(string.format("st_wom_term_squad_%s_%03d", community_string, i))
-        if singular == "" then break end
-        local plural = translate_term(string.format("st_wom_term_squad_plural_%s_%03d", community_string, i))
-        if plural == "" then plural = singular .. "s" end
-        list[#list + 1] = { singular, plural }
-        i = i + 1
+    local list = _squad_term_cache[community_string]
+    if not list then
+        list = {}
+        local i = 1
+        while true do
+            local singular = translate_term(string.format("st_wom_term_squad_%s_%03d", community_string, i))
+            if singular == "" then break end
+            local plural = translate_term(string.format("st_wom_term_squad_plural_%s_%03d", community_string, i))
+            if plural == "" then plural = singular .. "s" end
+            list[#list + 1] = { singular, plural }
+            i = i + 1
+        end
+        _squad_term_cache[community_string] = list
     end
     if #list == 0 then return "", "" end
     local chosen = wom_utils.pick_random_item(list)
@@ -77,13 +107,17 @@ end
 -- @param prefix string  XML key prefix e.g. "st_wom_term_ours_one"
 -- @return string  randomly chosen variant, or "" if no entries exist
 local function pick_term_from_pool(prefix)
-    local list = {}
-    local i = 1
-    while true do
-        local term_value = translate_term(string.format("%s_%03d", prefix, i))
-        if term_value == "" then break end
-        list[#list + 1] = term_value
-        i = i + 1
+    local list = _term_pool_cache[prefix]
+    if not list then
+        list = {}
+        local i = 1
+        while true do
+            local term_value = translate_term(string.format("%s_%03d", prefix, i))
+            if term_value == "" then break end
+            list[#list + 1] = term_value
+            i = i + 1
+        end
+        _term_pool_cache[prefix] = list
     end
     if #list == 0 then return "" end
     return wom_utils.pick_random_item(list)
@@ -535,8 +569,7 @@ function get_location_name(smart_id, current_level_id, force_region)
     -- Non-English locales: return the engine-translated name as-is.
     -- The English-specific algorithm below (article, case folding, level-prefix
     -- stripping) produces nonsense in inflected languages like Russian.
-    local lang = ini_sys and ini_sys:r_string_ex("string_table", "language") or "eng"
-    if lang ~= "eng" then return name end
+    if not is_english_locale() then return name end
 
     -- Resolve the terrain's level and the actor's current level for comparison.
     local terrain_level = nil
