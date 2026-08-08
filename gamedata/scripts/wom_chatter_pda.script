@@ -222,6 +222,14 @@ end
 -- this filter exists to hold is "the asker is always off-map", and a squad whose level
 -- cannot be proven different is not proof of anything.
 --
+-- The story-character test belongs in this walk specifically, ahead of the level test:
+-- "stationed, unscripted, off-map" is an exact description of a trader squad parked at its
+-- smart terrain (bar_visitors_barman_stalker_trader_squad and friends are
+-- online_offline_group squads under smart control), so without it Sidorovich and the barman
+-- are prime asker candidates. squad.id is a free field read, so it stays among the free
+-- tests; the commander-level half of the gate waits until _first_eligible_asker, where a
+-- commander is resolved anyway.
+--
 -- Algorithm R over the accept set: candidates beyond the reservoir size replace a random
 -- slot with probability k/n, which keeps the sample uniform without building an array of
 -- every match. See the header for why the per-squad tests are all free.
@@ -237,6 +245,7 @@ local function _sample_asker_ids(allowed, scripted, actor_level_id)
         if allowed[squad.player_id]
            and squad.current_action == 1
            and not scripted[squad.id]
+           and not wom_bark.is_story_character(squad.id)
            and _is_off_map(squad, actor_level_id) then
             seen = seen + 1
             if seen <= ASKER_CANDIDATES then
@@ -251,7 +260,15 @@ local function _sample_asker_ids(allowed, scripted, actor_level_id)
 end
 
 -- Applies the expensive gates to sampled asker candidates in order and returns the first
--- that passes: squad still alive, has members, commander name resolvable, off cooldown.
+-- that passes: squad still alive, has members, commander not a story character, commander
+-- name resolvable, off cooldown.
+--
+-- The story test runs at both levels because the two can disagree: a smart terrain
+-- respawning a unique trader (smart_terrain_warfare.check_unique_npcs) puts a story NPC in
+-- command of an unremarkable squad, and attrition can leave a story squad commanded by a
+-- generated stalker. Ordered before can_speak so an excluded candidate does not consume a
+-- cooldown lookup, and left inside the loop so exclusion falls through to the next sampled
+-- candidate rather than aborting the exchange.
 -- @param candidate_ids table   array of squad IDs
 -- @param now_sec       number  current in-game seconds
 -- @return userdata|nil squad, string|nil name, string icon
@@ -262,7 +279,9 @@ local function _first_eligible_asker(candidate_ids, now_sec)
         local squad = sim:object(candidate_ids[i])
         if squad and (squad.npc_count and squad:npc_count() or 0) > 0 then
             local commander_id = squad.commander_id and squad:commander_id()
-            if commander_id and wom_bark.can_speak(commander_id, now_sec, WIRE_COOLDOWN_GAME_SEC) then
+            if commander_id
+               and not wom_bark.is_story_character(commander_id)
+               and wom_bark.can_speak(commander_id, now_sec, WIRE_COOLDOWN_GAME_SEC) then
                 local name, icon = _commander_display(squad)
                 if name then return squad, name, icon end
             end
@@ -364,6 +383,9 @@ local function _first_eligible_answerer(candidate_ids, now_sec)
             if commander_id
                and not wom_bark.can_speak(commander_id, now_sec, WIRE_COOLDOWN_GAME_SEC) then
                 -- on cooldown; try the next candidate
+            elseif wom_bark.is_story_character(squad_id)
+                   or wom_bark.is_story_character(commander_id) then
+                _trace("answerer candidate " .. tostring(squad_id) .. " skipped: story character")
             elseif _goal_is_secret(squad_id) then
                 _trace("answerer candidate " .. tostring(squad_id) .. " skipped: goal is secret")
             else

@@ -67,6 +67,7 @@ local HUMANS = { stalker = true, csky = true, dolg = true, freedom = true, bandi
 
 local _sent = {}      -- delivered PDA messages
 local _nearby_stalker = nil
+local _story_ids = {}  -- id -> true, for is_story_character stub
 
 wom_bark = {
     reset_cooldowns  = function() end,
@@ -82,6 +83,7 @@ wom_bark = {
         _sent[#_sent + 1] = { name = name, icon = icon, message = message, tag = tag }
     end,
     pick_nearby_stalker = function() return _nearby_stalker end,
+    is_story_character = function(object_id) return object_id ~= nil and _story_ids[object_id] == true end,
 }
 
 wom_terminology_helper = {
@@ -201,6 +203,7 @@ end
 local function squad(faction, opts)
     opts = opts or {}
     return {
+        id             = opts.id,
         player_id      = faction,
         stationed      = opts.stationed or false,
         commander_name = opts.commander_name,
@@ -225,6 +228,7 @@ local function reset(now)
     _nearby_stalker  = nil
     _next_cons_id    = 0
     _timer_callback  = nil
+    _story_ids       = {}
     wom_reaction.on_game_start()
 end
 
@@ -490,6 +494,24 @@ group("5. Sender attribution", function()
     check("an ally event is voiced by the ALLY, not the player's faction",
           _sent[1] and _sent[1].name, "Cold")
     check("...and rendered as that faction", _render_args.faction, "csky")
+
+    -- A faction whose only squads are story characters (trader, leader) must not have
+    -- its news voiced by one of them; the generic faction handle takes over instead.
+    reset()
+    tick()
+    _squads = {
+        squad("stalker", { id = 1, stationed = true, commander_name = "Story Squad",
+                            commander_id = 1234 }),
+        squad("stalker", { id = 2, stationed = true, commander_name = "Story Commander",
+                            commander_id = 5678 }),
+    }
+    _story_ids[1]    = true   -- squad-level story character
+    _story_ids[5678] = true   -- commander-level story character
+    _records = { record() }
+    tick()
+    check("a story-only faction falls back to the generic handle",
+          _sent[1] and _sent[1].name, "The stalker")
+    check("...and the faction portrait", _sent[1] and _sent[1].icon, "icon_stalker")
 end)
 
 -- ============================================================

@@ -37,6 +37,7 @@ local _server_npcs     = {}    -- npc_id   -> { group_id, position, character_na
 local _server_squads   = {}    -- squad_id -> squad server object stub
 local _client_npcs     = {}    -- npc_id   -> client object stub (nil = offline/destroyed)
 local _assigned        = {}    -- squad_id -> AP assigned record
+local _story_ids       = {}    -- id -> true, for is_story_character stub
 
 -- Cost counters: every stubbed luabind-equivalent call bumps _crossings.
 local _crossings       = 0
@@ -122,6 +123,7 @@ wom_bark = {
         db.actor:give_game_news(npc:character_name(), message)
     end,
     mark_spoke = function() end,
+    is_story_character = function(object_id) return object_id ~= nil and _story_ids[object_id] == true end,
 }
 
 wom_utils = {
@@ -195,6 +197,7 @@ end
 local function reset()
     _pda_calls, _bark_count = {}, 0
     _server_npcs, _server_squads, _client_npcs, _assigned = {}, {}, {}, {}
+    _story_ids = {}
     db.OnlineStalkers = {}
     _crossings, _live_npc_calls = 0, 0
     _chatter_enabled, _dev_mode, _chatter_range = true, false, 50
@@ -374,6 +377,33 @@ suite("2. gates", function()
     tick()
     tick()
     check("disabled in MCM does nothing", #_pda_calls, 0)
+
+    -- Story characters (unique/faction-leader NPCs) never bark goal changes.
+    reset()
+    _story_ids[1] = true   -- squad_id itself flagged as a story character
+    add_npc(10, 1, 5)
+    add_npc(11, 1, 5)
+    add_squad(1, 10)
+    set_goal(1, 100)
+    baseline_then_change(1, 200)
+    check("story squad_id does not announce", #_pda_calls, 0)
+
+    reset()
+    _story_ids[10] = true   -- commander flagged as a story character
+    add_npc(10, 1, 5)
+    add_npc(11, 1, 5)
+    add_squad(1, 10)
+    set_goal(1, 100)
+    baseline_then_change(1, 200)
+    check("story commander does not announce", #_pda_calls, 0)
+
+    reset()
+    add_npc(10, 1, 5)
+    add_npc(11, 1, 5)
+    add_squad(1, 10)
+    set_goal(1, 100)
+    baseline_then_change(1, 200)
+    check("ordinary squad still announces (regression guard)", #_pda_calls, 1)
 end)
 
 -- ============================================================

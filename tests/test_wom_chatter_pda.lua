@@ -47,6 +47,7 @@ local _last_force_region       -- force_region as the reply render last received
 local _hooks_installed = 0     -- times on_game_start asked wom_bark to hook external news
 local _goal_by_squad = {}      -- squad_id -> goal suffix; absent == "job_explore" (public)
 local _goal_visibility = {}    -- goal suffix -> MCM visibility; absent == "public"
+local _story_ids = {}          -- id -> true, for is_story_character stub
 
 local function reset()
     _squads, _by_id, _scripted = {}, {}, {}
@@ -68,6 +69,7 @@ local function reset()
     _last_force_region = nil
     _goal_by_squad   = {}
     _goal_visibility = {}
+    _story_ids       = {}
     db.actor     = {}
     on_game_start()
 end
@@ -197,6 +199,7 @@ wom_bark = {
     -- real implementation and its wrapper contract are covered in test_wom_bark.
     hook_external_news = function() _hooks_installed = _hooks_installed + 1 end,
     send_news_pda   = function(name, icon, message) _pda_calls[#_pda_calls + 1] = { name = name, message = message } end,
+    is_story_character = function(object_id) return object_id ~= nil and _story_ids[object_id] == true end,
 }
 
 wom_recap_npc = {
@@ -755,6 +758,50 @@ group("the reply is exempt from the quiet window", function()
     _wire_quiet = false
     fire_reply()
     check("reply delivered anyway", #_pda_calls, 2)
+end)
+
+group("a story squad_id never asks", function()
+    add_squad(1, "stalker", 1, { smart_id = 500 })   -- the only stationed off-map candidate
+    add_squad(2, "stalker", 0, { scripted = true })
+    _story_ids[1] = true
+    tick()
+    check("no question sent", #_pda_calls, 0)
+    check("traced as no stationed off-map squad", trace_contains("no stationed unscripted off-map squad"), true)
+end)
+
+group("a story commander never asks", function()
+    add_squad(1, "stalker", 1, { smart_id = 500 })   -- commander is 1001
+    add_squad(2, "stalker", 0, { scripted = true })
+    _story_ids[1001] = true
+    tick()
+    check("no question sent", #_pda_calls, 0)
+    check("traced as asker candidates gated", trace_contains("asker candidates gated"), true)
+end)
+
+group("a story asker candidate falls back to the other one", function()
+    add_squad(1, "stalker", 1, { smart_id = 500 })   -- story commander, sampled first
+    add_squad(3, "stalker", 1, { smart_id = 501 })   -- ordinary, sampled second
+    add_squad(2, "stalker", 0, { scripted = true })
+    _story_ids[1001] = true                           -- commander of squad 1
+    tick()
+    fire_reply()
+    check("exchange still happens", #_pda_calls, 2)
+    check("asker is the non-story candidate", _pda_calls[1].name, "Commander3")
+end)
+
+group("a story answerer is skipped for another AP-scripted squad", function()
+    add_squad(1, "stalker", 1, { smart_id = 500 })
+    -- Moving answerer candidates are returned ahead of arrived ones, so the story squad is
+    -- tried FIRST deterministically -- pairs() order over the scripted set would otherwise
+    -- decide whether the skip was exercised at all.
+    add_squad(2, "stalker", 0, { scripted = true })   -- moving: story commander, tried first
+    add_squad(3, "stalker", 1, { scripted = true })   -- arrived: ordinary, tried second
+    _story_ids[1002] = true                           -- commander of squad 2
+    tick()
+    fire_reply()
+    check("reply delivered", #_pda_calls, 2)
+    check("reply came from the non-story answerer", _pda_calls[2].name, "Commander3")
+    check("story answerer traced as skipped", trace_contains("skipped: story character"), true)
 end)
 
 group("startup installs the external-news hooks", function()

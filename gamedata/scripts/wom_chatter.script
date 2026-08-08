@@ -387,6 +387,10 @@ local function _process_squad(squad_id, members, sim, actor_pos, dev, r_sqr, scr
     local squad   = sim:object(squad_id)
     local faction = squad and squad.player_id
     if not (faction and wom_bark.is_human_faction(faction)) then return end
+    -- Story squads never bark. Placed with the free field reads, ahead of the first luabind
+    -- call: squad_id is already in hand, so this costs one table index. The commander half of
+    -- the gate waits until commander_id is resolved below.
+    if wom_bark.is_story_character(squad_id) then return end
     -- Only announce goals when 2+ members in squad; prevents NPCs from talking to themselves
     local count = squad.npc_count and squad:npc_count() or 0
     if count < 2 then return end
@@ -395,6 +399,7 @@ local function _process_squad(squad_id, members, sim, actor_pos, dev, r_sqr, scr
     -- earshot — not merely some member of the squad.
     local commander_id = squad.commander_id and squad:commander_id()
     if not _is_online_member(members, commander_id) then return end
+    if wom_bark.is_story_character(commander_id) then return end
 
     -- Range gate on the commander's own position, read fresh from the server object every
     -- tick (never cached — see _squad_of_npc). ALifePlus reads server positions for an

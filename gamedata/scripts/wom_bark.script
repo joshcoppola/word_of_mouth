@@ -40,6 +40,36 @@ function is_human_faction(community)
     return HUMAN_FACTIONS[community] == true
 end
 
+-- Returns true when the object is a story/unique character -- traders, faction leaders,
+-- mechanics, medics, named quest givers -- rather than a generated Zone inhabitant.
+-- Accepts a squad ID as readily as an NPC ID: story squads carry story IDs of their own
+-- (squad_descr_bar.ltx: story_id = bar_visitors_barman_stalker_trader_squad), so testing
+-- both levels catches a unique commander in a plain squad AND a replacement nobody
+-- commanding a story squad.
+--
+-- get_object_story_id is a plain index into story_objects.story_id_by_object_id
+-- (_unpacked/scripts/_g.script:2692), which story_objects.check_spawn_ini_for_story_id
+-- fills at alife-register time from the spawn section's story_id field. Three properties
+-- matter here:
+--   • 0 luabind crossings, so this is safe inside the registry walks, where squad.id is
+--     the only free handle available and resolving a commander per squad is not affordable.
+--   • Valid for OFFLINE objects — every faction-wire speaker is offline by construction.
+--   • Fixed at spawn, never derived from bound logic. This is why it is used instead of a
+--     role or profile heuristic: the removed is_ordinary_stalker precondition read
+--     xsmart.get_npc_roles, which depends on db.storage[id].section_logic and so gave
+--     different answers in a fresh game and a settled save (wom-dialog-system skill).
+-- ALifePlus applies the same gate to its own news wire (ap_ext_news.script:211), so the
+-- two mods agree on who counts as an ordinary inhabitant.
+--
+-- Fails open when the global is absent: reporting nobody as a story character costs one
+-- odd-sounding message, whereas failing closed would silence every speaker in the mod.
+-- @param object_id number|nil  squad, commander, or NPC server object ID
+-- @return boolean
+function is_story_character(object_id)
+    if not (object_id and get_object_story_id) then return false end
+    return get_object_story_id(object_id) ~= nil
+end
+
 -- Returns true when the NPC currently has an active enemy (is in combat).
 -- Uses the engine's best_enemy() query, which returns the current target or nil.
 -- @param npc userdata  NPC client game object (alive, online)
@@ -314,6 +344,7 @@ end
 -- all eligibility checks:
 --   • alive and not a destroyed/stale object (wom_utils.get_live_online_npc)
 --   • human faction (character_community in HUMAN_FACTIONS)
+--   • not a story character (is_story_character on the ID, free)
 --   • in range (or dev mode)
 --   • off the shared cooldown
 --   • passes opts.filter_fn when provided
@@ -345,7 +376,7 @@ function pick_nearby_stalker(actor, opts)
     for _, i in ipairs(indices) do
         local id  = online[i]
         local npc = wom_utils.get_live_online_npc(id)
-        if npc and HUMAN_FACTIONS[npc:character_community()] then
+        if npc and HUMAN_FACTIONS[npc:character_community()] and not is_story_character(id) then
             local in_range = opts.dev or (_range_sqr(actor_pos, npc:position()) <= opts.range_sqr)
             if in_range and can_speak(id, opts.now_sec, opts.cooldown_sec) then
                 if not opts.filter_fn or opts.filter_fn(npc) then

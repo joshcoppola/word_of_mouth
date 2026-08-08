@@ -23,6 +23,7 @@ local _timer_callback = nil
 local _game_sec       = 7200
 local _server_npcs    = {}   -- npc_id -> { group_id }
 local _npc_id_counter = 0
+local _story_ids      = {}   -- id -> true, for get_object_story_id stub
 
 -- Content-function return values (nil = return nothing)
 local _area_sentence  = nil
@@ -136,6 +137,13 @@ alife = function()
     return {
         object = function(self, id) return _server_npcs[id] end,
     }
+end
+
+-- Mirrors the real Anomaly global: a plain lookup returning a story-id string for
+-- unique/story NPCs and nil for ordinary generated stalkers. wom_bark.is_story_character
+-- reads it directly, so this is the seam here rather than a stub table entry.
+get_object_story_id = function(object_id)
+    return _story_ids[object_id] and "some_story_id" or nil
 end
 
 -- ============================================================
@@ -303,6 +311,7 @@ local function reset()
     _forced_roll      = nil
     _server_npcs      = {}
     _npc_id_counter   = 0
+    _story_ids        = {}
     db.OnlineStalkers = {}
     db.storage        = {}
     db.actor          = make_actor()
@@ -481,6 +490,23 @@ suite("3. Candidate filtering", function()
     db.storage[9998] = { object = nil }
     scan()
     check("storage.object nil → skipped, no crash", #_pda_calls, 0)
+
+    -- Story character (unique/faction-leader NPC) is never picked at a campfire
+    reset()
+    _area_sentence = "Event."
+    _forced_roll = 1
+    local story_npc = add_eligible_npc()
+    _story_ids[story_npc._id] = true
+    scan()
+    check("story NPC → not selected", #_pda_calls, 0)
+
+    -- An ordinary NPC at the same campfire is still picked
+    reset()
+    _area_sentence = "Event."
+    _forced_roll = 1
+    add_eligible_npc()
+    scan()
+    check("ordinary NPC → still selected", #_pda_calls, 1)
 end)
 
 -- ============================================================

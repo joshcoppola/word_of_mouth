@@ -94,9 +94,15 @@ local function _is_chilling_npc(npc)
 end
 
 -- Shuffles OnlineStalkers and returns the first NPC that is eligible (alive,
--- human faction, campfire/animpoint scheme), in range, and off the shared cooldown.
--- Returns nil when no such NPC exists. Avoids iterating the full list when a
--- candidate is found early.
+-- human faction, campfire/animpoint scheme, not a story character), in range, and off the
+-- shared cooldown. Returns nil when no such NPC exists. Avoids iterating the full list when
+-- a candidate is found early.
+--
+-- The story-character test is here rather than in _is_chilling_npc because the ID is
+-- already in hand at this point; asking the client object for npc:id() inside the predicate
+-- would pay a luabind crossing for something free. Unique NPCs sit at campfires and run
+-- animpoints like anyone else, so without it the Doctor and the barman gossip about squad
+-- movements — see wom_bark.is_story_character for why story_id is the signal used.
 -- @param actor   userdata  db.actor
 -- @param now_sec number    xtime.game_sec()
 -- @return userdata|nil
@@ -114,7 +120,7 @@ local function _pick_candidate(actor, now_sec)
     for _, i in ipairs(indices) do
         local id  = online[i]
         local npc = wom_utils.get_live_online_npc(id)
-        if npc and _is_chilling_npc(npc) then
+        if npc and not wom_bark.is_story_character(id) and _is_chilling_npc(npc) then
             local in_range = dev or (actor_pos:distance_to_sqr(npc:position()) <= r_sqr)
             if in_range and wom_bark.can_speak(id, now_sec, CAMPFIRE_NPC_COOLDOWN_GAME_SEC) then
                 return npc

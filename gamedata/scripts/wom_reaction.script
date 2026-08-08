@@ -168,6 +168,12 @@ end
 -- Finds (name, icon) for a sender by scanning all squads of the given faction in
 -- the simulation (any map). Prefers a stationed (garrisoning) commander, then any
 -- squad member, then falls back to a generic faction display name and portrait.
+--
+-- Story characters are excluded at both the squad and commander level: a faction's news
+-- should not come over the wire in the voice of its trader or its leader. The squad test is
+-- a free field read; the commander test adds nothing, since this loop resolves
+-- commander_id anyway. Excluding every candidate is already a handled outcome — the
+-- _faction_display fallback below covers it.
 -- @param faction string  raw community string e.g. "dolg", "stalker"
 -- @return string, string  sender name, sender icon (both may be empty strings)
 local function _pick_faction_reporter(faction)
@@ -178,9 +184,10 @@ local function _pick_faction_reporter(faction)
     local stationed_squads = {}
     local any_squads       = {}
     for squad in xsquad.iter_squads() do
-        if squad.player_id == faction then
+        if squad.player_id == faction and not wom_bark.is_story_character(squad.id) then
             local commander_id = squad:commander_id()
-            if commander_id and commander_id ~= INVALID_ENTITY_ID then
+            if commander_id and commander_id ~= INVALID_ENTITY_ID
+               and not wom_bark.is_story_character(commander_id) then
                 if xsquad.is_stationed(squad) then
                     stationed_squads[#stationed_squads + 1] = squad
                 else
