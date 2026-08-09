@@ -1,3 +1,7 @@
+1.5.1
+* Increase default values for faction PDA chatter to make them much less frequent
+* Increase max values for PDA chatter interval and the required quiet period so they can be adjusted to be even less frequent
+
 1.5.0
 * New feature: faction PDA chatter. Every so often a stalker asks what's going on, and another squad answers with what they're doing. Fully configurable in MCM.
 * In English localization, fixed a stray dash in place names for locations whose name is written "Region - Place", which read as "on our way to the - Yanov station in Jupiter". Now reads "the Yanov station in Jupiter".
