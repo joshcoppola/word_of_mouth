@@ -98,7 +98,7 @@ ap_api = {
 xtime  = { game_sec = function() return _game_sec end }
 
 xlevel = {
-    get_actor_level_id = function() return _level_id end,
+    get_actor_level = function() return _level_id end,
     get_level_id       = function(smart) return smart and smart.level_id end,
 }
 

@@ -295,7 +295,7 @@ end
 -- A live hold always wins over a record for the same smart — the spawn pool is the current
 -- truth, and a record naming a different (earlier) holder is not evidence about now, so it
 -- contributes a timestamp only when it names the same holder.
--- @param level_id       number|nil    level to scan (xlevel.get_actor_level_id())
+-- @param level_id       number|nil    level to scan (xlevel.get_actor_level())
 -- @param now_game_hours number        current cumulative in-game hour
 -- @param speaker_npc    userdata|nil  the NPC being asked; when they are standing at one of
 --                                     the held smarts, that holding sorts first and is
@@ -474,7 +474,7 @@ end
 function render_territory(npc)
     local npc_faction = npc and npc:character_community() or nil
 
-    local level_id = xlevel and xlevel.get_actor_level_id and xlevel.get_actor_level_id()
+    local level_id = xlevel and xlevel.get_actor_level and xlevel.get_actor_level()
     local now_game_hours = (xtime and xtime.game_sec) and math.floor(xtime.game_sec() / 3600) or 0
 
     local holdings = collect_holdings(level_id, now_game_hours, npc)

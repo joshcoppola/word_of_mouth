@@ -23,7 +23,7 @@ local L_GS      = 5   -- Great Swamp (internal name: "marsh")
 -- ============================================================
 
 local _smarts      = {}         -- [id] = { _name, _level }
-local _actor_level = L_GARBAGE  -- what xlevel.get_actor_level_id() returns
+local _actor_level = L_GARBAGE  -- what xlevel.get_actor_level() returns
 
 -- What xlevel.get_level_name(level_id) returns.
 -- xlevel.get_level_name calls game.translate_string(alife():level_name(level_id)).
@@ -65,9 +65,9 @@ xobject = {
 }
 
 xlevel = {
-    get_smart_display_name = function(s) return s._name end,
+    get_smart_name = function(s) return s._name end,
     get_level_id           = function(s) return s._level end,
-    get_actor_level_id     = function() return _actor_level end,
+    get_actor_level     = function() return _actor_level end,
     get_level_name         = function(lid) return _level_name_map[lid] end,
 }
 

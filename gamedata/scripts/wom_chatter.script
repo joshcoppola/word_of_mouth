@@ -45,8 +45,8 @@ local _last_goal = {}
 -- @param id  number    NPC game object id
 -- @return number|nil
 local function _squad_id_of(sim, id)
-    if xsquad and xsquad.get_squad_by_member then
-        local squad = xsquad.get_squad_by_member(id)
+    if xsquad and xsquad.get_member_squad then
+        local squad = xsquad.get_member_squad(id)
         return squad and squad.id or nil
     end
     local server_object = sim and sim:object(id)

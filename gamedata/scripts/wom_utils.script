@@ -149,7 +149,7 @@ end
 -- Returns the level_id for a server NPC/monster object.
 -- Uses xlevel.get_level_id on the server object. Returns nil when unavailable —
 -- callers that need a level guarantee must handle nil explicitly. Never falls back
--- to xlevel.get_actor_level_id(), since that would assign off-map deaths to the
+-- to xlevel.get_actor_level(), since that would assign off-map deaths to the
 -- player's current level and surface them as local events.
 -- @param sim    userdata|nil  alife() simulator (unused; kept for symmetry with callers)
 -- @param se_obj userdata|nil  server object
@@ -195,7 +195,7 @@ function play_hello_bark(npc)
 end
 
 -- Returns the squad server object for the given NPC, or nil.
--- Tries xsquad.get_squad_by_member first; falls back to the server-object group_id.
+-- Tries xsquad.get_member_squad first; falls back to the server-object group_id.
 -- Accepts either object kind: the id is resolved through get_object_id, so a caller
 -- holding a server object (a death callback, say) is not a latent crash the way a
 -- bare npc:id() here would be.
@@ -205,8 +205,8 @@ function resolve_squad(npc)
     if not npc then return nil end
     local npc_id = get_object_id(npc)
     if not npc_id then return nil end
-    if xsquad and xsquad.get_squad_by_member then
-        return xsquad.get_squad_by_member(npc_id)
+    if xsquad and xsquad.get_member_squad then
+        return xsquad.get_member_squad(npc_id)
     end
     local sim = alife()
     local server_object = sim and sim:object(npc_id)

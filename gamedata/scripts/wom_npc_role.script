@@ -128,8 +128,8 @@ function nearest_smart_id(pos, radius, level_id)
     -- on one kill is a far better outcome than a CTD inside a death callback.
     if type(pos) ~= "userdata" and type(pos) ~= "table" then return nil end
     if not (xsmart and xsmart.find_smart) then return nil end
-    if not level_id and xlevel and xlevel.get_actor_level_id then
-        level_id = xlevel.get_actor_level_id()
+    if not level_id and xlevel and xlevel.get_actor_level then
+        level_id = xlevel.get_actor_level()
     end
     local smart = xsmart.find_smart(pos, {
         max_distance = radius or 300,

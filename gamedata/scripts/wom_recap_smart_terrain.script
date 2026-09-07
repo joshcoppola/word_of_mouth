@@ -299,10 +299,10 @@ end
 -- }
 function collect_eligible_news()
     if not (ap_api and ap_api.get_records) then return nil end
-    if not (xlevel and xlevel.get_actor_level_id) then return nil end
+    if not (xlevel and xlevel.get_actor_level) then return nil end
     if not (xtime and xtime.game_sec) then return nil end
 
-    local current_level_id = xlevel.get_actor_level_id()
+    local current_level_id = xlevel.get_actor_level()
     if not current_level_id then return nil end
     local now_game_hours   = math.floor(xtime.game_sec() / 3600)
 

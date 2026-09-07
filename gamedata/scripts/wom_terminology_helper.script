@@ -478,7 +478,7 @@ end
 --   "Garbage. Bus Stop"   (period-space, vanilla Anomaly)
 --   "Garbage, Bus Stop"   (comma-space)
 --   "Garbage Bus Stop"    (space-only, GAMMA — stripped via level display name)
--- current_level_id defaults to xlevel.get_actor_level_id() when nil.
+-- current_level_id defaults to xlevel.get_actor_level() when nil.
 -- @param smart_id         number      ALifePlus record smart_id
 -- @param current_level_id number|nil  level to compare against; defaults to actor's level
 -- @return string  spoken location phrase, or "" if unresolvable
@@ -487,8 +487,8 @@ function get_location_name(smart_id, current_level_id)
     if not (xobject and xobject.se) then return "" end
     local smart = xobject.se(smart_id)
     if not smart then return "" end
-    if not (xlevel and xlevel.get_smart_display_name) then return "" end
-    local name = xlevel.get_smart_display_name(smart) or ""
+    if not (xlevel and xlevel.get_smart_name) then return "" end
+    local name = xlevel.get_smart_name(smart) or ""
     if name == "" then return "" end
 
     -- Non-English locales: return the engine-translated name as-is.
@@ -505,8 +505,8 @@ function get_location_name(smart_id, current_level_id)
     end
 
     local compare_level = current_level_id
-    if not compare_level and xlevel and xlevel.get_actor_level_id then
-        compare_level = xlevel.get_actor_level_id()
+    if not compare_level and xlevel and xlevel.get_actor_level then
+        compare_level = xlevel.get_actor_level()
     end
 
     -- Resolve the level display name once (get_level_name already translates internally).

@@ -405,7 +405,7 @@ end
 -- for merging into the area recap by wom_recap_smart_terrain.
 -- Role phrases are pre-rendered here so the caller needs no outpost vocabulary.
 -- Returns an empty array when the feature is disabled or nothing is known yet.
--- @param level_id number  level to filter on (xlevel.get_actor_level_id())
+-- @param level_id number  level to filter on (xlevel.get_actor_level())
 -- @return table  array of {
 --   smart_id     number,
 --   faction      string,   raw community string of the holding faction
@@ -550,7 +550,7 @@ end
 --     luabind calls per squad (sim:object resolve + section_name, which allocates a
 --     shared_str) across the high hundreds to a couple thousand squads a GAMMA save holds,
 --     in one frame, every 15 real seconds. For comparison xlibs caches an equivalent
---     SIMBOARD roster walk for 60 seconds in xsmart.get_faction_smart_count, and AP's own
+--     SIMBOARD roster walk for 60 seconds in xsmart.get_faction_count, and AP's own
 --     smart mutator scans on a 60-second interval. This polls 4x more often than xlibs
 --     bothers to cache.
 --
