@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+    <!-- Goal-announce templates for wom_chatter.script.
+         Delivered as PDA messages attributed to the squad commander when a nearby
+         squad changes its ALifePlus assigned goal.
+
+         Key format: st_wom_goal_{goal}_{faction} / st_wom_goal_{goal} / st_wom_goal_generic
+         Lookup order: faction-specific, goal-generic, catch-all (first non-empty wins).
+         Variants are numbered _001, _002, ... and one is picked at random.
+
+         Available slots:
+           #location# — target smart terrain name; variants referencing it are filtered
+                        when no destination is known, so every pool needs at least one
+                        location-free line.
+           #partner#  — squadmate's character name when the squad has 2 members;
+                        "team" when the squad has 3 or more members. Always non-empty. -->
+
+    <!-- partner slot fallbacks -->
+    <string id="st_wom_partner_solo"><text>partner</text></string>
+    <string id="st_wom_partner_group"><text>team</text></string>
+
+    <!-- catch-all fallback -->
+    <string id="st_wom_goal_generic_001"><text>Heading out!</text></string>
+    <string id="st_wom_goal_generic_002"><text>Alright, time to move!</text></string>
+    <string id="st_wom_goal_generic_003"><text>Moving out.</text></string>
+    <string id="st_wom_goal_generic_004"><text>Time to head over to #location#.</text></string>
+    <string id="st_wom_goal_generic_005"><text>OK #partner#, time to move.</text></string>
+    <string id="st_wom_goal_generic_006"><text>Alright #partner#, let's head out.</text></string>
+    <string id="st_wom_goal_generic_007"><text>OK #partner#, we're moving to #location#.</text></string>
+
+    <!-- massacre -->
+    <string id="st_wom_goal_massacre_investigate_001"><text>Heads up, #partner#. Those guys at #location# haven't checked in. Got a bad feeling, let's check it out.</text></string>
+    <string id="st_wom_goal_massacre_investigate_002"><text>Alright #partner#, let's go check out #location#, something seems fishy.</text></string>
+    <string id="st_wom_goal_massacre_investigate_003"><text>Stay close, #partner#. Something went wrong at #location# and we need to find out what.</text></string>
+
+    <string id="st_wom_goal_massacre_loot_001"><text>Alright #partner#. A crew got wiped near #location#. Time to see if they left any gifts.</text></string>
+    <string id="st_wom_goal_massacre_loot_002"><text>OK #partner#, time for a salvage run. Follow me to #location# and keep your eyes peeled for anything valuable.</text></string>
+
+    <string id="st_wom_goal_massacre_scavenge_001"><text>Hey #partner#, time to see if there's any loot to be had after the massacre at #location#.</text></string>
+    <string id="st_wom_goal_massacre_scavenge_002"><text>Alright #partner#, let's go see if those poor bastards at #location# left behind anything valuable.</text></string>
+
+    <!-- stash -->
+    <string id="st_wom_goal_stash_loot_001"><text>Alright #partner#, got a line on a stash near #location#. Let's go crack it.</text></string>
+    <string id="st_wom_goal_stash_loot_002"><text>Hey #partner#, time to go clear that cache at #location#.</text></string>
+
+    <string id="st_wom_goal_stash_ambush_001"><text>Hey #partner#, word is someone's hitting a stash at #location#. We're setting up on it.</text></string>
+    <string id="st_wom_goal_stash_ambush_002"><text>Hey #partner#, time to lay an ambush on the stash near #location#.</text></string>
+
+    <!-- base defense / flight -->
+    <string id="st_wom_goal_basekill_flee_001"><text>Hey #partner#, time to fall back to #location#!</text></string>
+    <string id="st_wom_goal_basekill_flee_002"><text>Listen up #partner#, retreat to #location#!</text></string>
+    <string id="st_wom_goal_basekill_flee_003"><text>OK #partner#, we gotta go! Fall back to #location#!</text></string>
+
+    <string id="st_wom_goal_basekill_support_001"><text>Hey #partner#, our people are under fire at #location#. We're moving to support.</text></string>
+    <string id="st_wom_goal_basekill_support_002"><text>Alright #partner#, let's move out to support our crew at #location#.</text></string>
+
+    <!-- revenge -->
+    <string id="st_wom_goal_squadkill_revenge_001"><text>Hey #partner#, let's move out. Time for some revenge!</text></string>
+    <string id="st_wom_goal_squadkill_revenge_002"><text>OK #partner#, time to move out and get some payback on a squad that hit our crew near #location#.</text></string>
+    <string id="st_wom_goal_squadkill_revenge_003"><text>Alright #partner#, we're moving out. Time to settle a score near #location#.</text></string>
+
+    <!-- territory -->
+    <string id="st_wom_goal_area_conquer_001"><text>Let's move out to occupy #location#.</text></string>
+    <string id="st_wom_goal_area_conquer_002"><text>Alright, let's move out and stake out at #location#.</text></string>
+
+    <!-- jobs -->
+    <string id="st_wom_goal_job_explore_001"><text>Listen up #partner#, time to move out and sweep the area around #location#.</text></string>
+    <string id="st_wom_goal_job_explore_002"><text>Alright #partner#, time for a routine patrol, heading to #location#.</text></string>
+    <string id="st_wom_goal_job_explore_003"><text>Hey #partner#, let's go do a sweep around #location#.</text></string>
+
+    <string id="st_wom_goal_job_outpost_001"><text>Hey #partner#, let's move and post up at #location#.</text></string>
+    <string id="st_wom_goal_job_outpost_002"><text>Hey #partner#, time to move out and set a watch at #location#.</text></string>
+
+    <string id="st_wom_goal_job_research_001"><text>OK #partner#, time to move. The plan is to do a survey at #location#.</text></string>
+    <string id="st_wom_goal_job_research_002"><text>Alright #partner#, let's head out now to collect those readings at #location#.</text></string>
+
+    <!-- social -->
+    <string id="st_wom_goal_social_base_001"><text>Hey #partner#, let's head to base at #location# for a bit.</text></string>
+    <string id="st_wom_goal_social_base_002"><text>OK #partner#, time for a breather. Let's move to #location#.</text></string>
+
+    <string id="st_wom_goal_social_campfire_001"><text>OK #partner#, time to head to #location# and find a spot to shoot the breeze for a bit.</text></string>
+    <string id="st_wom_goal_social_campfire_002"><text>Hey #partner#, let's head out to #location# to catch up.</text></string>
+
+    <!-- rest / needs -->
+    <string id="st_wom_goal_rest_campfire_001"><text>Alright #partner#, let's see if we can find somewhere to rest at #location#.</text></string>
+    <string id="st_wom_goal_rest_campfire_002"><text>Hey #partner#, let's check #location# for a spot to rest up.</text></string>
+
+    <string id="st_wom_goal_sleep_campfire_001"><text>Alright #partner#, time to see if we can find a spot to sleep at #location#.</text></string>
+    <string id="st_wom_goal_sleep_campfire_002"><text>Hey #partner#, let's move to #location# to bed down.</text></string>
+
+    <string id="st_wom_goal_hunger_campfire_001"><text>Anyone else starving? Let's move out to #location# and see if we can find a spot to eat.</text></string>
+    <string id="st_wom_goal_hunger_campfire_002"><text>Alright #partner#, time for a meal break. Hope #location# has a spot for us to eat.</text></string>
+
+    <string id="st_wom_goal_heal_shelter_001"><text>Alright #partner#, let's see if we can take shelter at #location# to patch up.</text></string>
+    <string id="st_wom_goal_heal_shelter_002"><text>Hey #partner#, time to see if we can find a spot to heal up at #location#.</text></string>
+
+    <!-- shelter -->
+    <string id="st_wom_goal_shelter_indoor_001"><text>Alright #partner#, been a while since we've been indoors. Let's move out to #location# and see if we can find a spot to relax.</text></string>
+    <string id="st_wom_goal_shelter_indoor_002"><text>Hey #partner#, we're going to head to #location# and try to find a spot to take it easy.</text></string>
+
+    <string id="st_wom_goal_shelter_outdoor_001"><text>Alright #partner#, let's head to #location# and take it easy for a bit.</text></string>
+    <string id="st_wom_goal_shelter_outdoor_002"><text>Hey #partner#, let's hunker down at #location#.</text></string>
+
+    <!-- wounded -->
+    <string id="st_wom_goal_wounded_help_001"><text>Heads up #partner#, we need to move and help out the wounded at #location#.</text></string>
+    <string id="st_wom_goal_wounded_help_002"><text>OK #partner#, a fellow stalker's wounded at #location#. Let's move out and give them some aid!</text></string>
+
+    <string id="st_wom_goal_wounded_hunt_001"><text>OK #partner#, follow me. We're tracking whoever put our man on the ground near #location#.</text></string>
+    <string id="st_wom_goal_wounded_hunt_002"><text>Hey #partner#, someone's bleeding our people near #location#. Time for some payback.</text></string>
+
+    <!-- money / harvest -->
+    <string id="st_wom_goal_money_harvest_001"><text>Hey #partner#, anyone feeling lucky? Let's do some artifact hunting at #location#.</text></string>
+    <string id="st_wom_goal_money_harvest_002"><text>Alright #partner#, follow me to #location# and see if we can detect any artifacts.</text></string>
+
+    <string id="st_wom_goal_harvest_rob_001"><text>Alright #partner#, time to go shake down an artifact crew near #location#.</text></string>
+    <string id="st_wom_goal_harvest_rob_002"><text>Hey #partner#, easy money. Let's go to #location# to rob some harvesters.</text></string>
+
+    <string id="st_wom_goal_harvest_haunt_001"><text>OK #partner#, let's move. We're going to spook those artifact hunters at #location#.</text></string>
+
+    <!-- money hunt -->
+    <string id="st_wom_goal_money_hunt_001"><text>Alright #partner#, time for a little adventure. Let's see if we can find some mutants at #location#.</text></string>
+    <string id="st_wom_goal_money_hunt_002"><text>Hey #partner#, let's go mutant hunting. Follow me to #location# and stay sharp.</text></string>
+    <string id="st_wom_goal_money_hunt_003"><text>Stay sharp, #partner#. We're going hunting near #location#.</text></string>
+
+    <!-- stash fill -->
+    <string id="st_wom_goal_stash_fill_001"><text>Alright #partner#, let's move out and stow that gear in the cache we found near #location#.</text></string>
+    <string id="st_wom_goal_stash_fill_002"><text>Hey #partner#, we're squaring away a stash for later.</text></string>
+
+    <!-- roam -->
+    <string id="st_wom_goal_roam_001"><text>Alright #partner#, feeling restless. Let's head over to #location#.</text></string>
+    <string id="st_wom_goal_roam_002"><text>Hey #partner#, let's move to #location# and see what's up.</text></string>
+
+    <!-- supply -->
+    <string id="st_wom_goal_supply_trader_001"><text>Alright #partner#, time for a supply run to #location#.</text></string>
+    <string id="st_wom_goal_supply_trader_002"><text>Hey #partner#, let's move out to #location# to pick up supplies.</text></string>
+
+</string_table>

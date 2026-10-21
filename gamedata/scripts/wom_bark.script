@@ -1,0 +1,448 @@
+--- wom_bark.script
+--- Shared proximity-bark infrastructure for Word of Mouth ambient features.
+--- Provides: human-faction test, in-combat test, PDA delivery, a single shared
+--- per-NPC cooldown table, a shared PDA quiet window, and a generic
+--- nearby-stalker picker.
+---
+--- The shared cooldown table means one NPC cannot deliver barks from two systems
+--- (campfire chatter and reaction) within the same cooldown window.
+---
+--- The quiet window (is_pda_quiet) applies the same idea to the PDA itself rather
+--- than to a speaker. The stamp is written by EVERY feature's delivery, but only
+--- wom_chatter_pda tests it: idle radio traffic yields to whatever else is being
+--- reported, while the features covering events near the player are never muted.
+--- hook_external_news extends that to messages WoM did not send, so the wire yields
+--- to vanilla tips, task updates and other addons' news as well as to its own siblings.
+---
+--- Depends on: wom_utils, db, xr_sound (soft), xmath (soft),
+---             news_manager / dynamic_news_helper (soft, hook targets only),
+---             xpda (soft, hook target and preferred delivery path)
+
+-- All human factions whose NPCs may speak. Mutants are excluded by omission.
+local HUMAN_FACTIONS = {
+    stalker  = true, dolg    = true, freedom = true, bandit   = true,
+    killer   = true, army    = true, ecolog  = true, csky     = true,
+    renegade = true, greh    = true, isg     = true,
+}
+
+-- npc_id -> game_sec when that NPC last spoke; shared across all bark features.
+local _last_spoke = {}
+
+-- time_global() ms at which ANY feature last put a message on the PDA; nil until
+-- the first one is sent. See the quiet-window section below.
+local _last_message_ms = nil
+
+-- ---- faction / combat tests -------------------------------------------------
+
+-- Returns true when the given community string is a human faction.
+-- @param community string  e.g. "stalker", "dog"
+-- @return boolean
+function is_human_faction(community)
+    return HUMAN_FACTIONS[community] == true
+end
+
+-- Returns true when the object is a story/unique character -- traders, faction leaders,
+-- mechanics, medics, named quest givers -- rather than a generated Zone inhabitant.
+-- Accepts a squad ID as readily as an NPC ID: story squads carry story IDs of their own
+-- (squad_descr_bar.ltx: story_id = bar_visitors_barman_stalker_trader_squad), so testing
+-- both levels catches a unique commander in a plain squad AND a replacement nobody
+-- commanding a story squad.
+--
+-- get_object_story_id is a plain index into story_objects.story_id_by_object_id
+-- (_unpacked/scripts/_g.script:2692), which story_objects.check_spawn_ini_for_story_id
+-- fills at alife-register time from the spawn section's story_id field. Three properties
+-- matter here:
+--   • 0 luabind crossings, so this is safe inside the registry walks, where squad.id is
+--     the only free handle available and resolving a commander per squad is not affordable.
+--   • Valid for OFFLINE objects — every faction-wire speaker is offline by construction.
+--   • Fixed at spawn, never derived from bound logic. This is why it is used instead of a
+--     role or profile heuristic: the removed is_ordinary_stalker precondition read
+--     xsmart.get_npc_roles, which depends on db.storage[id].section_logic and so gave
+--     different answers in a fresh game and a settled save (wom-dialog-system skill).
+-- ALifePlus applies the same gate to its own news wire (ap_ext_news._is_speaker_npc_eligible), so the
+-- two mods agree on who counts as an ordinary inhabitant.
+--
+-- Fails open when the global is absent: reporting nobody as a story character costs one
+-- odd-sounding message, whereas failing closed would silence every speaker in the mod.
+-- @param object_id number|nil  squad, commander, or NPC server object ID
+-- @return boolean
+function is_story_character(object_id)
+    if not (object_id and get_object_story_id) then return false end
+    return get_object_story_id(object_id) ~= nil
+end
+
+-- Returns true when the NPC currently has an active enemy (is in combat).
+-- Uses the engine's best_enemy() query, which returns the current target or nil.
+-- @param npc userdata  NPC client game object (alive, online)
+-- @return boolean
+function is_in_combat(npc)
+    return npc:best_enemy() ~= nil
+end
+
+-- ---- player-faction relevance ----------------------------------------------
+
+-- Returns true when community is in scope for the player: their own faction always,
+-- plus allied factions at "allies", plus non-hostile factions at "neutral".
+-- The scopes are cumulative, widest last, so a caller can offer any prefix of them.
+-- A nil community always returns false.
+-- Shared by every news-wire feature so one MCM scope setting means the same thing
+-- everywhere. Not every caller offers every scope — wom_reaction offers only
+-- "faction"/"allies" — but the meanings are fixed here so they cannot drift apart.
+--
+-- "neutral" is tested with is_factions_neutrals rather than "not is_factions_enemies":
+-- the latter is true for a faction with no registered relation at all, which would
+-- pull in communities the player has no standing with. Neutral means a real relation
+-- strictly between ENEMIES and FRIENDS.
+-- @param community   string|nil  raw community string to test
+-- @param player_comm string|nil  get_actor_true_community()
+-- @param scope       string      "faction", "allies" or "neutral"
+-- @return boolean
+function faction_matches(community, player_comm, scope)
+    if not community then return false end
+    if community == player_comm then return true end
+    if not game_relations then return false end
+    if (scope == "allies" or scope == "neutral")
+       and game_relations.is_factions_friends
+       and game_relations.is_factions_friends(player_comm, community) == true then
+        return true
+    end
+    if scope == "neutral" and game_relations.is_factions_neutrals then
+        return game_relations.is_factions_neutrals(player_comm, community) == true
+    end
+    return false
+end
+
+-- Returns the set of human factions in scope for the player, as { [community] = true }.
+--
+-- This is faction_matches precomputed across every human faction. A caller that scans
+-- the whole squad registry (wom_chatter_pda walks SIMBOARD.squads, several hundred
+-- entries) would otherwise pay a game_relations luabind call per squad to ask a question
+-- with only eleven distinct answers. Resolve the set once per scan and the in-loop test
+-- becomes a table lookup. Callers that test a handful of communities should keep using
+-- faction_matches directly — this allocates a table.
+-- @param player_comm string|nil  get_actor_true_community()
+-- @param scope       string      "faction", "allies" or "neutral"
+-- @return table  set of community strings in scope
+function allowed_factions(player_comm, scope)
+    local allowed = {}
+    -- The player's own community is seeded unconditionally, because faction_matches
+    -- answers true for it at every scope without consulting HUMAN_FACTIONS. Iterating
+    -- that table alone is only equivalent to faction_matches while the table is complete,
+    -- and it is not: monolith is a real talking community and a playable one in GAMMA
+    -- (actor_monolith). Without the seed a Monolith player got an empty set, every
+    -- sampling pass matched nothing, and the faction wire never fired a single exchange
+    -- at any scope — indistinguishable in the trace from an ordinary empty tick.
+    if player_comm then allowed[player_comm] = true end
+    for community in pairs(HUMAN_FACTIONS) do
+        if faction_matches(community, player_comm, scope) then allowed[community] = true end
+    end
+    return allowed
+end
+
+-- Returns the generic (name, icon) pair for a faction: translated faction name and
+-- community portrait. Used as the last-resort sender when no real NPC can be resolved.
+-- @param faction string  raw community string e.g. "dolg", "stalker"
+-- @return string, string  faction display name, faction portrait texture
+function faction_display(faction)
+    local icon = news_manager and news_manager.tips_icons
+                 and news_manager.tips_icons[faction] or ""
+    local key  = "st_dyn_news_comm_" .. faction .. "_6"
+    local name = game.translate_string(key)
+    if name == key then name = faction end
+    return name, icon
+end
+
+-- ---- shared cooldown --------------------------------------------------------
+
+-- Returns true when the NPC is off cooldown and may speak.
+-- @param npc_id      number  NPC client game object id
+-- @param now_sec     number  xtime.get_game_sec() current value
+-- @param cooldown_sec number  required minimum gap in in-game seconds
+-- @return boolean
+function can_speak(npc_id, now_sec, cooldown_sec)
+    return (now_sec - (_last_spoke[npc_id] or 0)) >= cooldown_sec
+end
+
+-- Records that the NPC has spoken now.
+-- @param npc_id  number  NPC client game object id
+-- @param now_sec number  xtime.get_game_sec() current value
+function mark_spoke(npc_id, now_sec)
+    _last_spoke[npc_id] = now_sec
+end
+
+-- Clears all entries from the shared cooldown table.
+-- Call from each feature's on_game_start so stale timestamps from a prior save
+-- cannot permanently block NPCs when the player loads an earlier save (which
+-- makes now_sec smaller than stored values, keeping can_speak always false).
+function reset_cooldowns()
+    _last_spoke = {}
+end
+
+-- Removes entries whose cooldown has elapsed to keep the table bounded.
+-- @param now_sec      number  xtime.get_game_sec() current value
+-- @param cooldown_sec number  minimum gap; entries older than this are pruned
+function prune_cooldowns(now_sec, cooldown_sec)
+    for id, last in pairs(_last_spoke) do
+        if (now_sec - last) >= cooldown_sec then
+            _last_spoke[id] = nil
+        end
+    end
+end
+
+-- ---- PDA quiet window -------------------------------------------------------
+
+-- Returns true when nothing has reached the player's PDA for at least min_gap_sec
+-- REAL seconds, i.e. the PDA is quiet enough for a new message.
+--
+-- Asymmetric by design: every feature's delivery WRITES _last_message_ms (both send
+-- functions stamp it), but only wom_chatter_pda READS it. The faction wire is ambient
+-- radio chatter with no urgency, so it should yield to a campfire bark or an event
+-- reaction; the reverse is not true, and gating those on the wire would suppress
+-- reports of things happening right next to the player. Do not add callers here
+-- without a reason of that kind.
+--
+-- A caller should test this as an EARLY gate, before its scan does real work — the
+-- point is to skip the registry walks and rendering, not to discard a finished message.
+--
+-- Real seconds, not game seconds: PDA spam is something the player experiences in
+-- real time, and the neighbouring pacing sliders (campfire_interval,
+-- chatter_pda_interval) are already real seconds. time_global() also costs no
+-- luabind crossing, which matters in gates that run every few seconds.
+--
+-- min_gap_sec <= 0 disables the rule entirely (always quiet).
+--
+-- time_global() is milliseconds since level load, so it jumps backwards on a load
+-- or level change. A backwards jump is treated as "never sent" rather than left to
+-- produce a negative elapsed time, which would otherwise read as not-quiet and mute
+-- every feature until the clock caught up. The cost of the reset is that one message
+-- may land slightly early after a load.
+-- @param min_gap_sec number  required quiet period in real seconds
+-- @return boolean
+function is_pda_quiet(min_gap_sec)
+    if not min_gap_sec or min_gap_sec <= 0 then return true end
+    if not _last_message_ms then return true end
+    local now_ms = time_global()
+    if now_ms < _last_message_ms then
+        _last_message_ms = nil
+        return true
+    end
+    return (now_ms - _last_message_ms) >= (min_gap_sec * 1000)
+end
+
+-- Stamps the quiet window as of now. Called by both delivery functions, so no call
+-- site can put a message on the PDA without the faction wire seeing it — that is the
+-- whole point of stamping here rather than in the features that own the gate.
+local function _mark_message_sent()
+    _last_message_ms = time_global()
+end
+
+-- Clears the quiet window so the next message is unconditionally allowed.
+-- Called from wom_chatter_pda.on_game_start, the only reader.
+function reset_quiet_window()
+    _last_message_ms = nil
+end
+
+-- ---- external news tracking -------------------------------------------------
+
+-- The Lua funnels through which the base game and other mods put text on the player's
+-- PDA. Stamping the quiet window from WoM's own two delivery functions only ever made
+-- the wire yield to WoM itself; a vanilla tip, a task update or another addon's news
+-- channel is exactly as much of an interruption from the player's chair, so the wire
+-- should yield to those too.
+--
+-- There is no single chokepoint available from Lua: the one true funnel is the engine
+-- method game_object:give_game_news, and patching a luabind-bound C++ method for every
+-- game object to watch one of them is both fragile and global in blast radius. These
+-- are the Lua entry points every scripted PDA message in GAMMA actually passes through
+-- (dynamic_news_helper.send_tip is where the whole dynamic_news_manager channel
+-- pipeline lands, so hooking it covers every PushToChannel caller without hooking the
+-- manager itself).
+--
+-- `result` says how to read the original's return value, because these functions do not
+-- agree on one convention and a bail must not be stamped:
+--   "truthy"    returns true when it displayed something, false/nil when it bailed
+--               (news_manager.send_tip bails on a wounded or dead sender;
+--               send_sound bails when the line has no translation).
+--   "not_false" returns nothing on success and false on a bail, so anything other than
+--               an explicit false counts as delivered.
+-- The "not_false" group also routes to give_talk_message2 instead of the news feed while
+-- the actor is in dialogue, which is not a PDA message at all — hence the is_talking test.
+local EXTERNAL_NEWS_FUNNELS = {
+    { module = "news_manager",        result = "truthy",    functions = { "send_tip", "send_sound" } },
+    { module = "news_manager",        result = "not_false", functions = { "send_task", "send_treasure",
+                                                                         "relocate_item", "relocate_money" } },
+    { module = "dynamic_news_helper", result = "truthy",    functions = { "send_tip" } },
+    { module = "xpda",                result = "truthy",    functions = { "publish_news", "show_npc_tip" } },
+}
+
+-- True once the funnels have been wrapped, so a second on_game_start (every save load
+-- runs one) cannot nest a wrapper inside the previous session's wrapper and grow a
+-- chain one layer deeper per load.
+local _external_hooked = false
+
+-- The game runs Lua 5.1, where unpack is a global; the test harness may run on a newer
+-- interpreter, where it moved to table.unpack. Resolve it once either way.
+local _unpack = unpack or table.unpack
+
+-- Returns a replacement for one funnel function: calls the original, then stamps the
+-- quiet window when the return value says a message really reached the news feed.
+-- The original's return values are passed through unchanged — these are engine-facing
+-- vanilla functions with real callers, and swallowing a `false` would change behaviour
+-- for every mod on the funnel.
+-- @param original function  the funnel function being wrapped
+-- @param result   string    "truthy" or "not_false"; see EXTERNAL_NEWS_FUNNELS
+-- @return function
+local function _wrap_news_funnel(original, result)
+    return function(...)
+        local returned = { original(...) }
+        local delivered
+        if result == "not_false" then
+            delivered = returned[1] ~= false
+                        and db.actor ~= nil and not db.actor:is_talking()
+        else
+            delivered = returned[1] and true or false
+        end
+        if delivered then _mark_message_sent() end
+        return _unpack(returned)
+    end
+end
+
+-- Wraps every available external news funnel so any PDA message, from any mod or from
+-- the base game, closes the quiet window that wom_chatter_pda gates on.
+-- Idempotent, and safe when a funnel module is absent (each is looked up by name and
+-- skipped if it or the function is missing).
+-- Call from wom_chatter_pda.on_game_start — the wire is the only reader of the window,
+-- so there is nothing to track when it is not running.
+function hook_external_news()
+    if _external_hooked then return end
+    _external_hooked = true
+    for _, funnel in ipairs(EXTERNAL_NEWS_FUNNELS) do
+        local module_table = _G[funnel.module]
+        if type(module_table) == "table" then
+            for _, name in ipairs(funnel.functions) do
+                local original = module_table[name]
+                if type(original) == "function" then
+                    module_table[name] = _wrap_news_funnel(original, funnel.result)
+                end
+            end
+        end
+    end
+end
+
+-- ---- NPC picker -------------------------------------------------------------
+
+-- Squared ground-plane (XZ) distance between two world positions, ignoring
+-- height. Falls back to the engine's 3D squared distance when xlibs is absent.
+-- @param from userdata  world-space vector
+-- @param to   userdata  world-space vector
+-- @return number  squared distance
+local function _range_sqr(from, to)
+    if xmath and xmath.get_flat_dist then return xmath.get_flat_dist(from, to) end
+    return from:distance_to_sqr(to)
+end
+
+-- Shuffles db.OnlineStalkers (Fisher-Yates) and returns the first NPC that passes
+-- all eligibility checks:
+--   • alive and not a destroyed/stale object (wom_utils.get_live_online_npc)
+--   • human faction (character_community in HUMAN_FACTIONS)
+--   • not a story character (is_story_character on the ID, free)
+--   • in range (or dev mode)
+--   • off the shared cooldown
+--   • passes opts.filter_fn when provided
+-- Returns nil when no eligible NPC is found.
+--
+-- Range is measured on the ground plane (xmath.get_flat_dist), not in 3D: these
+-- are earshot checks, and a stalker one floor up a stairwell or on a gantry is
+-- as audible as one the same distance away on the flat. A 3D measure pushes
+-- them out of range on vertical maps (Agroprom underground, the Jupiter plant).
+-- Falls back to the 3D measure when xlibs is absent.
+-- opts fields:
+--   range_sqr  number    squared detection radius (ground-plane comparison)
+--   dev        boolean   when true, the range gate is removed
+--   now_sec    number    current xtime.get_game_sec() value
+--   cooldown_sec number  shared cooldown constant in in-game seconds
+--   filter_fn  function|nil  optional (npc) -> boolean extra filter
+-- @param actor   userdata  db.actor
+-- @param opts    table
+-- @return userdata|nil
+function pick_nearby_stalker(actor, opts)
+    local online    = db.OnlineStalkers
+    local actor_pos = actor:position()
+    local indices   = {}
+    for i = 1, #online do indices[i] = i end
+    for i = #indices, 2, -1 do
+        local j = math.random(i)
+        indices[i], indices[j] = indices[j], indices[i]
+    end
+    for _, i in ipairs(indices) do
+        local id  = online[i]
+        local npc = wom_utils.get_live_online_npc(id)
+        if npc and HUMAN_FACTIONS[npc:character_community()] and not is_story_character(id) then
+            local in_range = opts.dev or (_range_sqr(actor_pos, npc:position()) <= opts.range_sqr)
+            if in_range and can_speak(id, opts.now_sec, opts.cooldown_sec) then
+                if not opts.filter_fn or opts.filter_fn(npc) then
+                    return npc
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- ---- PDA delivery -----------------------------------------------------------
+
+-- Puts one line on the actor's PDA news feed. Caller has already checked db.actor.
+--
+-- Prefers xpda.publish_news (xlibs 1.9.1+) because it stamps xpda's shared last-news
+-- clock, which ALifePlus 1.8.9+ reads (ap_ext_news.is_feed_busy) to hold its own
+-- reports and overheard chatter back for a few seconds after any PDA line. Calling
+-- give_game_news directly is invisible to that clock, so an ALifePlus report could
+-- land on top of a WoM bark. publish_news shows a line for 7 s rather than 8 s.
+-- @param name   string  sender caption
+-- @param styled string  message text, colour codes already applied
+-- @param icon   string  sender portrait texture
+local function _give_news(name, styled, icon)
+    if xpda and xpda.publish_news then
+        xpda.publish_news(name, styled, icon)
+    else
+        db.actor:give_game_news(name, styled, icon, 0, 8000)
+    end
+end
+
+-- Delivers a styled PDA message attributed to the given NPC, plays a 3D hello
+-- bark, and emits a console log line tagged with log_tag.
+-- Message is wrapped in amber quotes to match the campfire/chatter visual style.
+-- Use this for proximity barks from a nearby online NPC (campfire, chatter).
+-- @param npc     userdata  NPC client game object (alive, online)
+-- @param message string    rendered sentence to deliver
+-- @param log_tag string    module name for printf (e.g. "wom_campfire")
+function send_pda(npc, message, log_tag)
+    local name   = npc:character_name() or "Stalker"
+    local icon   = npc:character_icon()
+    local styled = '%c[255,220,190,100]"' .. message .. '"%c[default]'
+    wom_utils.play_hello_bark(npc)
+    if db.actor then
+        _give_news(name, styled, icon)
+        if xr_sound then xr_sound.set_sound_play(db.actor:id(), "pda_beep_1") end
+        _mark_message_sent()
+    end
+    if printf then printf("~[%s] [%s] %s", log_tag, name, message) end
+end
+
+-- Delivers an unquoted news-wire PDA message using explicit name and icon strings.
+-- No hello bark is played (sender may be remote/offline). Styled in the default
+-- (white) PDA text color, unquoted, to distinguish from proximity campfire/chatter barks.
+-- Use this for faction news-wire delivery where the sender is an offline member.
+-- @param name    string  sender display name (from se_obj:character_name() or faction fallback)
+-- @param icon    string  sender portrait texture (from se_obj:character_icon() or tips_icons)
+-- @param message string  rendered sentence to deliver
+-- @param log_tag string  module name for printf (e.g. "wom_reaction")
+function send_news_pda(name, icon, message, log_tag)
+    local styled = "%c[default]" .. message .. "%c[default]"
+    if db.actor then
+        _give_news(name, styled, icon or "")
+        if xr_sound then xr_sound.set_sound_play(db.actor:id(), "pda_beep_1") end
+        _mark_message_sent()
+    end
+    if printf then printf("~[%s] [%s] %s", log_tag, name, message) end
+end

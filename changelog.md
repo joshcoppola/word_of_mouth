@@ -1,3 +1,6 @@
+1.5.2
+* Update for compatibility with xlibs 1.9.1
+
 1.5.1
 * Increase default values for faction PDA chatter to make them much less frequent
 * Increase max values for PDA chatter interval and the required quiet period so they can be adjusted to be even less frequent

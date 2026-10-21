@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+    <!-- Campfire ambient chatter templates for wom_campfire.script (needs path).
+         Delivered as overheard PDA messages from nearby resting NPCs.
+         Template keys: st_wom_campfire_need_{need}_{heavy|good}_{NNN}
+           heavy = need is 1.8x+ overdue (NPC is seriously lacking)
+           good  = need was very recently satisfied (ratio < 0.5x threshold)
+         No slots. Each line must stand alone as a complete sentence.
+         Needs: hunger, social, sleep, rest, supply, money -->
+
+    <!-- ===== HUNGER ===== -->
+    <!-- heavy: seriously hungry -->
+    <string id="st_wom_campfire_need_hunger_heavy_001"><text>Man, I'm starving. Haven't had a proper meal in ages.</text></string>
+    <string id="st_wom_campfire_need_hunger_heavy_002"><text>I could eat a whole boar right now, I swear.</text></string>
+    <string id="st_wom_campfire_need_hunger_heavy_003"><text>I'm so hungry right now I could settle for some snork meat.</text></string>
+    <string id="st_wom_campfire_need_hunger_heavy_004"><text>Ugh, I'm starving.</text></string>
+
+    <!-- good: recently well-fed -->
+    <string id="st_wom_campfire_need_hunger_good_001"><text>Finally ate something decent. Feeling a lot better.</text></string>
+    <string id="st_wom_campfire_need_hunger_good_002"><text>Belly's full for once. Life's not so bad.</text></string>
+
+    <!-- ===== SLEEP ===== -->
+    <!-- heavy: badly sleep-deprived -->
+    <string id="st_wom_campfire_need_sleep_heavy_001"><text>Can barely keep my eyes open. Need to sleep badly.</text></string>
+    <string id="st_wom_campfire_need_sleep_heavy_002"><text>Running on fumes here. Can't wait to get some shut-eye.</text></string>
+    <string id="st_wom_campfire_need_sleep_heavy_003"><text>Too tired to think straight.</text></string>
+
+    <!-- good: recently well-rested -->
+    <string id="st_wom_campfire_need_sleep_good_001"><text>Finally feeling rested up.</text></string>
+    <string id="st_wom_campfire_need_sleep_good_002"><text>Slept well for once.</text></string>
+    <string id="st_wom_campfire_need_sleep_good_003"><text>Slept like a rock. Didn't think that was possible out here.</text></string>
+
+    <!-- ===== REST ===== -->
+    <!-- heavy: exhausted, needs to stop -->
+    <string id="st_wom_campfire_need_rest_heavy_001"><text>Really just need a good breather.</text></string>
+    <string id="st_wom_campfire_need_rest_heavy_002"><text>I've been going nonstop, need to chill for a bit.</text></string>
+    <string id="st_wom_campfire_need_rest_heavy_003"><text>Everything aches. Hope I don't need to go anywhere for a while.</text></string>
+
+    <!-- good: recently rested up -->
+    <string id="st_wom_campfire_need_rest_good_001"><text>Took a breather finally. Muscles don't hate me anymore.</text></string>
+    <string id="st_wom_campfire_need_rest_good_002"><text>Glad we stopped when we did. Feeling a lot more like myself.</text></string>
+    <string id="st_wom_campfire_need_rest_good_003"><text>Good to just sit around for a bit. Almost forgot what that felt like.</text></string>
+
+    <!-- ===== SOCIAL ===== -->
+    <!-- heavy: isolated, hasn't talked to anyone -->
+    <string id="st_wom_campfire_need_social_heavy_001"><text>Starting to talk to myself out there.</text></string>
+    <string id="st_wom_campfire_need_social_heavy_002"><text>Been alone with my thoughts too long. Zone messes with your head when it's quiet.</text></string>
+    <string id="st_wom_campfire_need_social_heavy_003"><text>It's been too long since I've had a real conversation. Almost forgot how.</text></string>
+
+    <!-- good: recently socialized -->
+    <string id="st_wom_campfire_need_social_good_001"><text>No longer feeling so alone.</text></string>
+    <string id="st_wom_campfire_need_social_good_002"><text>Feels good to take it easy and shoot the breeze for once.</text></string>
+    <string id="st_wom_campfire_need_social_good_003"><text>Actually had some good conversation lately.</text></string>
+
+    <!-- ===== SUPPLY ===== -->
+    <!-- heavy: critically low on supplies -->
+    <string id="st_wom_campfire_need_supply_heavy_001"><text>Running low on everything. Hope I can scrounge some supplies soon.</text></string>
+    <string id="st_wom_campfire_need_supply_heavy_002"><text>Down to scraps. Can't keep operating like this.</text></string>
+    <string id="st_wom_campfire_need_supply_heavy_003"><text>Gonna need to pick up some supplies soon.</text></string>
+
+    <!-- good: recently restocked -->
+    <string id="st_wom_campfire_need_supply_good_001"><text>Finally topped off my gear. Nice to have a full kit again.</text></string>
+    <string id="st_wom_campfire_need_supply_good_002"><text>Got resupplied. Feels good not to be counting bullets for once.</text></string>
+    <string id="st_wom_campfire_need_supply_good_003"><text>Stocked up properly. Should be set for a while now.</text></string>
+
+    <!-- ===== MONEY ===== -->
+    <!-- heavy: badly broke -->
+    <string id="st_wom_campfire_need_money_heavy_001"><text>Completely broke. Need to find a job or start scavenging something.</text></string>
+    <string id="st_wom_campfire_need_money_heavy_002"><text>Pockets are empty. Gotta find some cash soon.</text></string>
+    <string id="st_wom_campfire_need_money_heavy_003"><text>Been a long time since I've seen any rubles.</text></string>
+
+    <!-- good: recently earned -->
+    <string id="st_wom_campfire_need_money_good_001"><text>Can finally breathe easy after coming into some cash.</text></string>
+    <string id="st_wom_campfire_need_money_good_002"><text>Finally got some rubles. Things aren't so bad when you're not completely broke.</text></string>
+    <string id="st_wom_campfire_need_money_good_003"><text>Sitting pretty for once. Now let's see how long it lasts.</text></string>
+
+</string_table>

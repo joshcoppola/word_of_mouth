@@ -1,0 +1,560 @@
+--- wom_chatter.script
+--- Goal announce: when a nearby squad changes its ALifePlus assigned goal, a PDA
+--- message is sent to the player attributed to the in-range trigger NPC (the squad
+--- member the player physically heard), accompanied by a 3D hello bark.
+---
+--- Scans db.OnlineStalkers every POLL_INTERVAL real seconds in two passes. The split
+--- exists to keep the per-NPC cost at zero or one luabind crossing and to push every
+--- expensive call onto the handful of squads that survive the free gates:
+---   Pass 1 — turns online NPC ids into the set of online SQUADS, reading only
+---             se_obj.group_id (a plain field) and answering from _squad_of_npc on a
+---             cache hit. No client objects, no positions, no per-NPC range test.
+---   Pass 2 — per squad: server object, faction, count, commander, then the earshot
+---             test against the COMMANDER's own fresh position, then the AP assigned
+---             record for a goal change. The client game object is resolved last, only
+---             for a squad that is actually about to speak. get_scripted_squads() is
+---             fetched once per scan and reused by _compose_message to resolve the
+---             destination smart terrain.
+--- Squads not in get_scripted_squads() are NOT skipped — see the TODO at the pass 2
+--- call site; that gate was disabled because chatter rarely fired with it on.
+--- Human factions only; squads of 2+ members only; speaker is always the squad leader.
+--- In dev mode (wom_mcm.dev_mode()), range gate is removed — all online stalkers
+--- are eligible regardless of distance.
+--- _last_goal is in-memory only; squads are silently re-baselined after a session
+--- reload or after leaving range.
+---
+--- Template keys (in st_wom_chatter.xml):
+---   st_wom_goal_{goal}_{faction}       -- most specific
+---   st_wom_goal_{goal}                 -- goal-level fallback
+---   st_wom_goal_{goal_base}_{faction}  -- on-map variant with faction (strips _offmap)
+---   st_wom_goal_{goal_base}            -- on-map variant fallback
+---   st_wom_goal_generic                -- catch-all
+--- Slots: #location# (target smart terrain name, gated — variants that reference it
+---        are filtered out when no location is known).
+---
+--- Depends on: ap_api (soft), xpda (soft), wom_bark, wom_mcm, wom_terminology_helper,
+---             wom_dialogue_helper, db
+
+local POLL_INTERVAL = 5  -- real seconds between scans
+
+local TIMER_ID = "wom_chatter"
+local TIMER_EV = "scan"
+
+-- squad_id -> cons_id we last announced for that squad; in-memory only, not persisted.
+local _last_goal = {}
+
+-- The engine's "this object is in no squad" sentinel for se_obj.group_id.
+local NO_SQUAD_ID = 65535
+
+-- npc_id -> { squad_id = number|false, checked_at = ms, ttl = ms }
+-- Squad membership changes rarely, so re-deriving it for every online stalker on every
+-- 5-second tick was pure waste: it was the single luabind crossing that dominated the
+-- scan. Entries expire on a jittered TTL rather than living forever, and `false` is
+-- cached as hard as a real id (an NPC in no squad is looked up just as often).
+--
+-- Staleness here is benign by construction, which is why a TTL is enough and no death
+-- or squad-change hook is needed. A stale entry can only (a) attribute a member to a
+-- squad they have left, costing a wrong partner name or three wasted crossings on a
+-- squad that turns out not to be in earshot, or (b) miss a squad for up to one TTL,
+-- costing one unannounced goal change. It can never put words in the wrong mouth: the
+-- speaker is always re-resolved from the squad's own commander_id in pass 2, and their
+-- position is always read fresh. That is also why the cache holds membership ONLY and
+-- never a position — the earshot test must not run on stale coordinates.
+local _squad_of_npc = {}
+
+local MEMBERSHIP_TTL_MS    = 60000  -- real ms before a cached membership is re-derived
+local MEMBERSHIP_JITTER_MS = 15000  -- spread re-derivation so entries don't all expire together
+
+-- ---- performance instrumentation --------------------------------------------
+--
+-- Console readout of how long each poll takes, gated on wom_mcm.dev_mode(). Everything
+-- here is behind _perf_enabled, which is read once per poll, so a normal session pays a
+-- single boolean test per tick and nothing else — no timer object, no counters.
+--
+-- READ THE NUMBERS WITH CARE: dev mode also disables the range gate (see _process_squad),
+-- so a poll measured under it is NOT a typical poll. Every squad in the simulation with an
+-- online commander clears the earshot test and goes on to the record lookup, while the
+-- commander-position crossing is skipped entirely. The result is a worst-case upper bound
+-- on the scan, not what the scan costs in play — which is why the printed line says so
+-- rather than leaving the reader to remember it.
+
+local _perf_enabled  = false
+local _perf_polls    = 0
+local _perf_total_ms = 0
+local _perf_max_ms   = 0
+
+-- Per-poll counters. membership_miss is the interesting one: it is how often the
+-- _squad_of_npc cache had to pay a crossing, so it should sit near zero on a warm cache
+-- and spike only on the first poll after a load or a TTL expiry.
+--
+-- `passed` counts squads that cleared every gate and reached the record lookup. It is
+-- deliberately NOT called in_range: the readout only ever appears under dev mode, which is
+-- exactly the mode that disables the range gate, so an "in_range" label would be wrong in
+-- 100% of the cases anyone reads it.
+local _perf_counts = { online = 0, squads = 0, membership_miss = 0, passed = 0 }
+
+-- Zeroes the per-poll counters. No-op when instrumentation is off.
+local function _perf_reset()
+    if not _perf_enabled then return end
+    _perf_counts.online, _perf_counts.squads = 0, 0
+    _perf_counts.membership_miss, _perf_counts.passed = 0, 0
+end
+
+-- Adds to one per-poll counter. No-op when instrumentation is off.
+-- @param field string  key in _perf_counts
+-- @param count number|nil  defaults to 1
+local function _perf_add(field, count)
+    if not _perf_enabled then return end
+    _perf_counts[field] = _perf_counts[field] + (count or 1)
+end
+
+-- Starts a timer and returns a function yielding elapsed milliseconds, or nil when no
+-- clock is available. Prefers xprofiler (engine profile_timer, microsecond precision):
+-- time_global is whole milliseconds, and a poll that costs 0.4 ms reads as 0, which is
+-- exactly the range this scan lives in. The time_global path is a coarse fallback so the
+-- readout still works if xlibs is missing rather than silently reporting nothing.
+-- @return function|nil  call to get elapsed ms (number)
+local function _start_timer()
+    if xprofiler and xprofiler.new then
+        local timer = xprofiler.new():start()
+        return function()
+            timer:stop()
+            return timer:get_ms()
+        end
+    end
+    if time_global then
+        local began = time_global()
+        return function() return time_global() - began end
+    end
+    return nil
+end
+
+-- Prints one poll's timing plus a running average and worst case to the console.
+-- printf rather than wom_debug.log_trace deliberately, against the usual preference in
+-- CLAUDE.md: this is a live readout meant to be watched in the console while playing, not
+-- a trace to be grepped out of a file afterwards.
+--
+-- The line is built with string.format and handed to printf as ONE already-formatted
+-- argument. Anomaly's printf is not string.format: it substitutes only %s, via a
+-- gsub on "%%s" (_g.script:629), and passes %d / %.3f through as literal text — which is
+-- exactly what shipped here, printing the raw format string to the console. Passing no
+-- varargs also skips that gsub entirely (select('#',...) == 0), so a % surviving in the
+-- built string cannot be mangled either.
+-- @param elapsed_ms number
+local function _perf_report(elapsed_ms)
+    _perf_polls    = _perf_polls + 1
+    _perf_total_ms = _perf_total_ms + elapsed_ms
+    if elapsed_ms > _perf_max_ms then _perf_max_ms = elapsed_ms end
+    if not printf then return end
+    printf(string.format(
+        "~[wom_chatter] poll %.3fms | online=%d squads=%d membership_miss=%d passed=%d | avg %.3fms max %.3fms over %d polls | dev mode: range gate OFF, timing is worst case",
+        elapsed_ms,
+        _perf_counts.online, _perf_counts.squads,
+        _perf_counts.membership_miss, _perf_counts.passed,
+        _perf_total_ms / _perf_polls, _perf_max_ms, _perf_polls))
+end
+
+-- ---- helpers ----------------------------------------------------------------
+
+-- Returns the current real-time clock in ms, or nil when unavailable.
+-- @return number|nil
+local function _now_ms()
+    return time_global and time_global() or nil
+end
+
+-- Squared 3D distance between two positions, computed from the .x/.y/.z fields rather
+-- than through vector:distance_to_sqr. Server-object positions and client-object
+-- positions are different userdata types that do not agree on which methods they expose,
+-- but both carry the three fields (this is the same reasoning wom_territory uses for its
+-- proximity step). Kept at 3D deliberately: wom_bark measures earshot on the ground plane
+-- and this module does not, which is a real inconsistency, but changing it is a
+-- behavioural decision that belongs in its own change rather than riding along here.
+-- @param from table|userdata  position with x/y/z
+-- @param to   table|userdata  position with x/y/z
+-- @return number|nil  squared distance, or nil when either position is unusable
+local function _distance_sqr(from, to)
+    if not (from and to) then return nil end
+    local fx, fy, fz = from.x, from.y, from.z
+    local tx, ty, tz = to.x, to.y, to.z
+    if not (fx and fy and fz and tx and ty and tz) then return nil end
+    local dx, dy, dz = fx - tx, fy - ty, fz - tz
+    return dx * dx + dy * dy + dz * dz
+end
+
+-- Returns the squad id for an online NPC id, false when they are in no squad, or nil
+-- when the server object could not be resolved. Answers from _squad_of_npc when the
+-- cached entry is still live; otherwise pays one sim:object crossing and re-caches.
+--
+-- A backwards time_global jump (level change, save load) expires the entry rather than
+-- pinning it until the clock catches up — the same asymmetry wom_bark applies to the PDA
+-- quiet window, and for the same reason: the safe failure is doing the work again.
+-- @param sim userdata  alife() simulation board
+-- @param id  number    NPC game object id
+-- @param now number|nil  time_global() in ms, or nil when the clock is unavailable
+-- @return number|false|nil
+local function _squad_id_of(sim, id, now)
+    local entry = _squad_of_npc[id]
+    if entry and now and now >= entry.checked_at and (now - entry.checked_at) < entry.ttl then
+        return entry.squad_id
+    end
+
+    _perf_add("membership_miss")
+    local server_object = sim and sim:object(id)
+    if not server_object then
+        -- Unresolvable: drop any cached entry rather than serving it past its TTL, and
+        -- do not cache the failure — the object may simply be mid-transition.
+        _squad_of_npc[id] = nil
+        return nil
+    end
+
+    local group_id = server_object.group_id
+    local squad_id = (group_id and group_id ~= NO_SQUAD_ID) and group_id or false
+
+    if now then
+        _squad_of_npc[id] = {
+            squad_id   = squad_id,
+            checked_at = now,
+            ttl        = MEMBERSHIP_TTL_MS + math.random(0, MEMBERSHIP_JITTER_MS),
+        }
+    end
+    return squad_id
+end
+
+-- ---- message composition ----------------------------------------------------
+
+-- Builds the PDA message text for a goal change.
+-- Resolves the target location from the cached scripted-squad table or the record's smart_id.
+-- Template cascade: goal+faction, goal, base_goal+faction, base_goal, generic.
+-- Off-map variants (e.g. job_explore_offmap) strip the _offmap suffix and fall back to
+-- the on-map pool (job_explore) before hitting generic.
+-- Variants referencing #location# when no location is known are filtered out by
+-- pick_dialogue_variant's gated_tokens.
+-- Returns nil when no template matches.
+-- @param record          table       AP assigned record (has consequence_key, smart_id)
+-- @param squad_id        number      squad server object id
+-- @param faction         string      squad's community key (player_id)
+-- @param scripted_squads table|nil   cached result of ap_api.get_scripted_squads()
+-- @param partner         string      squadmate name (squad of 2) or generic term ("team" for 3+)
+-- @return string|nil
+local function _compose_message(record, squad_id, faction, scripted_squads, partner)
+    local goal = record.consequence_key and record.consequence_key:match("^consequence:(.+)")
+    if not goal then return nil end
+
+    local squad_entry = scripted_squads and scripted_squads[squad_id]
+    local dest_id     = (squad_entry and squad_entry.target_smart_id) or record.smart_id
+
+    local location = dest_id and wom_terminology_helper.get_location_name(dest_id) or ""
+    local slots    = { location = location, partner = partner }
+
+    -- Strip _offmap suffix so off-map variants (job_explore_offmap, supply_trader_offmap,
+    -- social_offmap) fall back to their on-map template pool before hitting the generic catch-all.
+    local goal_base = goal:match("^(.-)_offmap$") or goal
+
+    -- Non-public goals fall back to the generic pool so the squad announces
+    -- movement without revealing why — the goal itself stays secret.
+    local prefixes
+    if wom_mcm.get_goal_visibility(goal) ~= "public" then
+        prefixes = { "st_wom_goal_generic" }
+    else
+        prefixes = {
+            "st_wom_goal_" .. goal        .. "_" .. faction,
+            "st_wom_goal_" .. goal,
+            "st_wom_goal_" .. goal_base   .. "_" .. faction,
+            "st_wom_goal_" .. goal_base,
+            "st_wom_goal_generic",
+        }
+    end
+    for i = 1, #prefixes do
+        local result = wom_dialogue_helper.pick_dialogue_variant(prefixes[i], slots, { "location" })
+        if result ~= "" then return result end
+    end
+    return nil
+end
+
+-- ---- scan loop --------------------------------------------------------------
+
+-- Maps the online NPC ids to the set of squads that have at least one online member.
+--
+-- Deliberately resolves NO client objects. The previous version called
+-- wom_utils.get_live_online_npc for every entry in db.OnlineStalkers — three crossings
+-- and a pcall apiece — purely to hold an object that pass 2 discarded for all but one
+-- squad. Liveness is not tested here either: an id in db.OnlineStalkers whose object is
+-- already destroyed simply contributes a member id that pass 2 never dereferences, and
+-- the one object this scan does touch (the speaker) goes through get_live_online_npc at
+-- the point of use, which is the only place the stale-object hazard is real.
+-- @param sim     userdata     alife() simulation board
+-- @param online  table        db.OnlineStalkers
+-- @param now     number|nil   time_global() in ms
+-- @return table  squad_id -> array of online member npc ids
+local function _group_online_squads(sim, online, now)
+    local online_squads = {}
+    for i = 1, #online do
+        local id       = online[i]
+        local squad_id = _squad_id_of(sim, id, now)
+        if squad_id then
+            local members = online_squads[squad_id]
+            if not members then
+                members = {}
+                online_squads[squad_id] = members
+            end
+            members[#members + 1] = id
+        end
+    end
+    return online_squads
+end
+
+-- Returns true when npc_id appears in the squad's online member list.
+-- @param members table   array of online member npc ids
+-- @param npc_id  number
+-- @return boolean
+local function _is_online_member(members, npc_id)
+    if not npc_id then return false end
+    for i = 1, #members do
+        if members[i] == npc_id then return true end
+    end
+    return false
+end
+
+-- Returns the first name of the other squad member (squad of 2), or the localised
+-- fallback "partner" (solo pair) / "team" (3+ members).
+-- Reads the name off the SERVER object via wom_dialogue_helper.get_npc_first_name rather
+-- than a client object, so pass 1 no longer has to hold one for every online NPC just in
+-- case this is reached. Only called for a squad that is about to speak.
+-- @param members      table   array of online member npc ids for this squad
+-- @param commander_id number  the commander's NPC id
+-- @param count        number  squad size
+-- @return string
+local function _resolve_partner(members, commander_id, count)
+    if count ~= 2 then return game.translate_string("st_wom_partner_group") end
+    for i = 1, #members do
+        local member_id = members[i]
+        if member_id ~= commander_id then
+            -- get_npc_first_name returns the literal "them" when the server object or its
+            -- name cannot be resolved; that is the same condition the old client-object
+            -- path treated as "no usable name", so it maps to the same fallback.
+            local member_name = wom_dialogue_helper.get_npc_first_name(member_id)
+            if member_name and member_name ~= "" and member_name ~= "them" then
+                return member_name
+            end
+            return game.translate_string("st_wom_partner_solo")
+        end
+    end
+    return game.translate_string("st_wom_partner_solo")
+end
+
+-- Returns true when the squad leader is attached to the same smart terrain as the
+-- goal destination, meaning the goal is internal to where they already live.
+-- A nil destination or an unattached leader both return false (announce).
+-- @param speaker         userdata    commander client game object
+-- @param record          table       AP assigned record
+-- @param squad_id        number      squad server object id
+-- @param scripted_squads table|nil   cached ap_api.get_scripted_squads()
+-- @return boolean
+local function _is_same_terrain_goal(speaker, record, squad_id, scripted_squads)
+    local leader_smart = wom_npc_role.current_smart(speaker)
+    if not leader_smart then return false end
+    local squad_entry = scripted_squads and scripted_squads[squad_id]
+    local dest_id     = (squad_entry and squad_entry.target_smart_id) or record.smart_id
+    return dest_id ~= nil and leader_smart.id == dest_id
+end
+
+-- Sends a PDA goal-change message for speaker.
+-- @param speaker  userdata  commander client game object
+-- @param message  string    composed message text
+local function _send_chatter_message(speaker, message)
+    wom_bark.send_pda(speaker, message, "wom_chatter")
+    local now_sec = xtime and xtime.get_game_sec and xtime.get_game_sec() or 0
+    wom_bark.mark_spoke(speaker:id(), now_sec)
+end
+
+-- Checks one squad for a goal change and fires the PDA message if warranted.
+-- Updates _last_goal as a side effect (always, even when suppressed or first-sight).
+--
+-- Gates run cheapest-first and the ordering is the point: a plain field read
+-- (squad.player_id), then two luabind calls on the squad, then one crossing for the
+-- commander's position, then a free O(1) Lua lookup for the AP record — and only a squad
+-- that has passed ALL of that pays for a client game object. In a normal tick every squad
+-- exits at the goal-change test, so get_live_online_npc is called zero times.
+-- @param squad_id        number   squad server object id
+-- @param members         table    array of online member npc ids
+-- @param sim             userdata alife() board
+-- @param actor_pos       vector   actor world position
+-- @param dev             boolean  dev mode flag (removes range gate)
+-- @param r_sqr           number   squared range limit
+-- @param scripted_squads table|nil cached ap_api.get_scripted_squads()
+-- @param seen            table    set of squad_ids in range this pass (mutated)
+local function _process_squad(squad_id, members, sim, actor_pos, dev, r_sqr, scripted_squads, seen)
+    local squad   = sim:object(squad_id)
+    local faction = squad and squad.player_id
+    if not (faction and wom_bark.is_human_faction(faction)) then return end
+    -- Story squads never bark. Placed with the free field reads, ahead of the first luabind
+    -- call: squad_id is already in hand, so this costs one table index. The commander half of
+    -- the gate waits until commander_id is resolved below.
+    if wom_bark.is_story_character(squad_id) then return end
+    -- Only announce goals when 2+ members in squad; prevents NPCs from talking to themselves
+    local count = squad.npc_count and squad:npc_count() or 0
+    if count < 2 then return end
+
+    -- The speaker is always the commander, so the commander is who has to be within
+    -- earshot — not merely some member of the squad.
+    local commander_id = squad.commander_id and squad:commander_id()
+    if not _is_online_member(members, commander_id) then return end
+    if wom_bark.is_story_character(commander_id) then return end
+
+    -- Range gate on the commander's own position, read fresh from the server object every
+    -- tick (never cached — see _squad_of_npc). ALifePlus reads server positions for an
+    -- 8-metre campfire-seat test on online members (ap_core_broker._is_member_off_campfire), so they
+    -- are ample for an earshot radius measured in tens of metres.
+    if not dev then
+        local commander_se = sim:object(commander_id)
+        local distance_sqr = commander_se and _distance_sqr(actor_pos, commander_se.position)
+        -- An unresolvable position fails closed: silence beats a bark from someone the
+        -- player cannot possibly hear.
+        if not (distance_sqr and distance_sqr <= r_sqr) then return end
+    end
+
+    seen[squad_id] = true
+
+    local record = ap_api.get_record({ squad_id = squad_id, assigned = true })
+    if not (record and record.cons_id) then return end
+
+    local previous = _last_goal[squad_id]
+    if record.cons_id == previous then return end
+
+    if previous == nil then
+        -- First sight: baseline only, no announce. Recorded without needing a speaker.
+        _last_goal[squad_id] = record.cons_id
+        return
+    end
+
+    -- Everything above is free or nearly so; only now is a client object worth resolving.
+    -- get_live_online_npc is the only sanctioned way to do it: db.OnlineStalkers can name
+    -- an object the engine has already destroyed, and any method call on one raises.
+    --
+    -- This sits BEFORE the _last_goal write on purpose. Writing first would consume the
+    -- change even when no speaker could be resolved — the next tick would then compare
+    -- equal and the announcement would be lost for good. Returning without writing means
+    -- a commander who is momentarily dead, destroyed, or mid-transition costs one retry
+    -- per tick and the line still lands once they are live again. (Pass 1 no longer
+    -- filters on liveness, so this is the only place that condition is caught.)
+    local speaker = wom_utils.get_live_online_npc(commander_id)
+    if not speaker then return end
+
+    _last_goal[squad_id] = record.cons_id
+
+    -- Suppress when the leader is attached to the same smart terrain as the goal
+    -- destination (an internal reassignment they wouldn't bother mentioning).
+    if _is_same_terrain_goal(speaker, record, squad_id, scripted_squads) then return end
+
+    local partner = _resolve_partner(members, commander_id, count)
+    local message = _compose_message(record, squad_id, faction, scripted_squads, partner)
+    if message then _send_chatter_message(speaker, message) end
+end
+
+-- Polls all online stalkers for ALifePlus goal changes and fires a proximity
+-- bark for any squad whose assigned goal has changed since the last poll.
+-- Called every POLL_INTERVAL real seconds via CreateTimeEvent (_on_timer).
+-- No parameters; no return value — all side effects are PDA bark messages and
+-- updates to _last_goal and _squad_of_npc. (Per-NPC bark cooldowns live in wom_bark,
+-- not here; this docstring named a local _npc_last_bark that no longer exists.)
+local function _poll_goal_changes()
+    if not wom_mcm.chatter_enabled() then return end
+    if not (ap_api and ap_api.get_record) then return end
+    local actor = db.actor
+    if not actor then return end
+    local online = db.OnlineStalkers
+    if not online or #online == 0 then return end
+    local sim = alife()
+    if not sim then return end
+
+    local actor_pos       = actor:position()
+    local dev             = wom_mcm.dev_mode()
+    local r_sqr           = wom_mcm.chatter_range() ^ 2
+    local seen            = {}
+    local now             = _now_ms()
+    local scripted_squads = ap_api.get_scripted_squads and ap_api.get_scripted_squads()
+
+    _perf_add("online", #online)
+
+    -- Pass 1: map online NPC ids to the squads that have online members.
+    local online_squads = _group_online_squads(sim, online, now)
+
+    if _perf_enabled then
+        for _ in pairs(online_squads) do _perf_add("squads") end
+    end
+
+    -- Pass 2: for each squad, check for a goal change and announce it.
+    -- TODO: restore scripted-squad gate: `if not scripted_squads or scripted_squads[squad_id]`
+    -- Disabled: it was too strict and chatter rarely fired with it on.
+    for squad_id, members in pairs(online_squads) do
+        _process_squad(squad_id, members, sim, actor_pos, dev, r_sqr, scripted_squads, seen)
+    end
+
+    if _perf_enabled then
+        for _ in pairs(seen) do _perf_add("passed") end
+    end
+
+    -- Forget squads no longer in range so the table stays bounded and they
+    -- re-baseline silently if they return rather than replaying a stale change.
+    for squad_id in pairs(_last_goal) do
+        if not seen[squad_id] then _last_goal[squad_id] = nil end
+    end
+
+    -- Drop membership entries for NPCs that are no longer online. Pure Lua over a table
+    -- the size of the online population — no crossings — and without it the cache would
+    -- grow for the whole session as the player moves between areas.
+    local still_online = {}
+    for i = 1, #online do still_online[online[i]] = true end
+    for npc_id in pairs(_squad_of_npc) do
+        if not still_online[npc_id] then _squad_of_npc[npc_id] = nil end
+    end
+end
+
+-- Returns the number of entries currently held in the membership cache.
+-- Diagnostic only: the prune step's job is to bound memory, which no behavioural
+-- assertion can observe, so tests need a way to see the table shrink. Nothing in the
+-- running game should depend on this.
+-- @return number
+function membership_cache_size()
+    local size = 0
+    for _ in pairs(_squad_of_npc) do size = size + 1 end
+    return size
+end
+
+-- ---- timer ------------------------------------------------------------------
+
+local function _on_timer()
+    ResetTimeEvent(TIMER_ID, TIMER_EV, POLL_INTERVAL)
+
+    -- Read once per poll: _perf_add and the counting loops all test this, so toggling dev
+    -- mode mid-session takes effect on the next poll without leaving half-counted state.
+    -- Gated on chatter_enabled too, because _poll_goal_changes returns immediately when the
+    -- feature is off: without it, a player running dev mode with chatter disabled gets a
+    -- line every 5 seconds reading all zeroes, which is noise that also looks like a bug
+    -- ("online=0" when the Zone is full of stalkers).
+    _perf_enabled = wom_mcm.dev_mode() and wom_mcm.chatter_enabled()
+    _perf_reset()
+    local elapsed = _perf_enabled and _start_timer() or nil
+
+    local ok, err = pcall(_poll_goal_changes)
+    if not ok and printf then printf("~[wom_chatter] scan error: %s", tostring(err)) end
+
+    -- Reported even when the scan raised: a poll that died partway still consumed time,
+    -- and hiding it would make the average look better than it is.
+    if elapsed then _perf_report(elapsed()) end
+    return false
+end
+
+-- ---- lifecycle --------------------------------------------------------------
+
+function on_game_start()
+    if not (ap_api and ap_api.get_record) then return end
+    _last_goal = {}
+    -- Cleared alongside _last_goal on every load: object ids are recycled by alife, so a
+    -- membership entry carried across a reload could name a completely different NPC.
+    _squad_of_npc = {}
+    -- Rolling timing stats are per-session too: an average spanning a reload would mix
+    -- populations from two different areas and mean nothing.
+    _perf_polls, _perf_total_ms, _perf_max_ms = 0, 0, 0
+    CreateTimeEvent(TIMER_ID, TIMER_EV, POLL_INTERVAL, _on_timer)
+end

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+    <!-- Outpost service discovery strings for wom_outpost.script.
+
+         ALifePlus 1.8.4 grows service NPCs (trader, barman, mechanic, medic) on smart
+         terrains a faction has conquered. This file holds everything the feature says:
+         the two PDA announcement pools, the area-recap event pools, and the role words.
+
+         ROLE WORDS (st_wom_outpost_role_<role>)
+         Carry their own article, because they are substituted directly into
+         #role#/#roles# and joined into lists ("a trader and a mechanic").
+
+         PDA ANNOUNCEMENTS
+           st_wom_outpost_established_NNN  first service seen at a smart
+           st_wom_outpost_service_NNN      a later role added to a known outpost
+         Delivered as an unquoted news-wire message attributed to the service NPC, so
+         the specialist announces their own arrival. Available slots:
+           #location# — the smart terrain name
+           #identity# — the holding faction's identity ("Duty", "the Loners")
+           #roles#    — every role that just appeared ("a trader and a mechanic")
+           #role#     — one role phrase; ONLY set for the service pool, never for
+                        established. Any established variant using it is filtered out.
+         All four slots are gated: a variant referencing one that resolves empty is
+         dropped before selection, so each pool must keep at least one variant that
+         uses only #location# and #identity#.
+
+         AREA RECAP (st_wom_event_outpost_*, st_wom_event_solo_outpost_*)
+         Merged into the area recap by wom_recap_smart_terrain. An outpost is newsworthy
+         on its own: it makes its location eligible even when nothing else happened
+         there, and the solo pool then carries the whole report. The indexed pool
+         supplies a body clause for the case where the location has other news too, so
+         those lines follow a time stamp or a sequence connector and start lowercase.
+         Both pools are marked timeless — never introduce a clock time here. Slots are
+         the standard area-event set plus #service_list# and #service_role#. Only _001
+         of the indexed pool is reachable: a smart can hold one outpost, so there is
+         never a second occurrence to index. -->
+
+    <!-- ===== role words ===== -->
+    <string id="st_wom_outpost_role_trader"><text>a trader</text></string>
+    <string id="st_wom_outpost_role_barman"><text>a barman</text></string>
+    <string id="st_wom_outpost_role_mechanic"><text>a mechanic</text></string>
+    <string id="st_wom_outpost_role_medic"><text>a medic</text></string>
+
+    <!-- ===== PDA: outpost established ===== -->
+    <string id="st_wom_outpost_established_001"><text>We have made #location# ours. There is #roles# set up here now, so come by if you need anything.</text></string>
+    <string id="st_wom_outpost_established_002"><text>Word from #location#: the place is ours, and we have #roles# working out of it. Spread it around.</text></string>
+    <string id="st_wom_outpost_established_003"><text>#identity# holds #location# now. We got #roles# in here, and the door is open to anyone friendly.</text></string>
+    <string id="st_wom_outpost_established_004"><text>Setting up shop at #location#, we even have #roles#.</text></string>
+    <string id="st_wom_outpost_established_005"><text>If you are passing #location#, stop in. It is ours these days, and there is #roles# on site.</text></string>
+    <string id="st_wom_outpost_established_006"><text>#location# is under #identity# now.</text></string>
+
+    <!-- ===== PDA: new specialist at an existing outpost ===== -->
+    <string id="st_wom_outpost_service_001"><text>The outpost at #location# has #role# now. Took long enough to get someone out here.</text></string>
+    <string id="st_wom_outpost_service_002"><text>Just got posted to #location#. If you need #role#, this is where I am.</text></string>
+    <string id="st_wom_outpost_service_003"><text>#identity# finally sent #role# up to #location#.</text></string>
+    <string id="st_wom_outpost_service_004"><text>There's a new face at the #location# outpost, #role# to be specific.</text></string>
+    <string id="st_wom_outpost_service_005"><text>Passing it on: #location# has #role# these days.</text></string>
+    <string id="st_wom_outpost_service_006"><text>They put me in at #location#. #identity# runs the place, and I am here if you need the work done.</text></string>
+
+    <!-- ===== area recap: outpost mentioned alongside other news ===== -->
+    <string id="st_wom_event_outpost_001a"><text>#some_members_subject# hold the place now, and they have got #service_list# working out of it.</text></string>
+    <string id="st_wom_event_outpost_001b"><text>the place is a proper outpost these days, including #service_list#, last I heard.</text></string>
+    <string id="st_wom_event_outpost_001c"><text>#some_members_subject# have set up there for good. You can find #service_list# on site.</text></string>
+    <string id="st_wom_event_outpost_001d"><text>there is an outpost running there now, if you need #service_role#.</text></string>
+    <string id="st_wom_event_outpost_001e"><text>whoever comes out of all that, #service_list# is still working there.</text></string>
+
+    <!-- ===== area recap: outpost as the only news from a location ===== -->
+    <string id="st_wom_event_solo_outpost_001"><text>#subject_identity# have made an outpost of #location#. There is #service_list# working out of it.</text></string>
+    <string id="st_wom_event_solo_outpost_002"><text>Only thing worth passing on is there's an outpost at #location# with #service_list# on site.</text></string>
+    <string id="st_wom_event_solo_outpost_003"><text>#some_members_subject# are running #location# these days. Word is they have #service_list# set up there.</text></string>
+</string_table>
