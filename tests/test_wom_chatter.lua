@@ -96,10 +96,10 @@ ap_api = {
     get_scripted_squads = function() return {} end,
 }
 
-xtime = { game_sec = function() return 0 end }
+xtime = { get_game_sec = function() return 0 end }
 
 -- xsquad is deliberately absent: the module must derive membership from the
--- server-object group_id field rather than reaching for xsquad.get_squad_by_member,
+-- server-object group_id field rather than reaching for xsquad.get_member_squad,
 -- which costs two crossings to return a squad object the scan does not want.
 xsquad = nil
 

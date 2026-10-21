@@ -89,7 +89,7 @@ xr_sound = nil
 printf   = function() end
 
 -- Mirrors the real helper's contract (nil for any id whose object is missing, stale
--- or dead) against this harness's registry. The real implementation's three engine
+-- or dead) against this harness's registry. The real implementation's four engine
 -- guards are covered in test_wom_utils.lua; what matters here is that the picker
 -- routes through it and honours a nil.
 wom_utils = {
@@ -444,7 +444,14 @@ news_manager = {
 -- module that is absent, or present without one of the named functions, must be skipped
 -- rather than erroring. dynamic_news_helper is exactly the case that goes missing when the
 -- player has a stripped news setup.
-xpda = { send = function() return true end }   -- no npc_tip
+-- Records what WoM's own delivery hands to xpda.publish_news; see the delivery-path tests.
+local _published = {}
+xpda = {   -- no show_npc_tip
+    publish_news = function(caption, msg, icon)
+        _published[#_published + 1] = { caption = caption, msg = msg, icon = icon }
+        return true
+    end,
+}
 
 hook_external_news()
 
@@ -516,12 +523,58 @@ end)
 
 group("hook_external_news: absent funnels are skipped, not errors", function()
     reset_window()
-    -- xpda.send exists and was hooked; xpda.npc_tip and the whole of dynamic_news_helper
-    -- did not exist when hook_external_news ran.
+    -- xpda.publish_news exists and was hooked; xpda.show_npc_tip and the whole of
+    -- dynamic_news_helper did not exist when hook_external_news ran.
+    -- This is also the regression check for the xlibs 1.9.0 rename (xpda.send ->
+    -- publish_news, npc_tip -> show_npc_tip, no aliases): with the old names in the
+    -- funnel table publish_news is skipped as "absent", and ALifePlus 1.8.9's reports,
+    -- which all go through it, never closed the window.
     check("dynamic_news_helper stayed absent", dynamic_news_helper, nil)
-    check("xpda.npc_tip stayed absent", xpda.npc_tip, nil)
-    xpda.send("Sender", "message")
+    check("xpda.show_npc_tip stayed absent", xpda.show_npc_tip, nil)
+    xpda.publish_news("Sender", "message")
     check("the funnel that did exist is hooked", is_pda_quiet(20), false)
+end)
+
+-- ============================================================
+-- Delivery path: WoM's own lines go through xpda when it is present
+-- ============================================================
+
+group("delivery: prefers xpda.publish_news so ALifePlus sees WoM's lines", function()
+    -- ALifePlus 1.8.9 holds its own reports while xpda's last-news clock is fresh. A line
+    -- put on the PDA with a raw give_game_news never stamps that clock, so an ALifePlus
+    -- report could land straight on top of a WoM bark.
+    reset_window()
+    _published = {}
+    local direct_calls = 0
+    local saved_give = db.actor.give_game_news
+    db.actor.give_game_news = function() direct_calls = direct_calls + 1 end
+
+    send_news_pda("Sender", "icon", "message", "test")
+    check("published through xpda", #_published, 1)
+    check("caption passed through", _published[1] and _published[1].caption, "Sender")
+    check("icon passed through", _published[1] and _published[1].icon, "icon")
+    check("styled text carries the message",
+          _published[1] and _published[1].msg:find("message", 1, true) ~= nil, true)
+    check("no direct give_game_news as well", direct_calls, 0)
+    check("WoM's own window is still stamped", is_pda_quiet(20), false)
+
+    db.actor.give_game_news = saved_give
+end)
+
+group("delivery: falls back to give_game_news without xpda", function()
+    reset_window()
+    local saved_xpda = xpda
+    xpda = nil
+    local direct_calls = 0
+    local saved_give = db.actor.give_game_news
+    db.actor.give_game_news = function() direct_calls = direct_calls + 1 end
+
+    send_news_pda("Sender", "icon", "message", "test")
+    check("delivered directly", direct_calls, 1)
+    check("window stamped on the fallback path too", is_pda_quiet(20), false)
+
+    db.actor.give_game_news = saved_give
+    xpda = saved_xpda
 end)
 
 -- ============================================================

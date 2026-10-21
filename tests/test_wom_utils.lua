@@ -159,6 +159,40 @@ group("get_live_online_npc: rejects what it cannot verify", function()
     check("dead npc → nil", wom_utils.get_live_online_npc(7), nil)
 end)
 
+group("get_live_online_npc: an id recycled to a non-creature is rejected", function()
+    -- db.OnlineStalkers can keep an id after its NPC is gone, and alife hands the number
+    -- to the next object it creates, often an item. :alive() on a non-CEntityAlive does
+    -- not raise, so the pcall never catches it: the engine logs "CSciptEntity [<section>]:
+    -- cannot access class member Alive!" plus a stack trace on every campfire tick that
+    -- drew the id. Reported from play with ammo and other item sections in the brackets.
+    local CLS_STALKER, CLS_MONSTER, CLS_AMMO = 1, 2, 3
+    IsStalker = function(_, class_id) return class_id == CLS_STALKER end
+    IsMonster = function(_, class_id) return class_id == CLS_MONSTER end
+
+    local alive_calls = 0
+    local client = { alive = function() alive_calls = alive_calls + 1 return true end }
+    local server_class = CLS_AMMO
+    level.object_by_id = function(id) return client end
+    alife = function()
+        return { object = function(self, id) return { clsid = function() return server_class end } end }
+    end
+
+    check("item id → nil", wom_utils.get_live_online_npc(7), nil)
+    check("and :alive() is never called on it", alive_calls, 0)
+
+    server_class = CLS_STALKER
+    check("stalker id → the object", wom_utils.get_live_online_npc(7), client)
+
+    server_class = CLS_MONSTER
+    check("mutant id → the object", wom_utils.get_live_online_npc(7), client)
+
+    -- Without the vanilla class helpers the guard steps aside rather than rejecting
+    -- every NPC in the game.
+    IsStalker, IsMonster = nil, nil
+    server_class = CLS_AMMO
+    check("no IsStalker/IsMonster → guard skipped", wom_utils.get_live_online_npc(7), client)
+end)
+
 -- ============================================================
 -- Summary
 -- ============================================================

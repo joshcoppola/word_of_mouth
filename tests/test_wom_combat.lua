@@ -48,12 +48,12 @@ db     = { storage = {} }
 
 -- Game clock, driven by the tests.
 local _game_sec = 0
-xtime = { game_sec = function() return _game_sec end }
+xtime = { get_game_sec = function() return _game_sec end }
 
 -- Server objects in these tests carry a plain `level_id` field; xlevel reads it.
 xlevel = {
     get_level_id       = function(se) return se and se.level_id or nil end,
-    get_actor_level_id = function() return 999 end,   -- deliberately wrong, to catch defaults
+    get_actor_level    = function() return 999 end,   -- deliberately wrong, to catch defaults
 }
 
 -- Captured RegisterScriptCallback handlers. _on_save / _on_load are module-locals,

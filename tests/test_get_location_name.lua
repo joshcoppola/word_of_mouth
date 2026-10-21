@@ -24,7 +24,7 @@ local L_JUPITER = 6
 -- ============================================================
 
 local _smarts      = {}         -- [id] = { _name, _level }
-local _actor_level = L_GARBAGE  -- what xlevel.get_actor_level_id() returns
+local _actor_level = L_GARBAGE  -- what xlevel.get_actor_level() returns
 
 -- What xlevel.get_level_name(level_id) returns.
 -- xlevel.get_level_name calls game.translate_string(alife():level_name(level_id)).
@@ -62,13 +62,13 @@ local _translations = {
 -- ============================================================
 
 xobject = {
-    se = function(id) return _smarts[id] end,
+    get_se = function(id) return _smarts[id] end,
 }
 
 xlevel = {
-    get_smart_display_name = function(s) return s._name end,
+    get_smart_name         = function(s) return s._name end,
     get_level_id           = function(s) return s._level end,
-    get_actor_level_id     = function() return _actor_level end,
+    get_actor_level        = function() return _actor_level end,
     get_level_name         = function(lid) return _level_name_map[lid] end,
 }
 
@@ -204,7 +204,7 @@ suite("9. On-map — possessive proper noun (no leading 'the')", function()
         get_location_name(id), "Sakharov's bunker")
 end)
 
-suite("10. Unknown smart terrain — xobject.se returns nil", function()
+suite("10. Unknown smart terrain — xobject.get_se returns nil", function()
     check("returns empty string", get_location_name(9999), "")
 end)
 

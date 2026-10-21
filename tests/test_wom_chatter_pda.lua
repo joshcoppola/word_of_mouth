@@ -115,11 +115,11 @@ alife = function()
     return { object = function(self, id) return _by_id[id] end }
 end
 
-xtime  = { game_sec = function() return _game_sec end }
-xobject = { se = function(id) return nil end }   -- icon falls back to the faction handle
+xtime  = { get_game_sec = function() return _game_sec end }
+xobject = { get_se = function(id) return nil end }   -- icon falls back to the faction handle
 
 xlevel = {
-    get_actor_level_id = function() return _actor_level end,
+    get_actor_level    = function() return _actor_level end,
     -- `or nil` matters: a fixture sets level=false to mean "unresolvable", and the real
     -- xlevel.get_level_id returns nil, never false. Without the normalisation the guard
     -- `level_id ~= nil` passes on false and the test silently proves nothing.
@@ -127,7 +127,7 @@ xlevel = {
 }
 
 xsquad = {
-    iter_squads = function()
+    iterate_squads = function()
         local index = 0
         return function()
             index = index + 1

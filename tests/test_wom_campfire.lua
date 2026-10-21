@@ -121,7 +121,7 @@ db = {
 
 ap_api = { get_records = function() return {} end }
 
-xtime = { game_sec = function() return _game_sec end }
+xtime = { get_game_sec = function() return _game_sec end }
 
 xr_sound = { set_sound_play = function() end }
 

@@ -31,7 +31,7 @@
 -- ============================================================
 
 local _game_sec = 100000
-xtime  = { game_sec = function() return _game_sec end }
+xtime  = { get_game_sec = function() return _game_sec end }
 xconst = { INVALID_ENTITY_ID = 65535 }
 
 local _printf_log = {}
@@ -119,7 +119,7 @@ wom_dialogue_helper = {
 -- Squad registry for sender selection.
 local _squads = {}
 xsquad = {
-    iter_squads = function()
+    iterate_squads = function()
         local i = 0
         return function()
             i = i + 1
@@ -129,7 +129,7 @@ xsquad = {
     is_stationed        = function(squad) return squad.stationed == true end,
     get_commander_name  = function(squad) return squad.commander_name end,
 }
-xobject = { se = function(id) return { character_icon = function() return "icon_" .. tostring(id) end } end }
+xobject = { get_se = function(id) return { character_icon = function() return "icon_" .. tostring(id) end } end }
 
 local script_dir = arg[0]:match("^(.*)[/\\][^/\\]*$") or "."
 
@@ -580,7 +580,7 @@ group("7. Global throttle", function()
 
     -- DEFECT MARKER — start of a brand-new game.
     --
-    -- on_game_start sets _last_fire_sec = 0, and xtime.game_sec() genuinely IS ~0 on a
+    -- on_game_start sets _last_fire_sec = 0, and xtime.get_game_sec() genuinely IS ~0 on a
     -- new game, so an in-band 0 cannot distinguish "never fired" from "fired just now".
     -- The result: for the first 30 in-game minutes of a new game every qualifying
     -- reaction is silently consumed by the throttle and never heard. This is the exact

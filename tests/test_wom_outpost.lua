@@ -75,11 +75,11 @@ function printf() end
 
 game = { translate_string = function(key) return key end }
 
-xtime  = { game_sec = function() return _game_sec end }
+xtime  = { get_game_sec = function() return _game_sec end }
 xlevel = { get_level_id = function(smart) return smart and 1 or nil end }
 
 xsquad = {
-    iter_squads = function()
+    iterate_squads = function()
         local index = 0
         return function()
             index = index + 1
@@ -90,7 +90,7 @@ xsquad = {
     get_commander_name  = function(squad) return "Commander" .. tostring(squad.id) end,
 }
 
-xobject = { se = function(id) return nil end }   -- sender falls back to the faction handle
+xobject = { get_se = function(id) return nil end }   -- sender falls back to the faction handle
 
 CreateTimeEvent = function(_, _, _, callback) _timer_callback = callback end
 ResetTimeEvent  = function() end

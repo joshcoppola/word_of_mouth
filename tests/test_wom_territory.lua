@@ -95,14 +95,14 @@ ap_api = {
     end,
 }
 
-xtime  = { game_sec = function() return _game_sec end }
+xtime  = { get_game_sec = function() return _game_sec end }
 
 xlevel = {
-    get_actor_level_id = function() return _level_id end,
+    get_actor_level    = function() return _level_id end,
     get_level_id       = function(smart) return smart and smart.level_id end,
 }
 
-xsmart = { smarts_by_names = function() return _smarts end }
+xsmart = { get_named_smarts = function() return _smarts end }
 
 -- Speaker location. Two of the three signals come from here (the smart whose job roster
 -- lists the NPC, and the NPC's squad's smart); the third is proximity, which wom_territory

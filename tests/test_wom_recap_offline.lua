@@ -73,13 +73,13 @@ function printf() end
 
 game = { translate_string = function(key) return key end }
 
-xtime  = { game_sec = function() return 1000000 end }
+xtime  = { get_game_sec = function() return 1000000 end }
 xsmart = {}
-xobject = { se = function(id) return nil end }
+xobject = { get_se = function(id) return nil end }
 axr_companions = nil
 
 xsquad = {
-    iter_member_ids = function(squad)
+    iterate_member_ids = function(squad)
         local index = 0
         return function()
             index = index + 1
